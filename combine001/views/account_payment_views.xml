@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_account_payment_form_combine001" model="ir.ui.view">
+        <field name="name">account.payment.form.combine001.wht</field>
+        <field name="model">account.payment</field>
+        <field name="inherit_id" ref="account.view_account_payment_form"/>
+        <field name="arch" type="xml">
+            <notebook name="payment_notebook" position="inside">
+                <page string="Withholding Tax" name="combine001_wht">
+                    <group>
+                        <group>
+                            <field name="x_wht_applicable" readonly="state != 'draft'"/>
+                            <field name="x_wht_rate" readonly="state != 'draft'" invisible="not x_wht_applicable"/>
+                            <field name="x_wht_amount" invisible="not x_wht_applicable"/>
+                            <field name="x_wht_account_id" readonly="state != 'draft'" invisible="not x_wht_applicable"/>
+                        </group>
+                        <group invisible="payment_type != 'inbound'">
+                            <field name="x_wht_expected_rate"/>
+                            <field name="x_wht_expected_amount"/>
+                            <field name="x_wht_variance"/>
+                        </group>
+                    </group>
+                </page>
+            </notebook>
+        </field>
+    </record>
+</odoo>

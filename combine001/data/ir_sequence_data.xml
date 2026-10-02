@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="seq_tax_adjustment" model="ir.sequence">
+        <field name="name">Combine001 Tax Ledger Adjustment</field>
+        <field name="code">combine001.tax.adjustment</field>
+        <field name="prefix">TADJ/%(year)s/</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+
+    <record id="seq_sale_amendment" model="ir.sequence">
+        <field name="name">Combine001 Contract Amendment</field>
+        <field name="code">combine001.sale.amendment</field>
+        <field name="prefix">AMD/%(year)s/</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+
+    <record id="seq_gate_pass" model="ir.sequence">
+        <field name="name">Combine001 Gate Pass</field>
+        <field name="code">combine001.gate.pass</field>
+        <field name="prefix">GP/%(year)s/</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+
+    <record id="seq_purchase_amendment" model="ir.sequence">
+        <field name="name">Combine001 PO Amendment</field>
+        <field name="code">combine001.purchase.amendment</field>
+        <field name="prefix">PAMD/%(year)s/</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+</odoo>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_add_charge_wizard_form" model="ir.ui.view">
+        <field name="name">combine001.add.charge.wizard.form</field>
+        <field name="model">combine001.add.charge.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Add Additional Charge">
+                <group>
+                    <field name="order_id" invisible="1"/>
+                    <field name="charge_type_id"/>
+                    <field name="amount"/>
+                </group>
+                <footer>
+                    <button string="Add" name="action_add_charge" type="object" class="btn-primary"/>
+                    <button string="Cancel" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_add_charge_wizard" model="ir.actions.act_window">
+        <field name="name">Add Additional Charge</field>
+        <field name="res_model">combine001.add.charge.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

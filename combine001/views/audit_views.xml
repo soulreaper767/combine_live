@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Read-only cross-module views for the Auditor role (BRD Section 3.3:
+         "view-only access across all financial and sales modules"). These
+         reuse Odoo's native list/form views; the New/Edit/Delete controls
+         are hidden automatically by the ORM because the Auditor group only
+         has perm_read on these models (see ir.model.access.csv). -->
+
+    <record id="action_audit_sale_orders" model="ir.actions.act_window">
+        <field name="name">Delivery Orders (Audit View)</field>
+        <field name="res_model">sale.order</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('state', '!=', 'draft')]</field>
+    </record>
+
+    <record id="action_audit_invoices" model="ir.actions.act_window">
+        <field name="name">Customer Invoices (Audit View)</field>
+        <field name="res_model">account.move</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('move_type', '=', 'out_invoice')]</field>
+        <field name="context">{'default_move_type': 'out_invoice'}</field>
+    </record>
+
+    <record id="action_audit_payments" model="ir.actions.act_window">
+        <field name="name">Payments (Audit View)</field>
+        <field name="res_model">account.payment</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="action_audit_deliveries" model="ir.actions.act_window">
+        <field name="name">Deliveries (Audit View)</field>
+        <field name="res_model">stock.picking</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('picking_type_code', '=', 'outgoing')]</field>
+    </record>
+
+    <record id="action_audit_purchase_orders" model="ir.actions.act_window">
+        <field name="name">RFQs / Purchase Orders (Audit View)</field>
+        <field name="res_model">purchase.order</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('state', '!=', 'draft')]</field>
+    </record>
+
+    <record id="action_audit_vendor_bills" model="ir.actions.act_window">
+        <field name="name">Vendor Bills (Audit View)</field>
+        <field name="res_model">account.move</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('move_type', '=', 'in_invoice')]</field>
+        <field name="context">{'default_move_type': 'in_invoice'}</field>
+    </record>
+
+    <record id="action_audit_receipts" model="ir.actions.act_window">
+        <field name="name">Receipts (Audit View)</field>
+        <field name="res_model">stock.picking</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('picking_type_code', '=', 'incoming')]</field>
+    </record>
+</odoo>

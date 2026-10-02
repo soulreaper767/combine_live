@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- BRD for Purchase Module Changes sec. 7: Purchase Receipt
+         approval (Draft -> Submitted -> Approved -> Done), only shown
+         for an incoming transfer actually linked to a Purchase Order -
+         every other transfer is completely unaffected, both in the view
+         (invisible otherwise) and in Python (see stock_picking.py's
+         button_validate override, scoped the same way). -->
+    <record id="view_picking_form_combine001_purchase" model="ir.ui.view">
+        <field name="name">stock.picking.form.combine001.purchase.approval</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_form"/>
+        <field name="arch" type="xml">
+            <field name="state" widget="statusbar" invisible="picking_type_code != 'incoming'" position="before">
+                <field name="purchase_id" invisible="1"/>
+                <button name="action_combine001_submit" type="object" string="Submit for Approval"
+                        class="oe_highlight"
+                        invisible="not purchase_id or picking_type_code != 'incoming' or x_approval_state != 'draft'"/>
+                <button name="action_combine001_approve" type="object" string="Approve"
+                        class="oe_highlight" groups="purchase.group_purchase_manager"
+                        invisible="not purchase_id or picking_type_code != 'incoming' or x_approval_state != 'submitted'"/>
+                <button name="action_combine001_reject" type="object" string="Reject"
+                        groups="purchase.group_purchase_manager"
+                        invisible="not purchase_id or picking_type_code != 'incoming' or x_approval_state != 'submitted'"/>
+                <button name="action_combine001_reset_draft" type="object" string="Reset to Draft"
+                        invisible="not purchase_id or picking_type_code != 'incoming' or x_approval_state != 'rejected'"/>
+                <field name="x_approval_state" widget="statusbar"
+                       invisible="not purchase_id or picking_type_code != 'incoming'"
+                       statusbar_visible="draft,submitted,approved"/>
+            </field>
+            <field name="picking_warning_text" position="after">
+                <div class="alert alert-warning" role="alert"
+                     invisible="not purchase_id or picking_type_code != 'incoming' or x_approval_state != 'rejected'">
+                    This Receipt was rejected. Reason: <field name="x_rejection_reason" nolabel="1" readonly="1"/>
+                </div>
+            </field>
+        </field>
+    </record>
+</odoo>

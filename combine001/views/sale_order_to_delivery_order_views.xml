@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- "Sales Order" (the confirmed sale.order, state='sale') -> "Delivery
+         Order" relabeling, per the Change Request Document for Sales
+         Module (2026-09-28). Same cosmetic-only technique as the
+         Quotation -> Contract rename: sale.order's model/fields/states/
+         workflow are entirely untouched, only the text a user sees
+         changes. Note this is a DIFFERENT document from the Delivery
+         Challan (the renamed stock.picking/Delivery Note - see
+         stock_picking_delivery_challan_views.xml) - "Delivery Order" here
+         is specifically the confirmed Contract/sale.order itself. -->
+
+    <!-- Main menu / breadcrumb: Sales > Orders > Orders -->
+    <record id="sale.action_orders" model="ir.actions.act_window">
+        <field name="name">Delivery Orders</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create a new Contract, the first step of a new sale!
+            </p><p>
+                Once the Contract is confirmed, it becomes a Delivery Order.<br/> You will be able to create an invoice and collect the payment.
+            </p>
+        </field>
+    </record>
+    <record id="sale.menu_sale_order" model="ir.ui.menu">
+        <field name="name">Delivery Orders</field>
+    </record>
+
+    <!-- List view titles -->
+    <record id="view_order_tree_combine001" model="ir.ui.view">
+        <field name="name">sale.order.list.orders.combine001</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_tree"/>
+        <field name="arch" type="xml">
+            <list position="attributes">
+                <attribute name="string">Delivery Orders</attribute>
+            </list>
+        </field>
+    </record>
+    <record id="sale_order_tree_combine001" model="ir.ui.view">
+        <field name="name">sale.order.list.combine001</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.sale_order_tree"/>
+        <field name="arch" type="xml">
+            <list position="attributes">
+                <attribute name="string">Delivery Orders</attribute>
+            </list>
+        </field>
+    </record>
+
+    <!-- Calendar / Graph / Pivot view titles -->
+    <record id="view_sale_order_calendar_combine001" model="ir.ui.view">
+        <field name="name">sale.order.calendar.combine001</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_sale_order_calendar"/>
+        <field name="arch" type="xml">
+            <calendar position="attributes">
+                <attribute name="string">Delivery Orders</attribute>
+            </calendar>
+        </field>
+    </record>
+    <record id="view_sale_order_graph_combine001" model="ir.ui.view">
+        <field name="name">sale.order.graph.combine001</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_sale_order_graph"/>
+        <field name="arch" type="xml">
+            <graph position="attributes">
+                <attribute name="string">Delivery Orders</attribute>
+            </graph>
+        </field>
+    </record>
+    <record id="view_sale_order_pivot_combine001" model="ir.ui.view">
+        <field name="name">sale.order.pivot.combine001</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_sale_order_pivot"/>
+        <field name="arch" type="xml">
+            <pivot position="attributes">
+                <attribute name="string">Delivery Orders</attribute>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- Search filters: "My Orders" (base view) and the invisible "Sales
+         Orders" filter used to default-activate the Orders action (the
+         VISIBLE "Sales Orders" filter lives in the Quotation-scoped
+         search view instead, renamed in sale_quotation_to_contract_views.xml). -->
+    <record id="view_sales_order_filter_combine001" model="ir.ui.view">
+        <field name="name">sale.order.list.select.combine001</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_sales_order_filter"/>
+        <field name="arch" type="xml">
+            <filter name="my_sale_orders_filter" position="attributes">
+                <attribute name="string">My Delivery Orders</attribute>
+            </filter>
+        </field>
+    </record>
+    <record id="sale_order_view_search_inherit_sale_combine001" model="ir.ui.view">
+        <field name="name">sale.order.search.inherit.sale.combine001</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.sale_order_view_search_inherit_sale"/>
+        <field name="arch" type="xml">
+            <filter name="sales" position="attributes">
+                <attribute name="string">Delivery Orders</attribute>
+            </filter>
+        </field>
+    </record>
+
+    <!-- CRM Team kanban dashboard -->
+    <record id="sale.action_orders_salesteams" model="ir.actions.act_window">
+        <field name="name">Delivery Orders</field>
+    </record>
+    <record id="sale.action_orders_to_invoice_salesteams" model="ir.actions.act_window">
+        <field name="name">Delivery Orders</field>
+    </record>
+    <template id="crm_team_kanban_view_combine001" inherit_id="sale.crm_team_view_kanban_dashboard">
+        <!-- The link's own action-reference attribute is resolved to a
+             numeric action id at data-file-load time (before this view
+             is ever composed), so it can't be used as an xpath locator
+             here - matching on the still-literal link text instead. -->
+        <xpath expr="//a[@type='action'][normalize-space(text())='Sales Orders']" position="replace">
+            <a name="%(sale.action_orders_salesteams)d" type="action">Delivery Orders</a>
+        </xpath>
+    </template>
+
+    <!-- Generated PDF filename + print action name (single source of
+         truth for both branches - see sale_quotation_to_contract_views.xml
+         for why this can't be split across two files). NOT overriding
+         the action's own `name` field shown in the Print dropdown: the
+         Enterprise sale_pdf_quote_builder module also sets it and loads
+         after combine001, silently winning that one rarely-seen label. -->
+    <record id="sale.action_report_saleorder" model="ir.actions.report">
+        <field name="print_report_name">(object.state in ('draft', 'sent') and 'Contract - %s' % (object.name)) or 'Delivery Order - %s' % (object.name)</field>
+    </record>
+
+    <!-- PDF report body: title + date label for the confirmed-order
+         (else) branch - the Contract (draft/sent) branch is handled in
+         sale_quotation_to_contract_views.xml, a separate xpath target
+         within the same base template so both compose cleanly. -->
+    <template id="report_saleorder_document_combine001_delivery" inherit_id="sale.report_saleorder_document">
+        <!-- Several other t-else="" nodes exist in this template (e.g. a
+             price_total span) - narrowed with the exact original text so
+             this can't accidentally match the wrong one. -->
+        <xpath expr="//span[@t-else='' and normalize-space(text())='Order #']" position="replace">
+            <span t-else="">Delivery Order # </span>
+        </xpath>
+        <xpath expr="//strong[@t-else='' and normalize-space(text())='Order Date']" position="replace">
+            <strong t-else="">Delivery Order Date</strong>
+        </xpath>
+    </template>
+</odoo>

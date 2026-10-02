@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_gst_saving_line_list" model="ir.ui.view">
+        <field name="name">combine001.gst.saving.line.list</field>
+        <field name="model">combine001.gst.saving.line</field>
+        <field name="arch" type="xml">
+            <list string="GST Saved" create="0" edit="0" delete="0">
+                <field name="date"/>
+                <field name="direction"/>
+                <field name="move_id" string="Invoice/Bill"/>
+                <field name="partner_id" string="Customer/Vendor"/>
+                <field name="base_amount"/>
+                <field name="rate"/>
+                <field name="gst_amount" sum="Total GST Saved"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_gst_saving_line_form" model="ir.ui.view">
+        <field name="name">combine001.gst.saving.line.form</field>
+        <field name="model">combine001.gst.saving.line</field>
+        <field name="arch" type="xml">
+            <form string="GST Saved" create="0" edit="0" delete="0">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_move" type="object"
+                                string="Open Invoice/Bill" class="oe_stat_button" icon="fa-file-text-o"/>
+                        <button name="action_open_journal_entry" type="object"
+                                string="Open GST Saving Entry" class="oe_stat_button" icon="fa-book"/>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="direction"/>
+                            <field name="move_id" string="Invoice/Bill"/>
+                            <field name="partner_id" string="Customer/Vendor"/>
+                            <field name="date"/>
+                        </group>
+                        <group>
+                            <field name="base_amount"/>
+                            <field name="rate"/>
+                            <field name="gst_amount"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_gst_saving_line_pivot" model="ir.ui.view">
+        <field name="name">combine001.gst.saving.line.pivot</field>
+        <field name="model">combine001.gst.saving.line</field>
+        <field name="arch" type="xml">
+            <pivot string="GST Saved">
+                <field name="direction" type="row"/>
+                <field name="partner_id" type="row" string="Customer/Vendor"/>
+                <field name="move_id" type="row" string="Invoice/Bill"/>
+                <field name="date" type="col" interval="month"/>
+                <field name="gst_amount" type="measure"/>
+                <field name="base_amount" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_gst_saving_line_search" model="ir.ui.view">
+        <field name="name">combine001.gst.saving.line.search</field>
+        <field name="model">combine001.gst.saving.line</field>
+        <field name="arch" type="xml">
+            <search string="GST Saved">
+                <field name="move_id" string="Invoice/Bill"/>
+                <field name="partner_id" string="Customer/Vendor"/>
+                <filter string="Sale" name="filter_sale" domain="[('direction', '=', 'sale')]"/>
+                <filter string="Purchase" name="filter_purchase" domain="[('direction', '=', 'purchase')]"/>
+                <separator/>
+                <filter string="This Year" name="filter_this_year" date="date"/>
+                <group>
+                    <filter string="Sale/Purchase" name="group_direction" context="{'group_by': 'direction'}"/>
+                    <filter string="Customer/Vendor" name="group_partner" context="{'group_by': 'partner_id'}"/>
+                    <filter string="Invoice/Bill" name="group_move" context="{'group_by': 'move_id'}"/>
+                    <filter string="Month" name="group_month" context="{'group_by': 'date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_gst_saving_line" model="ir.actions.act_window">
+        <field name="name">GST Saved</field>
+        <field name="res_model">combine001.gst.saving.line</field>
+        <field name="view_mode">list,pivot,form</field>
+        <field name="search_view_id" ref="view_gst_saving_line_search"/>
+        <field name="context">{'search_default_group_direction': 1, 'search_default_group_partner': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No GST-saving entries yet.
+            </p><p>
+                Created automatically whenever a Sales Invoice or Vendor
+                Bill is posted with no GST charged - the notional GST is
+                computed from the rate configured on each product and
+                recorded here, invoice/bill by invoice/bill, and as a
+                matching Dr "GST Saving" (Current Asset) / Cr "GST Saving
+                Reserve" (Equity) entry that shows on the Balance Sheet,
+                entirely outside the P&amp;L.
+            </p>
+        </field>
+    </record>
+</odoo>

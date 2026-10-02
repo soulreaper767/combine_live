@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Cosmetic-only "Delivery Note" -> "Delivery Challan" relabeling,
+         same technique as sale_quotation_to_contract_views.xml. The
+         per-warehouse stock.picking.type record itself (the "Delivery
+         Orders" card/menu users actually click into) is renamed as real
+         data instead, in res_company._combine001_rename_delivery_picking_types
+         - not something a fixed XML id can safely reach across arbitrary
+         warehouses. stock.picking's own model/fields/workflow/stock
+         movement are entirely untouched here. -->
+    <record id="stock.action_picking_tree_outgoing" model="ir.actions.act_window">
+        <field name="name">Delivery Challans</field>
+    </record>
+    <record id="stock.action_report_delivery" model="ir.actions.report">
+        <field name="name">Delivery Challan</field>
+        <field name="print_report_name">'Delivery Challan - %s - %s' % (object.partner_id.name or '', object.name)</field>
+    </record>
+
+    <!-- Registration-status fields + "Create Gate Pass" on the picking
+         form, only for outgoing transfers (Delivery Challans) - shown,
+         not renamed: the form's own title already follows the picking
+         type name renamed above. -->
+    <record id="view_picking_form_combine001_challan" model="ir.ui.view">
+        <field name="name">stock.picking.form.combine001.challan</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_combine001_create_gate_pass" type="object"
+                        class="oe_stat_button" icon="fa-id-card"
+                        invisible="picking_type_code != 'outgoing' or state != 'done'">
+                    <span>Gate Pass</span>
+                </button>
+            </xpath>
+            <field name="partner_id" position="after">
+                <field name="x_gst_status" invisible="picking_type_code != 'outgoing'" readonly="1"/>
+                <field name="x_income_tax_status" invisible="picking_type_code != 'outgoing'" readonly="1"/>
+                <field name="x_pra_status" invisible="picking_type_code != 'outgoing' or not x_show_pra_status" readonly="1"/>
+            </field>
+            <field name="product_uom_qty" position="after">
+                <field name="x_contract_price" optional="show" invisible="not sale_line_id"/>
+            </field>
+        </field>
+    </record>
+</odoo>

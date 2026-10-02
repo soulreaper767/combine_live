@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_commission_line_list" model="ir.ui.view">
+        <field name="name">combine001.commission.line.list</field>
+        <field name="model">combine001.commission.line</field>
+        <field name="arch" type="xml">
+            <list string="Commission Report" create="0" edit="0" delete="0">
+                <field name="date"/>
+                <field name="agent_id"/>
+                <field name="partner_id"/>
+                <field name="product_id"/>
+                <field name="sale_order_id"/>
+                <field name="invoice_id"/>
+                <field name="base_amount"/>
+                <field name="rate"/>
+                <field name="commission_amount" sum="Total Commission"/>
+                <field name="payment_state" widget="badge" decoration-success="payment_state == 'paid'"/>
+                <field name="payment_id"/>
+                <field name="payment_date"/>
+                <field name="amount_outstanding" sum="Total Outstanding"/>
+                <field name="amount_paid" sum="Total Paid"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_commission_line_form" model="ir.ui.view">
+        <field name="name">combine001.commission.line.form</field>
+        <field name="model">combine001.commission.line</field>
+        <field name="arch" type="xml">
+            <form string="Commission" create="0" delete="0">
+                <header>
+                    <button string="Mark as Paid" name="action_mark_paid" type="object"
+                            class="oe_highlight" invisible="payment_state == 'paid'"/>
+                    <field name="payment_state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="agent_id"/>
+                            <field name="partner_id"/>
+                            <field name="sale_order_id"/>
+                            <field name="invoice_id"/>
+                            <field name="product_id"/>
+                            <field name="date"/>
+                        </group>
+                        <group>
+                            <field name="base_amount"/>
+                            <field name="rate"/>
+                            <field name="commission_amount"/>
+                            <field name="amount_outstanding"/>
+                            <field name="amount_paid"/>
+                        </group>
+                    </group>
+                    <group string="Payment">
+                        <field name="payment_id"/>
+                        <field name="payment_reference"/>
+                        <field name="payment_date"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_commission_line_pivot" model="ir.ui.view">
+        <field name="name">combine001.commission.line.pivot</field>
+        <field name="model">combine001.commission.line</field>
+        <field name="arch" type="xml">
+            <pivot string="Commission Report">
+                <field name="agent_id" type="row"/>
+                <field name="partner_id" type="row"/>
+                <field name="payment_state" type="col"/>
+                <field name="date" type="col" interval="month"/>
+                <field name="commission_amount" type="measure"/>
+                <field name="amount_outstanding" type="measure"/>
+                <field name="amount_paid" type="measure"/>
+                <field name="base_amount" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_commission_line_search" model="ir.ui.view">
+        <field name="name">combine001.commission.line.search</field>
+        <field name="model">combine001.commission.line</field>
+        <field name="arch" type="xml">
+            <search string="Commission Report">
+                <field name="agent_id"/>
+                <field name="partner_id"/>
+                <field name="product_id"/>
+                <field name="sale_order_id"/>
+                <field name="payment_reference"/>
+                <filter string="Unpaid" name="filter_unpaid" domain="[('payment_state', '=', 'unpaid')]"/>
+                <filter string="Paid" name="filter_paid" domain="[('payment_state', '=', 'paid')]"/>
+                <separator/>
+                <group>
+                    <filter string="Agent" name="group_agent" context="{'group_by': 'agent_id'}"/>
+                    <filter string="Customer" name="group_partner" context="{'group_by': 'partner_id'}"/>
+                    <filter string="Product" name="group_product" context="{'group_by': 'product_id'}"/>
+                    <filter string="Payment Status" name="group_payment_state" context="{'group_by': 'payment_state'}"/>
+                    <filter string="Month" name="group_month" context="{'group_by': 'date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_commission_line" model="ir.actions.act_window">
+        <field name="name">Commission Report</field>
+        <field name="res_model">combine001.commission.line</field>
+        <field name="view_mode">list,pivot,form</field>
+        <field name="search_view_id" ref="view_commission_line_search"/>
+    </record>
+</odoo>

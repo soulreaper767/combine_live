@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- "Tax Info" tab on Customer/Vendor: separate registration status per
+         tax regime (GST, Income Tax, PRA), refined from the BRD's flat
+         Registered/Unregistered checkbox pair. GST/Income Tax status is
+         shown here unconditionally; PRA status is deliberately kept OFF
+         downstream documents unless a PRA-applicable product is on that
+         document's lines (see product_template.x_pra_applicable) - it's
+         still shown here on the master record itself since this is where
+         it's configured. -->
+    <record id="view_partner_form_combine001_tax_info" model="ir.ui.view">
+        <field name="name">res.partner.form.combine001.tax.info</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <page name="sales_purchases" position="after">
+                <page name="combine001_tax_info" string="Tax Info">
+                    <group>
+                        <group string="Sales Tax (GST)">
+                            <field name="x_gst_status" widget="radio"/>
+                            <field name="x_gst_number"/>
+                        </group>
+                        <group string="Income Tax">
+                            <field name="x_income_tax_status" widget="radio"/>
+                            <field name="x_income_tax_number"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Punjab Revenue Authority (Services)">
+                            <field name="x_pra_status" widget="radio"/>
+                            <field name="x_pra_number"/>
+                        </group>
+                    </group>
+                </page>
+            </page>
+        </field>
+    </record>
+</odoo>

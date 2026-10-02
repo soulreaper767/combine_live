@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_gate_pass_list" model="ir.ui.view">
+        <field name="name">combine001.gate.pass.list</field>
+        <field name="model">combine001.gate.pass</field>
+        <field name="arch" type="xml">
+            <list string="Gate Pass">
+                <field name="name"/>
+                <field name="date"/>
+                <field name="picking_id"/>
+                <field name="sale_order_id"/>
+                <field name="partner_id"/>
+                <field name="x_gst_status"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_gate_pass_form" model="ir.ui.view">
+        <field name="name">combine001.gate.pass.form</field>
+        <field name="model">combine001.gate.pass</field>
+        <field name="arch" type="xml">
+            <form string="Gate Pass">
+                <sheet>
+                    <div class="alert alert-info" role="alert">
+                        No stock is deducted here - stock already moved when the
+                        Delivery Challan below was validated (BRD sec. 8.2).
+                    </div>
+                    <group>
+                        <group>
+                            <field name="picking_id" readonly="1"/>
+                            <field name="sale_order_id" readonly="1"/>
+                            <field name="partner_id" readonly="1"/>
+                            <field name="date"/>
+                        </group>
+                        <group>
+                            <field name="x_gst_status" readonly="1"/>
+                            <field name="x_income_tax_status" readonly="1"/>
+                            <field name="x_pra_status" readonly="1" invisible="not x_show_pra_status"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Lines">
+                            <field name="line_ids" readonly="1">
+                                <list>
+                                    <field name="product_id"/>
+                                    <field name="quantity"/>
+                                    <field name="product_uom"/>
+                                    <field name="x_contract_price"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_gate_pass_search" model="ir.ui.view">
+        <field name="name">combine001.gate.pass.search</field>
+        <field name="model">combine001.gate.pass</field>
+        <field name="arch" type="xml">
+            <search string="Gate Pass">
+                <field name="name"/>
+                <field name="picking_id"/>
+                <field name="sale_order_id"/>
+                <field name="partner_id"/>
+                <group>
+                    <filter string="Customer" name="group_partner" context="{'group_by': 'partner_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_gate_pass" model="ir.actions.act_window">
+        <field name="name">Gate Pass</field>
+        <field name="res_model">combine001.gate.pass</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_gate_pass_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No Gate Passes yet.
+            </p><p>
+                Created from a validated Delivery Challan (BRD sec. 8) - a
+                logistics exit document, it never deducts stock a second time.
+            </p>
+        </field>
+    </record>
+</odoo>

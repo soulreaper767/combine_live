@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_order_form_combine001" model="ir.ui.view">
+        <field name="name">sale.order.form.combine001</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <field name="state" widget="statusbar" statusbar_visible="draft,sent,sale" position="before">
+                <button string="Approve Price Change" name="action_combine001_approve_price" type="object"
+                        class="oe_highlight" invisible="x_price_approval_state != 'pending'"
+                        groups="sales_team.group_sale_manager"/>
+                <button string="Reject Price Change" name="action_combine001_reject_price" type="object"
+                        invisible="x_price_approval_state != 'pending'"
+                        groups="sales_team.group_sale_manager"/>
+            </field>
+
+            <div class="alert alert-warning" role="alert" invisible="not sale_warning_text" position="after">
+                <div class="alert alert-warning" role="alert" invisible="x_price_approval_state != 'pending'">
+                    A price change on this order is <strong>pending Sales Manager approval</strong> and must be approved before confirmation.
+                </div>
+            </div>
+
+            <page name="order_lines" position="inside">
+                <button string="Add Charge" name="%(combine001.action_add_charge_wizard)d" type="action"
+                        class="btn-secondary mt-2" invisible="state not in ('draft', 'sent')"/>
+            </page>
+
+            <group name="sales_person" position="after">
+                <group name="combine001_commission" string="Commission">
+                    <field name="commission_agent_id"/>
+                    <field name="commission_rate" invisible="not commission_agent_id"/>
+                    <field name="commission_base" invisible="not commission_agent_id"/>
+                </group>
+                <group name="combine001_registration" string="Tax Registration">
+                    <field name="x_gst_status"/>
+                    <field name="x_income_tax_status"/>
+                    <field name="x_pra_status" invisible="not x_show_pra_status"/>
+                </group>
+            </group>
+
+            <div name="button_box" position="inside">
+                <button name="action_view_x_amendments" type="object"
+                        class="oe_stat_button" icon="fa-pencil-square-o"
+                        invisible="x_amendment_count == 0">
+                    <field name="x_amendment_count" widget="statinfo" string="Amendments"/>
+                </button>
+            </div>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_withholding_rate_list" model="ir.ui.view">
+        <field name="name">combine001.withholding.rate.list</field>
+        <field name="model">combine001.withholding.rate</field>
+        <field name="arch" type="xml">
+            <list string="Withholding Tax Rates" editable="bottom">
+                <field name="partner_id"/>
+                <field name="direction"/>
+                <field name="date_from"/>
+                <field name="date_to"/>
+                <field name="rate"/>
+                <field name="is_exempt"/>
+                <field name="exempt_rate" invisible="not is_exempt"/>
+                <field name="reason"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_withholding_rate_search" model="ir.ui.view">
+        <field name="name">combine001.withholding.rate.search</field>
+        <field name="model">combine001.withholding.rate</field>
+        <field name="arch" type="xml">
+            <search string="Withholding Tax Rates">
+                <field name="partner_id"/>
+                <filter string="Purchase" name="filter_purchase" domain="[('direction', '=', 'purchase')]"/>
+                <filter string="Sale" name="filter_sale" domain="[('direction', '=', 'sale')]"/>
+                <filter string="Exempt" name="filter_exempt" domain="[('is_exempt', '=', True)]"/>
+                <group>
+                    <filter string="Partner" name="group_partner" context="{'group_by': 'partner_id'}"/>
+                    <filter string="Direction" name="group_direction" context="{'group_by': 'direction'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_withholding_rate" model="ir.actions.act_window">
+        <field name="name">Withholding Tax Rates</field>
+        <field name="res_model">combine001.withholding.rate</field>
+        <field name="view_mode">list</field>
+        <field name="search_view_id" ref="view_withholding_rate_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No withholding tax rates configured yet.
+            </p><p>
+                One row per Vendor/Customer and date range. "Purchase" is the
+                rate WE withhold when paying that Vendor; "Sale" is the rate
+                that Customer is expected to withhold when paying us. Mark a
+                period Exempt and set its (possibly 0%) reduced rate for an
+                exemption certificate.
+            </p>
+        </field>
+    </record>
+
+    <record id="view_account_payment_wht_variance_list" model="ir.ui.view">
+        <field name="name">account.payment.list.combine001.wht.variance</field>
+        <field name="model">account.payment</field>
+        <field name="arch" type="xml">
+            <list string="Withholding Tax Variance" create="0" edit="0" delete="0">
+                <field name="date"/>
+                <field name="partner_id" string="Customer"/>
+                <field name="amount"/>
+                <field name="x_wht_rate" string="Actual Rate"/>
+                <field name="x_wht_amount" string="Actual Withheld" sum="Total Actual"/>
+                <field name="x_wht_expected_rate" string="Expected Rate"/>
+                <field name="x_wht_expected_amount" string="Expected Withheld" sum="Total Expected"/>
+                <field name="x_wht_variance" string="Variance" sum="Total Variance"
+                       decoration-danger="x_wht_variance != 0"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_account_payment_wht_variance_search" model="ir.ui.view">
+        <field name="name">account.payment.search.combine001.wht.variance</field>
+        <field name="model">account.payment</field>
+        <field name="arch" type="xml">
+            <search string="Withholding Tax Variance">
+                <field name="partner_id"/>
+                <filter string="Variance Only" name="filter_variance"
+                        domain="[('x_wht_variance', '!=', 0)]"/>
+                <filter string="Under-Withheld" name="filter_under"
+                        domain="[('x_wht_variance', '&lt;', 0)]"/>
+                <filter string="Over-Withheld" name="filter_over"
+                        domain="[('x_wht_variance', '&gt;', 0)]"/>
+                <group>
+                    <filter string="Customer" name="group_partner" context="{'group_by': 'partner_id'}"/>
+                    <filter string="Month" name="group_month" context="{'group_by': 'date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_account_payment_wht_variance_pivot" model="ir.ui.view">
+        <field name="name">account.payment.pivot.combine001.wht.variance</field>
+        <field name="model">account.payment</field>
+        <field name="arch" type="xml">
+            <pivot string="Withholding Tax Variance">
+                <field name="partner_id" type="row"/>
+                <field name="date" type="col" interval="month"/>
+                <field name="x_wht_amount" type="measure"/>
+                <field name="x_wht_expected_amount" type="measure"/>
+                <field name="x_wht_variance" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="action_wht_variance" model="ir.actions.act_window">
+        <field name="name">Withholding Tax Variance</field>
+        <field name="res_model">account.payment</field>
+        <field name="view_mode">list,pivot</field>
+        <field name="domain">[('payment_type', '=', 'inbound'), ('state', '!=', 'cancel')]</field>
+        <field name="context">{'search_default_filter_variance': 0}</field>
+        <field name="search_view_id" ref="view_account_payment_wht_variance_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No customer payments yet.
+            </p><p>
+                Compares what each customer actually withheld on a payment
+                (Actual) against what the configured Withholding Tax Rate for
+                that customer/date says they should have (Expected) - use
+                "Variance Only" to spot under/over-withholding.
+            </p>
+        </field>
+    </record>
+
+    <!-- Explicit view records (own external ids, so re-running this data
+         file on upgrade updates them in place instead of the view_ids
+         eval="[(0,0,{...})]" shorthand, which has no way to recognise an
+         already-existing row and would insert a duplicate every upgrade -
+         hit and fixed via the project's standard 2-upgrade-cycle test. -->
+    <record id="action_wht_variance_view_list" model="ir.actions.act_window.view">
+        <field name="sequence">1</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_account_payment_wht_variance_list"/>
+        <field name="act_window_id" ref="action_wht_variance"/>
+    </record>
+    <record id="action_wht_variance_view_pivot" model="ir.actions.act_window.view">
+        <field name="sequence">2</field>
+        <field name="view_mode">pivot</field>
+        <field name="view_id" ref="view_account_payment_wht_variance_pivot"/>
+        <field name="act_window_id" ref="action_wht_variance"/>
+    </record>
+</odoo>

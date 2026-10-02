@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- One demo user per BRD role (Section 3.1 "Defined User Roles"),
+         pre-assigned to the group(s) from Section 3.2's access matrix.
+         These are placeholder logins for setup/demo/UAT; the System
+         Administrator can rename/reassign them or create real named
+         accounts once the client's staff list is confirmed.
+
+         No password is set here on purpose: this file is committed to
+         a public-facing git repo, and a hardcoded password in version
+         control is a credential leak. After install, a System
+         Administrator sets each user's password locally via
+         Settings > Users & Companies > Users > (user) > Action >
+         Change Password, or triggers "Send Password Reset Instructions"
+         if outgoing mail is configured.
+
+         Each user's group_ids below lists the full closure of groups for
+         that role explicitly (e.g. Sales Manager includes the Salesman
+         group too, Finance Manager includes the Accountant group) rather
+         than relying on a group's implied_ids to cascade — testing showed
+         implied_ids does not propagate to a user created this way via a
+         plain (6,0,[...]) write in data-file XML (see
+         odoo19_api_gotchas memory). -->
+
+    <record id="user_sales" model="res.users">
+        <field name="name">Sales User (Combine001)</field>
+        <field name="login">sales.user@combine001.local</field>
+        <field name="email">sales.user@combine001.local</field>
+        <field name="group_ids" eval="[(6, 0, [
+            ref('base.group_user'),
+            ref('sales_team.group_sale_salesman'),
+            ref('combine001.group_combine001_sales_user'),
+        ])]"/>
+    </record>
+
+    <record id="user_sales_manager" model="res.users">
+        <field name="name">Sales Manager (Combine001)</field>
+        <field name="login">sales.manager@combine001.local</field>
+        <field name="email">sales.manager@combine001.local</field>
+        <field name="group_ids" eval="[(6, 0, [
+            ref('base.group_user'),
+            ref('sales_team.group_sale_salesman'),
+            ref('sales_team.group_sale_manager'),
+            ref('combine001.group_combine001_sales_user'),
+            ref('combine001.group_combine001_sales_manager'),
+        ])]"/>
+    </record>
+
+    <record id="user_warehouse" model="res.users">
+        <field name="name">Warehouse User (Combine001)</field>
+        <field name="login">warehouse.user@combine001.local</field>
+        <field name="email">warehouse.user@combine001.local</field>
+        <field name="group_ids" eval="[(6, 0, [
+            ref('base.group_user'),
+            ref('stock.group_stock_user'),
+            ref('combine001.group_combine001_warehouse_user'),
+        ])]"/>
+    </record>
+
+    <record id="user_accountant" model="res.users">
+        <field name="name">Accountant (Combine001)</field>
+        <field name="login">accountant@combine001.local</field>
+        <field name="email">accountant@combine001.local</field>
+        <field name="group_ids" eval="[(6, 0, [
+            ref('base.group_user'),
+            ref('account.group_account_user'),
+            ref('combine001.group_combine001_accountant'),
+        ])]"/>
+    </record>
+
+    <record id="user_finance_manager" model="res.users">
+        <field name="name">Finance Manager (Combine001)</field>
+        <field name="login">finance.manager@combine001.local</field>
+        <field name="email">finance.manager@combine001.local</field>
+        <field name="group_ids" eval="[(6, 0, [
+            ref('base.group_user'),
+            ref('account.group_account_user'),
+            ref('account.group_account_manager'),
+            ref('combine001.group_combine001_accountant'),
+            ref('combine001.group_combine001_finance_manager'),
+        ])]"/>
+    </record>
+
+    <record id="user_tax_officer" model="res.users">
+        <field name="name">Tax Officer (Combine001)</field>
+        <field name="login">tax.officer@combine001.local</field>
+        <field name="email">tax.officer@combine001.local</field>
+        <field name="group_ids" eval="[(6, 0, [
+            ref('base.group_user'),
+            ref('account.group_account_user'),
+            ref('combine001.group_tax_officer'),
+        ])]"/>
+    </record>
+
+    <record id="user_system_admin" model="res.users">
+        <field name="name">System Administrator (Combine001)</field>
+        <field name="login">system.admin@combine001.local</field>
+        <field name="email">system.admin@combine001.local</field>
+        <field name="group_ids" eval="[(6, 0, [
+            ref('base.group_user'),
+            ref('base.group_system'),
+            ref('combine001.group_combine001_module_admin'),
+            ref('combine001.group_combine001_system_admin'),
+        ])]"/>
+    </record>
+
+    <record id="user_module_admin" model="res.users">
+        <field name="name">Module Admin (Combine001)</field>
+        <field name="login">module.admin@combine001.local</field>
+        <field name="email">module.admin@combine001.local</field>
+        <field name="group_ids" eval="[(6, 0, [
+            ref('base.group_user'),
+            ref('combine001.group_combine001_module_admin'),
+        ])]"/>
+    </record>
+
+    <record id="user_auditor" model="res.users">
+        <field name="name">Auditor (Combine001)</field>
+        <field name="login">auditor@combine001.local</field>
+        <field name="email">auditor@combine001.local</field>
+        <field name="group_ids" eval="[(6, 0, [
+            ref('base.group_user'),
+            ref('combine001.group_auditor'),
+        ])]"/>
+    </record>
+</odoo>

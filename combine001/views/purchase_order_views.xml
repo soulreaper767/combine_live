@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_purchase_order_form_combine001" model="ir.ui.view">
+        <field name="name">purchase.order.form.combine001</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+            <button name="button_approve" position="after">
+                <button name="action_combine001_reject" type="object"
+                        string="Reject" invisible="state != 'to approve'"
+                        groups="purchase.group_purchase_manager"/>
+            </button>
+            <field name="state" widget="statusbar" statusbar_visible="draft,sent,purchase" position="after">
+                <field name="x_approved_by" invisible="not x_approved_by"/>
+            </field>
+            <div class="oe_button_box" name="button_box" position="inside">
+                <button name="action_view_x_amendments" type="object"
+                        class="oe_stat_button" icon="fa-pencil-square-o"
+                        invisible="x_amendment_count == 0">
+                    <field name="x_amendment_count" widget="statinfo" string="Amendments"/>
+                </button>
+            </div>
+            <notebook position="before">
+                <div class="alert alert-warning" role="alert" invisible="state != 'to approve'">
+                    <field name="x_rejection_reason" nolabel="1"
+                           placeholder="Rejection reason (fill in before clicking Reject above)..."/>
+                </div>
+                <div class="alert alert-info" role="alert" invisible="state != 'purchase'">
+                    Price and quantity are locked because this RFQ has been confirmed.
+                    Use a PO Amendment (button above) for any approved change.
+                </div>
+                <group string="Commission">
+                    <field name="commission_agent_id"/>
+                    <field name="commission_rate" invisible="not commission_agent_id"/>
+                    <field name="commission_base" invisible="not commission_agent_id"/>
+                    <field name="commission_basis" invisible="not commission_agent_id"/>
+                </group>
+            </notebook>
+        </field>
+    </record>
+</odoo>

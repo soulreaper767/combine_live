@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_sale_amendment_list" model="ir.ui.view">
+        <field name="name">combine001.sale.amendment.list</field>
+        <field name="model">combine001.sale.amendment</field>
+        <field name="arch" type="xml">
+            <list string="Contract Amendments">
+                <field name="name"/>
+                <field name="sale_order_id"/>
+                <field name="partner_id"/>
+                <field name="requested_by"/>
+                <field name="approved_by"/>
+                <field name="applied_date"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'applied'"
+                       decoration-info="state == 'approved'"
+                       decoration-warning="state == 'pending'"
+                       decoration-danger="state == 'rejected'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_sale_amendment_form" model="ir.ui.view">
+        <field name="name">combine001.sale.amendment.form</field>
+        <field name="model">combine001.sale.amendment</field>
+        <field name="arch" type="xml">
+            <form string="Contract Amendment">
+                <header>
+                    <button string="Submit" name="action_submit" type="object"
+                            class="oe_highlight" invisible="state != 'draft'"/>
+                    <button string="Approve" name="action_approve" type="object"
+                            class="oe_highlight" invisible="state != 'pending'"
+                            groups="sales_team.group_sale_manager"/>
+                    <button string="Reject" name="action_reject" type="object"
+                            invisible="state != 'pending'"
+                            groups="sales_team.group_sale_manager"/>
+                    <button string="Apply" name="action_apply" type="object"
+                            class="oe_highlight" invisible="state != 'approved'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,pending,approved,applied"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="sale_order_id" readonly="state != 'draft'"/>
+                            <field name="partner_id" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="requested_by" readonly="1"/>
+                            <field name="approved_by" readonly="1"/>
+                            <field name="applied_date" readonly="1"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="reason" readonly="state not in ('draft',)"/>
+                    </group>
+                    <notebook>
+                        <page string="Amendment Lines">
+                            <field name="line_ids" readonly="state not in ('draft',)">
+                                <list editable="bottom">
+                                    <field name="order_line_id"/>
+                                    <field name="product_id"/>
+                                    <field name="old_price_unit" readonly="1"/>
+                                    <field name="new_price_unit"/>
+                                    <field name="old_qty" readonly="1"/>
+                                    <field name="new_qty"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_sale_amendment_search" model="ir.ui.view">
+        <field name="name">combine001.sale.amendment.search</field>
+        <field name="model">combine001.sale.amendment</field>
+        <field name="arch" type="xml">
+            <search string="Contract Amendments">
+                <field name="name"/>
+                <field name="sale_order_id"/>
+                <field name="partner_id"/>
+                <filter string="Pending Approval" name="filter_pending" domain="[('state', '=', 'pending')]"/>
+                <filter string="Approved" name="filter_approved" domain="[('state', '=', 'approved')]"/>
+                <group>
+                    <filter string="Contract" name="group_order" context="{'group_by': 'sale_order_id'}"/>
+                    <filter string="Status" name="group_state" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_sale_amendment" model="ir.actions.act_window">
+        <field name="name">Contract Amendments</field>
+        <field name="res_model">combine001.sale.amendment</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_sale_amendment_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No Contract amendments yet.
+            </p><p>
+                The only way to change price/quantity on a confirmed
+                Contract (BRD sec. 3.2/3.3) - draft, submit, get Sales
+                Manager approval, then Apply. Applying always updates the
+                existing line, never creates a duplicate.
+            </p>
+        </field>
+    </record>
+</odoo>

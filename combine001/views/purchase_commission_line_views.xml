@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_purchase_commission_line_list" model="ir.ui.view">
+        <field name="name">combine001.purchase.commission.line.list</field>
+        <field name="model">combine001.purchase.commission.line</field>
+        <field name="arch" type="xml">
+            <list string="Purchase Commission Report" create="0" edit="0" delete="0">
+                <field name="date"/>
+                <field name="agent_id"/>
+                <field name="partner_id"/>
+                <field name="product_id"/>
+                <field name="purchase_order_id"/>
+                <field name="vendor_bill_id"/>
+                <field name="commission_basis"/>
+                <field name="base_amount"/>
+                <field name="rate"/>
+                <field name="commission_amount" sum="Total Commission"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'paid'"
+                       decoration-info="state == 'payable'"
+                       decoration-muted="state == 'cancelled'"/>
+                <field name="payment_status" widget="badge" decoration-success="payment_status == 'paid'"/>
+                <field name="payment_reference"/>
+                <field name="payment_date"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_purchase_commission_line_form" model="ir.ui.view">
+        <field name="name">combine001.purchase.commission.line.form</field>
+        <field name="model">combine001.purchase.commission.line</field>
+        <field name="arch" type="xml">
+            <form string="Purchase Commission" create="0" delete="0">
+                <header>
+                    <button string="Confirm" name="action_confirm" type="object"
+                            class="oe_highlight" invisible="state != 'draft'"/>
+                    <button string="Mark Payable" name="action_mark_payable" type="object"
+                            class="oe_highlight" invisible="state != 'confirmed'"/>
+                    <button string="Mark as Paid" name="action_mark_paid" type="object"
+                            class="oe_highlight" invisible="state != 'payable'"/>
+                    <button string="Cancel" name="action_cancel" type="object"
+                            invisible="state in ('paid', 'cancelled')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,confirmed,payable,paid"/>
+                </header>
+                <sheet>
+                    <div class="alert alert-info" role="alert" invisible="not x_bill_paid or state != 'confirmed'">
+                        The vendor bill is fully paid - this commission can now be marked Payable.
+                    </div>
+                    <group>
+                        <group>
+                            <field name="agent_id"/>
+                            <field name="partner_id"/>
+                            <field name="purchase_order_id"/>
+                            <field name="vendor_bill_id"/>
+                            <field name="product_id"/>
+                            <field name="date"/>
+                        </group>
+                        <group>
+                            <field name="commission_basis"/>
+                            <field name="base_amount"/>
+                            <field name="rate"/>
+                            <field name="commission_amount"/>
+                            <field name="x_bill_paid"/>
+                        </group>
+                    </group>
+                    <group string="Payment">
+                        <field name="payment_id"/>
+                        <field name="payment_reference"/>
+                        <field name="payment_date"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_purchase_commission_line_pivot" model="ir.ui.view">
+        <field name="name">combine001.purchase.commission.line.pivot</field>
+        <field name="model">combine001.purchase.commission.line</field>
+        <field name="arch" type="xml">
+            <pivot string="Purchase Commission Report">
+                <field name="agent_id" type="row"/>
+                <field name="partner_id" type="row"/>
+                <field name="payment_status" type="col"/>
+                <field name="date" type="col" interval="month"/>
+                <field name="commission_amount" type="measure"/>
+                <field name="base_amount" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_purchase_commission_line_search" model="ir.ui.view">
+        <field name="name">combine001.purchase.commission.line.search</field>
+        <field name="model">combine001.purchase.commission.line</field>
+        <field name="arch" type="xml">
+            <search string="Purchase Commission Report">
+                <field name="agent_id"/>
+                <field name="partner_id"/>
+                <field name="product_id"/>
+                <field name="purchase_order_id"/>
+                <field name="payment_reference"/>
+                <filter string="Unpaid" name="filter_unpaid" domain="[('payment_status', '=', 'unpaid')]"/>
+                <filter string="Paid" name="filter_paid" domain="[('payment_status', '=', 'paid')]"/>
+                <filter string="Payable" name="filter_payable" domain="[('state', '=', 'payable')]"/>
+                <separator/>
+                <group>
+                    <filter string="Agent" name="group_agent" context="{'group_by': 'agent_id'}"/>
+                    <filter string="Vendor" name="group_partner" context="{'group_by': 'partner_id'}"/>
+                    <filter string="Status" name="group_state" context="{'group_by': 'state'}"/>
+                    <filter string="Month" name="group_month" context="{'group_by': 'date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_purchase_commission_line" model="ir.actions.act_window">
+        <field name="name">Purchase Commission Report</field>
+        <field name="res_model">combine001.purchase.commission.line</field>
+        <field name="view_mode">list,pivot,form</field>
+        <field name="search_view_id" ref="view_purchase_commission_line_search"/>
+    </record>
+
+    <record id="view_purchase_commission_payment_wizard_form" model="ir.ui.view">
+        <field name="name">combine001.purchase.commission.payment.wizard.form</field>
+        <field name="model">combine001.purchase.commission.payment.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Mark Purchase Commission as Paid">
+                <group>
+                    <field name="line_ids" widget="many2many_tags" readonly="1"/>
+                    <field name="total_amount"/>
+                    <field name="payment_id"/>
+                    <field name="payment_reference"/>
+                    <field name="payment_date"/>
+                </group>
+                <footer>
+                    <button string="Mark as Paid" name="action_confirm" type="object" class="btn-primary"/>
+                    <button string="Cancel" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_purchase_commission_payment_wizard" model="ir.actions.act_window">
+        <field name="name">Mark Purchase Commission as Paid</field>
+        <field name="res_model">combine001.purchase.commission.payment.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="model_combine001_purchase_commission_line"/>
+        <field name="binding_view_types">list</field>
+    </record>
+</odoo>

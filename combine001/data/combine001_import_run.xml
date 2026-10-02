@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Deliberately NOT noupdate: an XML <function> call only runs on
+         module upgrade (not just fresh install) when its containing file
+         is not marked noupdate="1" (see odoo/tools/convert.py
+         _tag_function) - what makes the structural-account/GST-tax/
+         feature-toggle setup in models/res_company.py re-apply every
+         time this module is upgraded, not just the first time it's
+         installed (post_init_hook only ever fires on install). This
+         combine_live variant does NOT import any Chart of Accounts /
+         opening balance / Customers / Vendors / product data - see
+         res_company.py's module docstring. -->
+    <function model="res.company" name="_combine001_run_import"/>
+</odoo>

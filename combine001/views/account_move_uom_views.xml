@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Change Request Document for Sales Module (2026-09-28) sec. 2.1/8:
+         UoM must be visible on the Sales Invoice, not just toggleable.
+         The field is already present (gated by uom.group_uom, granted
+         company-wide in res_company._combine001_ensure_uom_group) but
+         Odoo's own list marks it an "optional" column a user could still
+         hide - forcing it to always show instead. -->
+    <record id="view_move_form_combine001_uom" model="ir.ui.view">
+        <field name="name">account.move.form.combine001.uom</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"/>
+        <field name="arch" type="xml">
+            <field name="product_uom_id" optional="conditional" position="attributes">
+                <attribute name="optional">show</attribute>
+            </field>
+        </field>
+    </record>
+</odoo>

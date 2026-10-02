@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_commission_payment_wizard_form" model="ir.ui.view">
+        <field name="name">combine001.commission.payment.wizard.form</field>
+        <field name="model">combine001.commission.payment.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Mark Commission as Paid">
+                <group>
+                    <field name="line_ids" widget="many2many_tags" readonly="1"/>
+                    <field name="total_amount"/>
+                    <field name="payment_id"/>
+                    <field name="payment_reference"/>
+                    <field name="payment_date"/>
+                </group>
+                <footer>
+                    <button string="Mark as Paid" name="action_confirm" type="object" class="btn-primary"/>
+                    <button string="Cancel" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_commission_payment_wizard" model="ir.actions.act_window">
+        <field name="name">Mark Commission as Paid</field>
+        <field name="res_model">combine001.commission.payment.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="model_combine001_commission_line"/>
+        <field name="binding_view_types">list</field>
+    </record>
+</odoo>

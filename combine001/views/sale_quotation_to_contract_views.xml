@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- "Quotation" -> "Contract" relabeling, per the Change Request
+         Document for Sales Module (2026-09-28), which supersedes the
+         earlier "Sales Contract" wording with plain "Contract". Purely
+         cosmetic: renames labels/menus/buttons/report text within the
+         core Sales app. Does not touch the underlying sale.order model,
+         fields, states, or workflow - a "Contract" here is exactly what
+         Odoo calls a Quotation (a draft/sent sale.order). -->
+
+    <!-- Main menu / breadcrumb: Sales > Orders > Quotations -->
+    <record id="sale.action_quotations_with_onboarding" model="ir.actions.act_window">
+        <field name="name">Contracts</field>
+    </record>
+    <record id="sale.action_quotations" model="ir.actions.act_window">
+        <field name="name">Contracts</field>
+    </record>
+    <!-- The sidebar menuitem itself has its OWN stored `name` field,
+         copied from the action's name only once, when the menu record
+         was first created (long before this module ever ran) - it does
+         not live-follow the action's name afterward, so the action
+         rename above alone leaves the sidebar entry still reading
+         "Quotations". Must be set explicitly here too. -->
+    <record id="sale.menu_sale_quotations" model="ir.ui.menu">
+        <field name="name">Contracts</field>
+    </record>
+
+    <!-- List view title shown when opening the Quotations action, plus
+         the actual Contract Date column: core Odoo's own quotation list
+         replaces the date column with record Creation Date instead (its
+         own assumption that the quotation date isn't normally the
+         interesting one pre-confirmation) - reinstated as "Contract
+         Date" and made the default-visible column, since that's the
+         date this business actually tracks Contracts by; Creation Date
+         stays available as an optional (hidden by default) column
+         rather than being dropped outright. The list's own default
+         order (`sale.order._order = 'date_order desc, id desc'`) already
+         sorts newest-Contract-Date-first with no extra work needed. -->
+    <record id="view_quotation_tree_combine001" model="ir.ui.view">
+        <field name="name">sale.order.list.quotation.combine001</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_quotation_tree"/>
+        <field name="arch" type="xml">
+            <list position="attributes">
+                <attribute name="string">Contracts</attribute>
+            </list>
+            <field name="create_date" position="before">
+                <field name="date_order" string="Contract Date" optional="show"/>
+            </field>
+            <field name="create_date" position="attributes">
+                <attribute name="optional">hide</attribute>
+            </field>
+        </field>
+    </record>
+
+    <!-- Search filters: "My Quotations" / "Quotations" / "Sales Orders" -
+         the last one lives in this same base search view (the Quotations
+         action's own search_view_id) and is renamed to "Delivery Orders"
+         here since this is the one place that filter is actually
+         user-visible (see sale_order_to_delivery_order_views.xml for the
+         rest of that rename). -->
+    <record id="sale_order_view_search_inherit_quotation_combine001" model="ir.ui.view">
+        <field name="name">sale.order.search.inherit.quotation.combine001</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.sale_order_view_search_inherit_quotation"/>
+        <field name="arch" type="xml">
+            <filter name="my_quotation" position="attributes">
+                <attribute name="string">My Contracts</attribute>
+            </filter>
+            <filter name="draft" position="attributes">
+                <attribute name="string">Contracts</attribute>
+            </filter>
+            <filter name="sales" position="attributes">
+                <attribute name="string">Delivery Orders</attribute>
+            </filter>
+            <!-- "Order Date" group-by (context group_by: date_order) - part
+                 of the shared base search view but reached fine from here
+                 since view inheritance composes cumulatively; renamed only
+                 in this Contracts-scoped search, the Delivery Orders one
+                 keeps its own wording. -->
+            <filter name="order_month" position="attributes">
+                <attribute name="string">Contract Date</attribute>
+            </filter>
+        </field>
+    </record>
+
+    <!-- Form: "Set to Quotation" button + "Quotation Date" label/field.
+         Odoo hides the draft/sent Quotation Date behind base.group_no_one
+         (developer mode only) - its own assumption that the quotation
+         date isn't normally worth a regular user's attention pre-
+         confirmation. Not true for Combine Spinning: a Contract is a
+         formal document from day one and its date needs to be visible
+         and trackable for every user, not just in debug mode - so this
+         replaces both the label and the field outright, dropping that
+         groups restriction, rather than just renaming the label text. -->
+    <record id="view_order_form_combine001_contract_labels" model="ir.ui.view">
+        <field name="name">sale.order.form.combine001.contract.labels</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <button name="action_draft" position="attributes">
+                <attribute name="string">Set to Contract</attribute>
+            </button>
+            <xpath expr="//div[@groups='base.group_no_one' and @invisible=&quot;state in ['sale', 'cancel']&quot;]" position="replace">
+                <div class="o_td_label" invisible="state in ['sale', 'cancel']">
+                    <label for="date_order" string="Contract Date"/>
+                </div>
+            </xpath>
+            <xpath expr="//field[@name='date_order' and @groups='base.group_no_one' and @invisible=&quot;state in ['sale', 'cancel']&quot;]" position="replace">
+                <field name="date_order" nolabel="1"
+                       invisible="state in ['sale', 'cancel']"
+                       readonly="state in ['cancel', 'sale']"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- "Mark Quotation as Sent" context-menu action -->
+    <record id="sale.model_sale_order_action_quotation_sent" model="ir.actions.server">
+        <field name="name">Mark Contract as Sent</field>
+    </record>
+
+    <!-- CRM Team "New Quotation" smart button -->
+    <record id="sale.action_quotation_form" model="ir.actions.act_window">
+        <field name="name">New Contract</field>
+    </record>
+
+    <!-- Sales > Configuration > Quotation Templates (action + menuitem
+         both have their own hardcoded `name`, same as menu_sale_quotations
+         above - both need setting explicitly, not just one or the other -->
+    <record id="sale_management.sale_order_template_action" model="ir.actions.act_window">
+        <field name="name">Contract Templates</field>
+    </record>
+    <record id="sale_management.sale_order_template_menu" model="ir.ui.menu">
+        <field name="name">Contract Templates</field>
+    </record>
+    <record id="sale_order_template_view_tree_combine001" model="ir.ui.view">
+        <field name="name">sale.order.template.list.combine001</field>
+        <field name="model">sale.order.template</field>
+        <field name="inherit_id" ref="sale_management.sale_order_template_view_tree"/>
+        <field name="arch" type="xml">
+            <list position="attributes">
+                <attribute name="string">Contract Template</attribute>
+            </list>
+        </field>
+    </record>
+
+    <!-- Generated PDF filename and print action's own `name` field are
+         handled together with the "Delivery Order" side of this rename
+         in sale_order_to_delivery_order_views.xml (a single field, only
+         one file may own it). -->
+
+    <!-- PDF report body: title + date label for the draft/sent (Contract)
+         branch only - the confirmed-order (else) branch is handled in
+         sale_order_to_delivery_order_views.xml, a separate xpath target
+         within the same base template so both compose cleanly. -->
+    <template id="report_saleorder_document_combine001" inherit_id="sale.report_saleorder_document">
+        <xpath expr="//span[@t-elif=&quot;doc.state in ['draft','sent']&quot;]" position="replace">
+            <span t-elif="doc.state in ['draft','sent']">Contract # </span>
+        </xpath>
+        <xpath expr="//strong[@t-elif=&quot;doc.state in ['draft', 'sent']&quot;]" position="replace">
+            <strong t-elif="doc.state in ['draft', 'sent']">Contract Date</strong>
+        </xpath>
+    </template>
+</odoo>

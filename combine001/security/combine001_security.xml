@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="module_category_combine001" model="ir.module.category">
+        <field name="name">Combine001</field>
+        <field name="sequence">25</field>
+    </record>
+
+    <!-- One privilege (row) per functional area, all grouped under the
+         "Combine001" category so every BRD role is manageable from a
+         single block on Settings > Users > Access Rights, instead of
+         being scattered across native Sales/Inventory/Accounting/
+         Settings sections. A user can hold one selection from EACH of
+         these privileges at once (they're separate rows) - that's why
+         Sales/Warehouse/Accounting/Tax/Audit/Administration are split
+         into distinct privileges rather than one combined list, which
+         would have made the roles mutually exclusive. -->
+    <record id="privilege_combine001_sales" model="res.groups.privilege">
+        <field name="name">Sales</field>
+        <field name="category_id" ref="module_category_combine001"/>
+        <field name="sequence">10</field>
+    </record>
+    <record id="privilege_combine001_purchase" model="res.groups.privilege">
+        <field name="name">Purchase</field>
+        <field name="category_id" ref="module_category_combine001"/>
+        <field name="sequence">15</field>
+    </record>
+    <record id="privilege_combine001_warehouse" model="res.groups.privilege">
+        <field name="name">Warehouse</field>
+        <field name="category_id" ref="module_category_combine001"/>
+        <field name="sequence">20</field>
+    </record>
+    <record id="privilege_combine001_accounting" model="res.groups.privilege">
+        <field name="name">Accounting</field>
+        <field name="category_id" ref="module_category_combine001"/>
+        <field name="sequence">30</field>
+    </record>
+    <record id="privilege_combine001_tax" model="res.groups.privilege">
+        <field name="name">Tax</field>
+        <field name="category_id" ref="module_category_combine001"/>
+        <field name="sequence">40</field>
+    </record>
+    <record id="privilege_combine001_audit" model="res.groups.privilege">
+        <field name="name">Audit</field>
+        <field name="category_id" ref="module_category_combine001"/>
+        <field name="sequence">50</field>
+    </record>
+    <record id="privilege_combine001_admin" model="res.groups.privilege">
+        <field name="name">Administration</field>
+        <field name="category_id" ref="module_category_combine001"/>
+        <field name="sequence">60</field>
+    </record>
+
+    <!-- Sales -->
+    <record id="group_combine001_sales_user" model="res.groups">
+        <field name="name">Sales User</field>
+        <field name="privilege_id" ref="privilege_combine001_sales"/>
+        <field name="sequence">10</field>
+        <field name="implied_ids" eval="[(4, ref('sales_team.group_sale_salesman'))]"/>
+        <field name="comment">Creates quotations and Sales Orders; day-to-day order entry (BRD role: Sales User).</field>
+    </record>
+    <record id="group_combine001_sales_manager" model="res.groups">
+        <field name="name">Sales Manager</field>
+        <field name="privilege_id" ref="privilege_combine001_sales"/>
+        <field name="sequence">20</field>
+        <field name="implied_ids" eval="[(4, ref('group_combine001_sales_user')), (4, ref('sales_team.group_sale_manager'))]"/>
+        <field name="comment">Approves price changes/discounts beyond user authority; oversees the sales team (BRD role: Sales Manager).</field>
+    </record>
+
+    <!-- Purchase (BRD for Purchase Module Changes sec. 17) -->
+    <record id="group_combine001_purchase_user" model="res.groups">
+        <field name="name">Purchase User</field>
+        <field name="privilege_id" ref="privilege_combine001_purchase"/>
+        <field name="sequence">10</field>
+        <field name="implied_ids" eval="[(4, ref('purchase.group_purchase_user'))]"/>
+        <field name="comment">Creates RFQs, submits them for approval, processes day-to-day purchasing (BRD role: Purchase User).</field>
+    </record>
+    <record id="group_combine001_purchase_manager" model="res.groups">
+        <field name="name">Purchase Manager</field>
+        <field name="privilege_id" ref="privilege_combine001_purchase"/>
+        <field name="sequence">20</field>
+        <field name="implied_ids" eval="[(4, ref('group_combine001_purchase_user')), (4, ref('purchase.group_purchase_manager'))]"/>
+        <field name="comment">Approves/rejects RFQs, POs and PO Amendments; oversees purchasing (BRD role: Purchase Manager).</field>
+    </record>
+
+    <!-- Warehouse -->
+    <record id="group_combine001_warehouse_user" model="res.groups">
+        <field name="name">Warehouse User</field>
+        <field name="privilege_id" ref="privilege_combine001_warehouse"/>
+        <field name="sequence">10</field>
+        <field name="implied_ids" eval="[(4, ref('stock.group_stock_user'))]"/>
+        <field name="comment">Processes deliveries against confirmed Sales Orders (BRD role: Warehouse / Inventory User).</field>
+    </record>
+
+    <!-- Accounting -->
+    <record id="group_combine001_accountant" model="res.groups">
+        <field name="name">Accountant</field>
+        <field name="privilege_id" ref="privilege_combine001_accounting"/>
+        <field name="sequence">10</field>
+        <field name="implied_ids" eval="[(4, ref('account.group_account_user'))]"/>
+        <field name="comment">Processes invoices, payments, journal entries; day-to-day accounting (BRD role: Accountant).</field>
+    </record>
+    <record id="group_combine001_finance_manager" model="res.groups">
+        <field name="name">Finance Manager</field>
+        <field name="privilege_id" ref="privilege_combine001_accounting"/>
+        <field name="sequence">20</field>
+        <field name="implied_ids" eval="[(4, ref('group_combine001_accountant')), (4, ref('account.group_account_manager'))]"/>
+        <field name="comment">Approves manual tax adjustments, Chart of Accounts changes, financial controls (BRD role: Finance Manager / Controller).</field>
+    </record>
+
+    <!-- Tax -->
+    <record id="group_tax_officer" model="res.groups">
+        <field name="name">Tax Officer</field>
+        <field name="privilege_id" ref="privilege_combine001_tax"/>
+        <field name="sequence">10</field>
+        <field name="implied_ids" eval="[(4, ref('account.group_account_user'))]"/>
+        <field name="comment">Maintains tax templates/rates and the Tax General Ledger. May be combined with the Accountant role in smaller teams.</field>
+    </record>
+
+    <!-- Audit -->
+    <record id="group_auditor" model="res.groups">
+        <field name="name">Auditor</field>
+        <field name="privilege_id" ref="privilege_combine001_audit"/>
+        <field name="sequence">10</field>
+        <field name="comment">Read-only access across Combine001 sales/tax/commission data for audit and compliance review.</field>
+    </record>
+
+    <!-- Administration -->
+    <record id="group_combine001_module_admin" model="res.groups">
+        <field name="name">Module Admin</field>
+        <field name="privilege_id" ref="privilege_combine001_admin"/>
+        <field name="sequence">10</field>
+        <field name="comment">Full configuration rights over Combine001's own settings (quantity limits, charge types, commission agents, tax ledger adjustments) without full System Administrator access to the rest of Odoo. Delegate this to someone who should manage the app without being a full technical admin.</field>
+    </record>
+    <record id="group_combine001_system_admin" model="res.groups">
+        <field name="name">System Administrator</field>
+        <field name="privilege_id" ref="privilege_combine001_admin"/>
+        <field name="sequence">20</field>
+        <field name="implied_ids" eval="[(4, ref('group_combine001_module_admin')), (4, ref('base.group_system'))]"/>
+        <field name="comment">Full technical administrator: master data configuration, user access, approval rules, and everything Module Admin has (BRD role: System Administrator).</field>
+    </record>
+
+    <!-- Auditor: read-only record rules on every Combine001 model -->
+    <record id="rule_auditor_customer_item_limit" model="ir.rule">
+        <field name="name">Combine001 Auditor: Customer Item Limit (read only)</field>
+        <field name="model_id" ref="model_combine001_customer_item_limit"/>
+        <field name="groups" eval="[(4, ref('group_auditor'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="perm_read">1</field>
+        <field name="perm_write">0</field>
+        <field name="perm_create">0</field>
+        <field name="perm_unlink">0</field>
+    </record>
+
+    <record id="rule_auditor_charge_type" model="ir.rule">
+        <field name="name">Combine001 Auditor: Charge Type (read only)</field>
+        <field name="model_id" ref="model_combine001_charge_type"/>
+        <field name="groups" eval="[(4, ref('group_auditor'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="perm_read">1</field>
+        <field name="perm_write">0</field>
+        <field name="perm_create">0</field>
+        <field name="perm_unlink">0</field>
+    </record>
+
+    <record id="rule_auditor_commission_agent" model="ir.rule">
+        <field name="name">Combine001 Auditor: Commission Agent (read only)</field>
+        <field name="model_id" ref="model_combine001_commission_agent"/>
+        <field name="groups" eval="[(4, ref('group_auditor'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="perm_read">1</field>
+        <field name="perm_write">0</field>
+        <field name="perm_create">0</field>
+        <field name="perm_unlink">0</field>
+    </record>
+
+    <record id="rule_auditor_commission_line" model="ir.rule">
+        <field name="name">Combine001 Auditor: Commission Line (read only)</field>
+        <field name="model_id" ref="model_combine001_commission_line"/>
+        <field name="groups" eval="[(4, ref('group_auditor'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="perm_read">1</field>
+        <field name="perm_write">0</field>
+        <field name="perm_create">0</field>
+        <field name="perm_unlink">0</field>
+    </record>
+
+    <record id="rule_auditor_tax_adjustment" model="ir.rule">
+        <field name="name">Combine001 Auditor: Tax Adjustment (read only)</field>
+        <field name="model_id" ref="model_combine001_tax_adjustment"/>
+        <field name="groups" eval="[(4, ref('group_auditor'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="perm_read">1</field>
+        <field name="perm_write">0</field>
+        <field name="perm_create">0</field>
+        <field name="perm_unlink">0</field>
+    </record>
+</odoo>

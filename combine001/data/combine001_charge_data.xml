@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="product_charge_freight" model="product.product">
+        <field name="name">Freight Charges</field>
+        <field name="type">service</field>
+        <field name="sale_ok">1</field>
+        <field name="purchase_ok">0</field>
+        <field name="invoice_policy">order</field>
+        <field name="list_price">0.0</field>
+    </record>
+    <record id="product_charge_transportation" model="product.product">
+        <field name="name">Transportation Charges</field>
+        <field name="type">service</field>
+        <field name="sale_ok">1</field>
+        <field name="purchase_ok">0</field>
+        <field name="invoice_policy">order</field>
+        <field name="list_price">0.0</field>
+    </record>
+    <record id="product_charge_handling" model="product.product">
+        <field name="name">Handling Charges</field>
+        <field name="type">service</field>
+        <field name="sale_ok">1</field>
+        <field name="purchase_ok">0</field>
+        <field name="invoice_policy">order</field>
+        <field name="list_price">0.0</field>
+    </record>
+    <record id="product_charge_service" model="product.product">
+        <field name="name">Service Charges</field>
+        <field name="type">service</field>
+        <field name="sale_ok">1</field>
+        <field name="purchase_ok">0</field>
+        <field name="invoice_policy">order</field>
+        <field name="list_price">0.0</field>
+    </record>
+
+    <record id="charge_type_freight" model="combine001.charge.type">
+        <field name="name">Freight</field>
+        <field name="computation">fixed</field>
+        <field name="default_amount">0.0</field>
+        <field name="product_id" ref="product_charge_freight"/>
+    </record>
+    <record id="charge_type_transportation" model="combine001.charge.type">
+        <field name="name">Transportation</field>
+        <field name="computation">fixed</field>
+        <field name="default_amount">0.0</field>
+        <field name="product_id" ref="product_charge_transportation"/>
+    </record>
+    <record id="charge_type_handling" model="combine001.charge.type">
+        <field name="name">Handling</field>
+        <field name="computation">fixed</field>
+        <field name="default_amount">0.0</field>
+        <field name="product_id" ref="product_charge_handling"/>
+    </record>
+    <record id="charge_type_service" model="combine001.charge.type">
+        <field name="name">Service Charge</field>
+        <field name="computation">percentage</field>
+        <field name="default_amount">0.0</field>
+        <field name="product_id" ref="product_charge_service"/>
+    </record>
+</odoo>

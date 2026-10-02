@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="product_template_form_view_combine001" model="ir.ui.view">
+        <field name="name">product.template.form.combine001</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="sale.product_template_form_view"/>
+        <field name="arch" type="xml">
+            <field name="invoice_policy" position="after">
+                <field name="x_max_order_qty"
+                       groups="combine001.group_tax_officer,sales_team.group_sale_manager,base.group_system,combine001.group_combine001_module_admin"
+                       invisible="not sale_ok or type == 'combo'"/>
+            </field>
+            <field name="taxes_id" position="after">
+                <field name="x_pra_applicable"
+                       groups="combine001.group_tax_officer,base.group_system,combine001.group_combine001_module_admin"
+                       invisible="type == 'combo'"/>
+            </field>
+        </field>
+    </record>
+</odoo>
