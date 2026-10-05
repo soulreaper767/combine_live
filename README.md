@@ -80,10 +80,15 @@ the real CoA already uses for the other 6.
 
 **Products** (`_combine001_import_live_products`): **126 Yarn
 products**, all under one new *Yarn* category (parent *Finished
-Goods*), posting to the **already-existing** `4.01.01.0001 LOCAL SALES
-- YARN` / `5.18.02.0002` / `3.08.01.0001` accounts (looked up by code,
-degrades gracefully with a warning if not found yet — same pattern as
-the GST taxes). Source sheet is a daily production/stock report split
+Goods*), posting to `4.01.01.0001 LOCAL SALES - YARN` / `5.18.02.0002`
+/ `3.08.01.0001` — this company's own real account codes (same ones
+the full-import variant's `product_categories.csv` also uses), found-
+and-reused if they already exist on this database, **created at those
+exact codes if they don't** (`_combine001_ensure_yarn_category`, same
+find-or-create idiom as the structural GST Saving/Withholding accounts
+and the Debtors control accounts above — stage 1 is master data only,
+no opening balance posted either way). Source sheet is a daily
+production/stock report split
 into 5 differently-headed sections (main production log, 3 "STOCK
 POSITION" sub-ledgers, 1 third-party-godown log); item identity is
 `<COUNT, QUALITY & PACKING>` + `<PAPER CONE COLOUR>`, standardised as

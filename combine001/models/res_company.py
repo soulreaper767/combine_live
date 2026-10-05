@@ -40,11 +40,14 @@ def _read_csv(filename):
 # CoA already uses for the other 6, not a new convention.
 _DEBTOR_CONTROL_ACCOUNTS_FILE = 'debtor_groups.csv'
 
-# Finished Goods (Yarn) - reuses the real, already-existing accounts the
-# full-import variant's product_categories.csv also points every yarn
-# category at (see that repo's data/import/product_categories.csv) -
-# looked up directly by code, never created, same discipline as the GST
-# accounts above.
+# Finished Goods (Yarn) - this company's own real account codes, the
+# same ones the full-import variant's product_categories.csv also
+# points every yarn category at (see that repo's
+# data/import/product_categories.csv). Found-and-reused where they
+# already exist on this database, created at these exact codes where
+# they don't yet - same find-or-create discipline as the structural
+# GST Saving/Withholding accounts above, see
+# _combine001_ensure_yarn_category.
 _YARN_INCOME_ACCOUNT_CODE = '4.01.01.0001'   # LOCAL SALES - YARN
 _YARN_EXPENSE_ACCOUNT_CODE = '5.18.02.0002'
 _YARN_STOCK_ACCOUNT_CODE = '3.08.01.0001'
@@ -105,6 +108,7 @@ class ResCompany(models.Model):
         company = self.env.company
         _logger.info("Combine001 (live): applying customizations for company %s", company.name)
 
+        self._combine001_cancel_generic_coa_auto_install()
         structural_by_code = self._combine001_ensure_structural_accounts(company)
         self._combine001_ensure_gst_taxes(company, structural_by_code)
         self._combine001_rename_delivery_picking_types(company)
@@ -114,6 +118,31 @@ class ResCompany(models.Model):
         self._combine001_import_live_products(company)
 
         _logger.info("Combine001 (live): customizations applied.")
+
+    def _combine001_cancel_generic_coa_auto_install(self):
+        """Installing the 'account' module (a combine001 dependency)
+        unconditionally queues a one-shot callback on the registry that
+        auto-installs Odoo's fallback 'Generic Chart of Accounts'
+        template (with its own journals/accounts, overwriting whatever
+        this company already has) the moment the *whole* module graph
+        finishes loading - regardless of what this method, or anything
+        else, does afterwards. That callback is queued while
+        chart_template is still unset, so setting chart_template later
+        does not stop it; the only way to stop it is to remove the
+        queued callback itself. Unlike the full-import combine001 repo
+        (which pairs this with its own CoA import), combine_live does
+        NOT import a CoA - this guard exists purely so the accounts THIS
+        module creates (Debtors control accounts, Yarn Income/COGS/
+        Stock) on a company that doesn't yet have a chart template
+        aren't silently wiped out again right after being created.
+        Ported back in after the live server showed exactly that
+        symptom: customers imported, but their receivable-account link
+        gone - the generic fallback had fired after
+        _combine001_ensure_debtor_control_accounts already created the
+        14 control accounts, on a company with no chart_template set."""
+        registry = self.env.registry
+        if hasattr(registry, '_auto_install_template'):
+            del registry._auto_install_template
 
     def _combine001_ensure_po_approval(self, company):
         """BRD for Purchase Module Changes sec. 4/6: 'Only approved RFQs
@@ -323,24 +352,36 @@ class ResCompany(models.Model):
     # -- live Finished Goods (Yarn) products -----------------------------
 
     def _combine001_ensure_yarn_category(self, company):
-        """Looks up the real, already-existing income/expense/stock
-        accounts by code (same ones the full-import variant's
-        product_categories.csv points every yarn category at) rather
-        than creating new ones. Degrades gracefully - same pattern as
-        _combine001_ensure_gst_taxes - if they're not found yet."""
+        """These 3 codes are Combine Spinning's own real account numbers
+        (same ones the full-import variant's product_categories.csv
+        points every yarn category at) - not invented here. Find-or-
+        create, same idiom as _combine001_ensure_structural_accounts /
+        _combine001_ensure_debtor_control_accounts: on a live database
+        that already has them, they're simply found and reused; on one
+        that doesn't yet (this company's numbering, just not fully set
+        up on this particular database), they're created at that exact
+        code. No opening balance is posted either way - stage 1 is
+        master data (accounts + product catalog) only."""
         Account = self.env['account.account']
-        accounts = {a.code: a for a in Account.search([
-            ('company_ids', 'in', company.id),
-            ('code', 'in', [_YARN_INCOME_ACCOUNT_CODE, _YARN_EXPENSE_ACCOUNT_CODE, _YARN_STOCK_ACCOUNT_CODE]),
+        wanted = [
+            (_YARN_INCOME_ACCOUNT_CODE, 'LOCAL SALES - YARN', 'income'),
+            (_YARN_EXPENSE_ACCOUNT_CODE, 'COST OF YARN SOLD', 'expense'),
+            (_YARN_STOCK_ACCOUNT_CODE, 'STOCK - YARN', 'asset_current'),
+        ]
+        codes = [c for c, _, _ in wanted]
+        existing = {a.code: a for a in Account.with_context(active_test=False).search([
+            ('company_ids', 'in', company.id), ('code', 'in', codes),
         ])}
-        missing = [c for c in (_YARN_INCOME_ACCOUNT_CODE, _YARN_EXPENSE_ACCOUNT_CODE, _YARN_STOCK_ACCOUNT_CODE) if c not in accounts]
-        if missing:
-            _logger.warning(
-                "Combine001: Finished Goods (Yarn) account(s) %s not found on this company's Chart "
-                "of Accounts - product import skipped. Set these up and upgrade the module again.",
-                missing,
-            )
-            return None
+        accounts = {}
+        for code, name, account_type in wanted:
+            found = existing.get(code)
+            if found:
+                accounts[code] = found
+            else:
+                accounts[code] = Account.create({
+                    'code': code, 'name': name, 'account_type': account_type,
+                    'company_ids': [(6, 0, [company.id])],
+                })
 
         Category = self.env['product.category']
         parent = Category.search([('name', '=', 'Finished Goods'), ('parent_id', '=', False)], limit=1)
