@@ -51,15 +51,64 @@ Odoo 19 custom app implementing the "Odoo ERP Enhancements v1.0" BRD
 | — | Purchase BRD: Receipt + Vendor Bill approval workflow | `models/combine001_approval_mixin.py`, `models/stock_picking.py`, `models/account_move.py` |
 | — | Purchase BRD: Purchase Commission Agent (Draft→Confirmed→Payable→Paid) | `models/purchase_commission_line.py` |
 
-## Products, Categories & Chart of Accounts mapping
+## Live Debtors (Customers) & Finished Goods (Yarn) data
 
-**Not applicable to this `combine_live` repo.** This section (kept below
-for reference, describing the `combine001` repo's full-import variant)
-documents a product-catalog/CoA import that this build deliberately does
-NOT perform — `combine_live`'s `_combine001_run_import()` only ensures
-the GST Saving/Withholding structural accounts and the GST taxes
-themselves (looked up against accounts that must already exist on this
-company's real CoA). See `models/res_company.py`'s module docstring.
+Unlike the rest of this repo, these two imports DO ship real data —
+`data/import/customers.csv` / `debtor_groups.csv` / `products.csv`,
+sourced directly from the live server's own `CUSTOMERS LIST.xlsx` and
+`PRODUCTS LIST WITH INVENTORY BALANCE.xls` (`30-9` sheet only, per
+instruction — the other 28 daily sheets and the 3 unrelated historical
+sheets were not imported). Run on every install/upgrade, same
+idempotent find-or-update pattern as everything else in this file.
+
+**Customers** (`_combine001_import_live_customers`): 2,476 unique
+customers (2,492 rows in the source, 16 exact name+account duplicates
+collapsed), collapsed into **14 Debtors control accounts**
+(`3.09.01`–`3.09.14`, one per sub-ledger: Local, Export, Waste, Raw
+Material, Bad Debts Recoverables, Rotation, Others, Foreign, Export
+Business, Fabrics Venture, Combine Fabrics, Revive Business-Local,
+Revive Stitched Garments, Revive Stitching Services) rather than one GL
+account per customer — same "Customer accounting dimension" discipline
+as the full-import variant (see below, and native Partner Ledger per
+customer). 6 of the 14 control accounts already existed as real
+postable accounts on the live CoA (`3.09.01/.02/.04/.11/.13/.14`) and
+are found-and-reused as-is (existing name/account kept, never
+overwritten); the other 8 had no bare group-level account in the real
+CoA — only individual named customer accounts under some of them — so
+they're created here at the group-level code itself, the same pattern
+the real CoA already uses for the other 6.
+
+**Products** (`_combine001_import_live_products`): **126 Yarn
+products**, all under one new *Yarn* category (parent *Finished
+Goods*), posting to the **already-existing** `4.01.01.0001 LOCAL SALES
+- YARN` / `5.18.02.0002` / `3.08.01.0001` accounts (looked up by code,
+degrades gracefully with a warning if not found yet — same pattern as
+the GST taxes). Source sheet is a daily production/stock report split
+into 5 differently-headed sections (main production log, 3 "STOCK
+POSITION" sub-ledgers, 1 third-party-godown log); item identity is
+`<COUNT, QUALITY & PACKING>` + `<PAPER CONE COLOUR>`, standardised as
+`"<count/quality/packing> - <colour>"` with whitespace collapsed and
+colour-spelling typos fixed (`VOILET`→`VIOLET`, `ZABRA`→`ZEBRA`,
+`AUTAIRO`/`AUTOAIR`→`AUTOAIRO`) so the same product+colour reported in
+more than one section collapses into a single item instead of
+fragmenting into near-duplicate rows; the sheet's own `CLOSING BALANCE`
+column, summed across every section the item appears in, is kept as a
+**reference-only** `closing_balance_bags` CSV column — like the
+full-import variant's product import, it is **not** applied as opening
+stock (a daily production/dispatch report isn't a safe source for a
+point-in-time inventory count). UoM is Odoo's generic *Units*,
+representing Bags (the sheet's native unit — unlike the full-import
+variant's Finished Goods/Raw Material catalog, nothing in this source
+converts cleanly to KG, so no conversion was attempted). No prices —
+products import at price 0 for Sales/Finance to fill in.
+
+## Products, Categories & Chart of Accounts mapping (full-import variant only)
+
+**Not applicable to this `combine_live` repo** beyond the Debtors/Yarn
+import documented just above. This section (kept below for reference,
+describing the `combine001` repo's full-import variant) documents a
+much larger product-catalog/CoA/opening-balance import that this build
+deliberately does NOT perform.
 
 **The source file is a daily stock/production report, not a product
 list or price list** — two sheets ("Finished Goods", "Raw Material"),
