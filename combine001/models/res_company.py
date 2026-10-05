@@ -403,31 +403,38 @@ class ResCompany(models.Model):
         return categ
 
     def _combine001_import_live_products(self, company):
-        """126 Yarn products from the live server's own "PRODUCTS LIST
-        WITH INVENTORY BALANCE.xls" (30-9 sheet only, per instruction).
-        Item names are standardised "<count/quality/packing> - <colour>"
-        (whitespace collapsed, colour-spelling typos fixed - e.g.
-        VOILET->VIOLET, ZABRA->ZEBRA, AUTAIRO->AUTOAIRO - so the same
-        product+colour reported in more than one of the sheet's sections
-        collapses to a single item instead of fragmenting into near-
-        duplicates). closing_balance_bags is kept as a reference-only
-        column (the sheet's own "CLOSING BALANCE", summed across every
-        section it appears in) - NOT applied as opening stock, same
-        discipline as the full-import variant's product import (no
-        opening-inventory count can safely be inferred from a daily
-        production/stock report - see that repo's README)."""
+        """149 Yarn products from the live server's own "Products List
+        FINAL.xlsx" - supersedes the earlier 126-item list sourced from
+        "PRODUCTS LIST WITH INVENTORY BALANCE.xls" (30-9 sheet), which
+        this method now also retires (deletes/archives). Item names
+        standardised: whitespace collapsed, spelling typos fixed
+        (TWWERA->TWEERA, AUTAIRO/AUTOAIR->AUTOAIRO), unmatched stray
+        parentheses dropped. The source file has no quantity data at
+        all (unlike the previous list's reference-only bag counts) -
+        this is master data only, same "no opening stock without a
+        trustworthy count" discipline as everywhere else in this repo."""
         categ = self._combine001_ensure_yarn_category(company)
         if not categ:
             return
         rows = _read_csv('products.csv')
+        names = [r['name'] for r in rows]
         Product = self.env['product.template']
+
+        stale = Product.search([('categ_id', '=', categ.id), ('name', 'not in', names)])
+        if stale:
+            try:
+                stale.unlink()
+            except Exception:
+                stale.write({'active': False})
+            _logger.info("Combine001 (live): %s stale Yarn product(s) retired.", len(stale))
+
         unit = self.env.ref('uom.product_uom_unit')
-        existing = {p.name: p for p in Product.search([('name', 'in', [r['name'] for r in rows])])}
+        existing = {p.name: p for p in Product.search([('name', 'in', names)])}
 
         to_create = []
-        for row in rows:
+        for name in names:
             vals = {
-                'name': row['name'],
+                'name': name,
                 'categ_id': categ.id,
                 'type': 'consu',
                 'is_storable': True,
@@ -435,7 +442,7 @@ class ResCompany(models.Model):
                 'sale_ok': True,
                 'purchase_ok': True,
             }
-            found = existing.get(row['name'])
+            found = existing.get(name)
             if found:
                 found.write(vals)
             else:

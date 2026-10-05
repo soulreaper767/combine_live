@@ -78,34 +78,28 @@ CoA — only individual named customer accounts under some of them — so
 they're created here at the group-level code itself, the same pattern
 the real CoA already uses for the other 6.
 
-**Products** (`_combine001_import_live_products`): **126 Yarn
-products**, all under one new *Yarn* category (parent *Finished
-Goods*), posting to `4.01.01.0001 LOCAL SALES - YARN` / `5.18.02.0002`
-/ `3.08.01.0001` — this company's own real account codes (same ones
-the full-import variant's `product_categories.csv` also uses), found-
-and-reused if they already exist on this database, **created at those
-exact codes if they don't** (`_combine001_ensure_yarn_category`, same
-find-or-create idiom as the structural GST Saving/Withholding accounts
-and the Debtors control accounts above — stage 1 is master data only,
-no opening balance posted either way). Source sheet is a daily
-production/stock report split
-into 5 differently-headed sections (main production log, 3 "STOCK
-POSITION" sub-ledgers, 1 third-party-godown log); item identity is
-`<COUNT, QUALITY & PACKING>` + `<PAPER CONE COLOUR>`, standardised as
-`"<count/quality/packing> - <colour>"` with whitespace collapsed and
-colour-spelling typos fixed (`VOILET`→`VIOLET`, `ZABRA`→`ZEBRA`,
-`AUTAIRO`/`AUTOAIR`→`AUTOAIRO`) so the same product+colour reported in
-more than one section collapses into a single item instead of
-fragmenting into near-duplicate rows; the sheet's own `CLOSING BALANCE`
-column, summed across every section the item appears in, is kept as a
-**reference-only** `closing_balance_bags` CSV column — like the
-full-import variant's product import, it is **not** applied as opening
-stock (a daily production/dispatch report isn't a safe source for a
-point-in-time inventory count). UoM is Odoo's generic *Units*,
-representing Bags (the sheet's native unit — unlike the full-import
-variant's Finished Goods/Raw Material catalog, nothing in this source
-converts cleanly to KG, so no conversion was attempted). No prices —
-products import at price 0 for Sales/Finance to fill in.
+**Products** (`_combine001_import_live_products`): **149 Yarn
+products**, sourced from the live server's own "Products List
+FINAL.xlsx" — supersedes an earlier 126-item list sourced from
+"PRODUCTS LIST WITH INVENTORY BALANCE.xls" (30-9 sheet), which this
+same method now also retires: any existing Yarn-category product whose
+name isn't in the current `products.csv` is unlinked (archived instead,
+if something still references it and unlink is blocked). All under one
+*Yarn* category (parent *Finished Goods*), posting to `4.01.01.0001
+LOCAL SALES - YARN` / `5.18.02.0002` / `3.08.01.0001` — this company's
+own real account codes (same ones the full-import variant's
+`product_categories.csv` also uses), found-and-reused if they already
+exist on this database, **created at those exact codes if they don't**
+(`_combine001_ensure_yarn_category`, same find-or-create idiom as the
+structural GST Saving/Withholding accounts and the Debtors control
+accounts above — master data only, no opening balance posted either
+way). Item names standardised: whitespace collapsed, spelling typos
+fixed (`TWWERA`→`TWEERA`, `AUTAIRO`/`AUTOAIR`→`AUTOAIRO`), unmatched
+stray parentheses dropped. The source file carries no quantity data at
+all (unlike the previous list's reference-only bag counts), so there's
+nothing to decide re: opening stock either way. UoM is Odoo's generic
+*Units*. No prices — products import at price 0 for Sales/Finance to
+fill in.
 
 ## Products, Categories & Chart of Accounts mapping (full-import variant only)
 
