@@ -61,6 +61,29 @@ instruction — the other 28 daily sheets and the 3 unrelated historical
 sheets were not imported). Run on every install/upgrade, same
 idempotent find-or-update pattern as everything else in this file.
 
+**Generic Chart of Accounts removal** (`_combine001_remove_generic_coa`,
+runs first, before any of the account creation below): installing the
+`account` module unconditionally queues Odoo's own fallback "auto-
+install a generic Chart of Accounts" the moment the whole module graph
+finishes loading, on any company with no chart template set yet —
+which silently wiped out this module's own newly-created accounts the
+first time this ran against the live server.
+`_combine001_cancel_generic_coa_auto_install` (just above, in the
+GST/structural-accounts section) stops that happening again on a
+future upgrade, but doesn't undo a generic chart that already got
+installed before that guard existed — this method does: every account
+on this company whose code contains no `.` (Combine Spinning's own
+real numbering always uses dotted codes, e.g. `3.09.01` /
+`4.01.01.0001`; the generic template's are always plain digits, e.g.
+`101000` / `400000`) is unlinked, after first clearing any
+company/journal field or stale `ir.default` row pointing at it;
+anything still referenced by a posted journal entry is archived
+instead of left blocking. Verified against a company that had the
+generic chart auto-installed first (standalone `account` module
+install, no combine001) — installing combine001 on top removed 49 of
+51 generic accounts outright and archived the 2 with journal items,
+leaving only the 20 real accounts this module manages.
+
 **Customers** (`_combine001_import_live_customers`): 2,476 unique
 customers (2,492 rows in the source, 16 exact name+account duplicates
 collapsed), collapsed into **14 Debtors control accounts**

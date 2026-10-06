@@ -109,6 +109,7 @@ class ResCompany(models.Model):
         _logger.info("Combine001 (live): applying customizations for company %s", company.name)
 
         self._combine001_cancel_generic_coa_auto_install()
+        self._combine001_remove_generic_coa(company)
         structural_by_code = self._combine001_ensure_structural_accounts(company)
         self._combine001_ensure_gst_taxes(company, structural_by_code)
         self._combine001_rename_delivery_picking_types(company)
@@ -143,6 +144,73 @@ class ResCompany(models.Model):
         registry = self.env.registry
         if hasattr(registry, '_auto_install_template'):
             del registry._auto_install_template
+
+    def _combine001_remove_generic_coa(self, company):
+        """Cancelling the auto-install above only stops it happening
+        AGAIN on a future upgrade - it does nothing for a company that
+        already got the generic 'Generic Chart of Accounts' template
+        auto-installed on an earlier upgrade, before that guard existed.
+        This actively removes it, so only Combine Spinning's own real,
+        dotted-code accounts remain (every real code in this company's
+        numbering scheme contains a '.', e.g. '3.09.01' / '4.01.01.0001'
+        - the generic template's own codes are always plain digits, e.g.
+        '101000' / '400000' - a reliable way to tell them apart without
+        hardcoding the generic template's account list). Clears any
+        company/journal field pointing at one first (otherwise deletion
+        is blocked), and any stale ir.default row left over from the
+        generic chart template's own _load() (same gotcha as deleting
+        any default chart account - see account_by_code usage
+        elsewhere); unlinks what has no journal items yet, archives
+        (rather than leaving blocked) anything that already does."""
+        Account = self.env['account.account'].with_context(active_test=False)
+        generic = Account.search([
+            ('company_ids', 'in', company.id), ('code', 'not like', '%.%'),
+        ])
+        if not generic:
+            return
+
+        company_fields = [
+            'transfer_account_id', 'income_currency_exchange_account_id',
+            'expense_currency_exchange_account_id', 'account_journal_suspense_account_id',
+            'account_journal_payment_debit_account_id', 'account_journal_payment_credit_account_id',
+            'account_journal_early_pay_discount_gain_account_id',
+            'account_journal_early_pay_discount_loss_account_id',
+            'default_cash_difference_income_account_id', 'default_cash_difference_expense_account_id',
+        ]
+        for f in company_fields:
+            if f in company._fields and company[f] in generic:
+                company[f] = False
+
+        journal_fields = [
+            'default_account_id', 'suspense_account_id', 'profit_account_id', 'loss_account_id',
+            'payment_debit_account_id', 'payment_credit_account_id',
+        ]
+        for journal in self.env['account.journal'].search([('company_id', '=', company.id)]):
+            for f in journal_fields:
+                if f in journal._fields and journal[f] in generic:
+                    journal[f] = False
+
+        IrDefault = self.env['ir.default']
+        for d in IrDefault.search([('field_id.relation', '=', 'account.account')]):
+            try:
+                if d.json_value and int(d.json_value) in generic.ids:
+                    d.unlink()
+            except (ValueError, TypeError):
+                continue
+
+        removed = kept = 0
+        for account in generic:
+            try:
+                with self.env.cr.savepoint():
+                    account.unlink()
+                removed += 1
+            except Exception:
+                account.write({'active': False})
+                kept += 1
+        _logger.info(
+            "Combine001 (live): removed %s generic Chart of Accounts account(s); "
+            "archived %s still referenced by existing entries.", removed, kept,
+        )
 
     def _combine001_ensure_po_approval(self, company):
         """BRD for Purchase Module Changes sec. 4/6: 'Only approved RFQs
