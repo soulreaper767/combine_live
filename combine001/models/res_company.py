@@ -100,16 +100,21 @@ class ResCompany(models.Model):
         so the rest of the codebase - and the non-noupdate <function>
         tag that calls this on every install/upgrade, see
         data/combine001_import_run.xml - needs zero changes), this
-        variant does NOT import any Chart of Accounts / opening balance
-        / Customers / Vendors / product catalog data. It only ensures
-        the handful of forward-looking accounts and company-level
-        feature toggles this module's own behavioural customizations
-        depend on - see the module-level docstring above for why."""
+        variant does NOT import any opening balance / Customers /
+        Vendors / product catalog data the way the full-import repo
+        does. It DOES import the Chart of Accounts structure (account
+        codes/names/types only, no opening balances - see
+        _combine001_import_coa) from this company's own real CoA
+        export, plus the handful of forward-looking accounts and
+        company-level feature toggles this module's own behavioural
+        customizations depend on - see the module-level docstring above
+        for the rest."""
         company = self.env.company
         _logger.info("Combine001 (live): applying customizations for company %s", company.name)
 
         self._combine001_cancel_generic_coa_auto_install()
-        self._combine001_remove_generic_coa(company)
+        self._combine001_import_coa(company)
+        self._combine001_ensure_default_accounts(company)
         structural_by_code = self._combine001_ensure_structural_accounts(company)
         self._combine001_ensure_gst_taxes(company, structural_by_code)
         self._combine001_rename_delivery_picking_types(company)
@@ -145,30 +150,17 @@ class ResCompany(models.Model):
         if hasattr(registry, '_auto_install_template'):
             del registry._auto_install_template
 
-    def _combine001_remove_generic_coa(self, company):
-        """Cancelling the auto-install above only stops it happening
-        AGAIN on a future upgrade - it does nothing for a company that
-        already got the generic 'Generic Chart of Accounts' template
-        auto-installed on an earlier upgrade, before that guard existed.
-        This actively removes it, so only Combine Spinning's own real,
-        dotted-code accounts remain (every real code in this company's
-        numbering scheme contains a '.', e.g. '3.09.01' / '4.01.01.0001'
-        - the generic template's own codes are always plain digits, e.g.
-        '101000' / '400000' - a reliable way to tell them apart without
-        hardcoding the generic template's account list). Clears any
-        company/journal field pointing at one first (otherwise deletion
-        is blocked), and any stale ir.default row left over from the
-        generic chart template's own _load() (same gotcha as deleting
-        any default chart account - see account_by_code usage
-        elsewhere); unlinks what has no journal items yet, archives
-        (rather than leaving blocked) anything that already does."""
-        Account = self.env['account.account'].with_context(active_test=False)
-        generic = Account.search([
-            ('company_ids', 'in', company.id), ('code', 'not like', '%.%'),
-        ])
-        if not generic:
+    def _combine001_clear_account_references(self, company, accounts):
+        """Before deleting any account.account record, every place that
+        might point at it needs clearing first or the delete is blocked
+        (or, worse for an ir.default, blocks a LATER unrelated delete
+        with a confusing "used as the default value of ..." error - see
+        the ir.default gotcha noted elsewhere in this codebase). Shared
+        by _combine001_import_coa (deleting anything not in the real
+        CoA export) - used to only cover Odoo's generic fallback chart,
+        now covers any account being retired for any reason."""
+        if not accounts:
             return
-
         company_fields = [
             'transfer_account_id', 'income_currency_exchange_account_id',
             'expense_currency_exchange_account_id', 'account_journal_suspense_account_id',
@@ -178,7 +170,7 @@ class ResCompany(models.Model):
             'default_cash_difference_income_account_id', 'default_cash_difference_expense_account_id',
         ]
         for f in company_fields:
-            if f in company._fields and company[f] in generic:
+            if f in company._fields and company[f] in accounts:
                 company[f] = False
 
         journal_fields = [
@@ -187,30 +179,145 @@ class ResCompany(models.Model):
         ]
         for journal in self.env['account.journal'].search([('company_id', '=', company.id)]):
             for f in journal_fields:
-                if f in journal._fields and journal[f] in generic:
+                if f in journal._fields and journal[f] in accounts:
                     journal[f] = False
 
         IrDefault = self.env['ir.default']
         for d in IrDefault.search([('field_id.relation', '=', 'account.account')]):
             try:
-                if d.json_value and int(d.json_value) in generic.ids:
+                if d.json_value and int(d.json_value) in accounts.ids:
                     d.unlink()
             except (ValueError, TypeError):
                 continue
 
+    # -- real Chart of Accounts (structure only, no opening balances) ---
+
+    def _combine001_import_coa(self, company):
+        """This company's own real Chart of Accounts - 700 accounts:
+        1,017 exported directly from the live server's Accounting >
+        Chart of Accounts list, minus 2 stray generic-chart leftovers
+        that export accidentally picked up ('400000 Product Sales',
+        '251000 Tax Received' - recognisable the same way as elsewhere
+        in this file: every one of this company's own real codes is
+        dotted, e.g. '3.09.01', the generic chart's never are), plus
+        the 8 Debtors sub-ledger control codes -
+        3.09.03/.05/.06/.07/.08/.09/.10/.12 - that genuinely don't exist
+        even in that real export, minus 323 "party-wise"
+        Receivable/Payable leaf accounts (one GL account per individual
+        customer/vendor, e.g. '3.09.01.0106 HAJI ASHRAF ALI ANSARI' /
+        '2.07.06.0011 OLYMPIA TEXTILE INTERNATIONAL - COMMISSION AGENT')
+        deliberately filtered out - this company does not want a
+        separate GL account per party, only the control-level accounts
+        (3-segment codes, e.g. '3.09.01', vs. the party-wise 4-segment
+        ones) stay, matching the "one control account per sub-ledger,
+        not one per customer" design already used throughout this repo
+        (see _combine001_import_live_customers and the "Customer
+        accounting dimension" assumption in the README) - individual
+        parties are tracked via Odoo's native Partner Ledger instead.
+        data/import/coa.csv: code, name, account_type, reconcile - the
+        exact "Code"/"Account Name"/"Type"/"Allow Reconciliation"
+        columns that view exports, "Type" mapped from its display
+        label, e.g. "Receivable", to the internal selection value, e.g.
+        asset_receivable. Structure only - no opening balances are
+        posted (no opening_debit/opening_credit column in the source at
+        all), same "stage 1 is master data only" discipline as
+        everywhere else in this repo; a full opening trial balance, if
+        wanted later, is a separate, deliberate piece of work.
+
+        Full replace, every upgrade: any account on this company whose
+        code is NOT in this file is removed first (unlinked if nothing
+        references it yet, archived instead if something already does -
+        same safety net as the generic-chart removal this replaced),
+        clearing any company/journal/ir.default reference to it first
+        so the delete isn't blocked. What IS in the file always has its
+        name/type/reconcile overwritten to match - this file is the
+        single source of truth, including correcting any placeholder
+        name this module itself may have guessed earlier (e.g. 3.09.01
+        was first created here as "DEBTORS - LOCAL"; the real export's
+        name is "TRADE DEBTORS - LOCAL SALES (GENERAL)")."""
+        rows = _read_csv('coa.csv')
+        target_codes = {r['code'] for r in rows}
+        Account = self.env['account.account'].with_context(active_test=False)
+
+        stale = Account.search([('company_ids', 'in', company.id), ('code', 'not in', list(target_codes))])
         removed = kept = 0
-        for account in generic:
-            try:
-                with self.env.cr.savepoint():
-                    account.unlink()
-                removed += 1
-            except Exception:
-                account.write({'active': False})
-                kept += 1
+        if stale:
+            self._combine001_clear_account_references(company, stale)
+            for account in stale:
+                try:
+                    with self.env.cr.savepoint():
+                        account.unlink()
+                    removed += 1
+                except Exception:
+                    account.write({'active': False})
+                    kept += 1
+
+        existing = {a.code: a for a in Account.search([
+            ('company_ids', 'in', company.id), ('code', 'in', list(target_codes)),
+        ])}
+        to_create = []
+        updated = 0
+        for row in rows:
+            vals = {
+                'code': row['code'],
+                'name': row['name'],
+                'account_type': row['account_type'],
+                'reconcile': row['reconcile'] == 'True',
+            }
+            found = existing.get(row['code'])
+            if found:
+                found.write(vals)
+                updated += 1
+            else:
+                vals['company_ids'] = [(6, 0, [company.id])]
+                to_create.append(vals)
+        if to_create:
+            Account.create(to_create)
         _logger.info(
-            "Combine001 (live): removed %s generic Chart of Accounts account(s); "
-            "archived %s still referenced by existing entries.", removed, kept,
+            "Combine001 (live): Chart of Accounts replaced - %s account(s) removed, %s archived "
+            "(still referenced), %s created, %s updated.", removed, kept, len(to_create), updated,
         )
+
+    def _combine001_ensure_default_accounts(self, company):
+        """Replacing the whole Chart of Accounts every upgrade (above)
+        blanks out every company/journal default-account field that
+        pointed at whatever got removed - this re-sets the ones with an
+        unambiguous, defensible real-account answer. Deliberately does
+        NOT guess the rest (which of 30 real bank accounts backs which
+        Odoo bank journal, which of 11 split-by-fibre raw-material
+        accounts a purchase journal should default to) - those need a
+        human decision, so a clear warning is logged instead, listing
+        exactly which journals still need one set manually."""
+        Account = self.env['account.account']
+        cash_in_hand = Account.search([('code', '=', '3.14.01.0001')], limit=1)  # CASH IN HAND - HEAD OFFICE
+        if cash_in_hand:
+            company.transfer_account_id = cash_in_hand.id
+
+        receivable_default = Account.search([('code', '=', '3.09.01')], limit=1)  # TRADE DEBTORS - LOCAL SALES (GENERAL)
+        payable_default = Account.search([('code', '=', '2.07.09')], limit=1)  # CREDITORS - OTHERS
+        IrDefault = self.env['ir.default']
+        if receivable_default:
+            IrDefault.set('res.partner', 'property_account_receivable_id', receivable_default.id, company_id=company.id)
+        if payable_default:
+            IrDefault.set('res.partner', 'property_account_payable_id', payable_default.id, company_id=company.id)
+
+        yarn_income = Account.search([('code', '=', _YARN_INCOME_ACCOUNT_CODE)], limit=1)
+        sale_journals = self.env['account.journal'].search([('company_id', '=', company.id), ('type', '=', 'sale')])
+        if yarn_income:
+            for journal in sale_journals:
+                if not journal.default_account_id:
+                    journal.default_account_id = yarn_income.id
+
+        unset = self.env['account.journal'].search([
+            ('company_id', '=', company.id), ('type', 'in', ('bank', 'cash', 'purchase')),
+            ('default_account_id', '=', False),
+        ])
+        if unset:
+            _logger.warning(
+                "Combine001 (live): %s journal(s) still have no default account set - no safe, "
+                "unambiguous real-account match exists, these need a manual choice: %s",
+                len(unset), unset.mapped('name'),
+            )
 
     def _combine001_ensure_po_approval(self, company):
         """BRD for Purchase Module Changes sec. 4/6: 'Only approved RFQs

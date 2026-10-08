@@ -2,20 +2,19 @@
     'name': 'Combine001',
     'version': '19.0.1.0.0',
     'category': 'Sales/Sales',
-    'summary': 'Combine Spinning — Sales, Quantity Control, Tax, Commission & Accounting enhancements (customizations only, no data import)',
+    'summary': 'Combine Spinning — Sales, Quantity Control, Tax, Commission & Accounting enhancements + this company\'s real CoA/Debtors/Yarn data',
     'description': """
 Combine001 — Odoo ERP Enhancements for Combine Spinning
 =========================================================
-LIVE VARIANT (repo: combine_live): this is the customizations-only
-build of this module, for installing on Combine Spinning's actual live
-server - it contains every behavioural customization below but
-deliberately NONE of the real-data import (Chart of Accounts, opening
-trial balance, Customers/Vendors, product catalog) that the full-import
-variant (repo: combine001) ships for throwaway/demo/dev databases. This
-company's real CoA/Customers/Vendors/products are expected to already
-exist on this server through its own normal, separate process. See
-models/res_company.py's module docstring and README.md for exactly what
-this build does and does not touch.
+LIVE VARIANT (repo: combine_live): every behavioural customization
+below, plus this company's own real Chart of Accounts (structure
+only, no opening trial balance), Debtors control accounts, Yarn
+product catalog and 2,476 customers - sourced directly from the live
+server's own exports, not the full-import variant's (repo:
+combine001) bundled demo-company CSVs. Vendors and opening balances
+are still NOT imported. See models/res_company.py's module docstring
+and README.md ("Chart of Accounts" / "Live Debtors & Yarn" sections)
+for exactly what each import does and does not touch.
 
 Implements the Business Requirements Document "Odoo ERP Enhancements v1.0"
 (Sibyl Technologies, 2026-09-16):
@@ -34,13 +33,14 @@ Implements the Business Requirements Document "Odoo ERP Enhancements v1.0"
 * Role-based security groups (Tax Officer, Auditor) aligned to the BRD's
   RACI / access matrix, plus one demo user per BRD role (Section 3.1)
   already assigned to the correct groups
-* On install AND on every upgrade: ensures the handful of forward-
-  looking accounts (GST Saving, Withholding) this module's own features
-  need exist, looking up this company's real GST tax accounts directly
-  by code - does NOT touch the Chart of Accounts, opening trial balance,
-  Customers, Vendors, bank journals or product catalog otherwise (see
-  the full-import `combine001` repo for the variant that does, meant
-  for throwaway/demo/dev databases only)
+* On install AND on every upgrade: imports this company's real Chart
+  of Accounts (structure only), Debtors control accounts, Yarn
+  products and customers from the live server's own exports; ensures
+  the handful of forward-looking accounts (GST Saving, Withholding)
+  this module's own features need; does NOT import opening trial
+  balance, Vendors, or bank journals (see the full-import `combine001`
+  repo for the variant that bundles its own self-contained demo data
+  instead, meant for throwaway/demo/dev databases only)
 * Relabels the core Sales app's document terminology (menus, buttons,
   filters, PDF report/print) to match the textile-trade terms Combine
   Spinning actually uses: Quotation -> Contract, confirmed Sales Order ->

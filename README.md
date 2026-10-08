@@ -3,21 +3,19 @@
 **This is `combine_live`, the live-server variant of the `combine001`
 module.** It contains every behavioural customization from that repo —
 price locks, approval workflows, commission processes, GST/withholding
-tax automation, document renaming, etc. — but **deliberately ships none
-of the real business data** the `combine001` repo bundles for
-throwaway/demo/dev databases: no Chart of Accounts, no opening trial
-balance, no Customers/Vendors, no product catalog. `models/res_company.py`'s
-`_combine001_run_import()` only ensures the handful of forward-looking
-accounts (GST Saving, Withholding) this module's own features need and
-looks up this company's existing GST tax accounts directly by code — it
-never creates, resets, or imports anything else. This server is expected
-to already have Combine Spinning's real CoA/Customers/Vendors/products
-in place through its own normal process, entirely independent of this
-module. See that method's own docstring for the exact reasoning.
+tax automation, document renaming, etc. — plus, unlike the rest of this
+module's original design, it DOES import this company's own real Chart
+of Accounts (structure only, no opening trial balance), Debtors
+control accounts, Yarn product catalog, and 2,476 customers - sourced
+directly from the live server's own exports, not the `combine001`
+repo's bundled demo-company CSVs. See the "Live Debtors & Yarn" and
+"Chart of Accounts" sections below for exactly what each import does.
+It still does NOT import Vendors, opening balances, or anything from
+`combine001`'s own bundled demo data.
 
 If you need the full-import variant (e.g. for a fresh demo/UAT
-database), see the `combine001` repo instead — the two are otherwise
-identical.
+database with its own self-contained demo data instead of this
+company's real exports), see the `combine001` repo instead.
 
 Odoo 19 custom app implementing the "Odoo ERP Enhancements v1.0" BRD
 (Sibyl Technologies, for Combine Spinning, 2026-09-16).
@@ -51,6 +49,86 @@ Odoo 19 custom app implementing the "Odoo ERP Enhancements v1.0" BRD
 | — | Purchase BRD: Receipt + Vendor Bill approval workflow | `models/combine001_approval_mixin.py`, `models/stock_picking.py`, `models/account_move.py` |
 | — | Purchase BRD: Purchase Commission Agent (Draft→Confirmed→Payable→Paid) | `models/purchase_commission_line.py` |
 
+## Chart of Accounts
+
+`_combine001_import_coa` (runs first, before everything below) imports
+this company's own real Chart of Accounts - **700 accounts**,
+`data/import/coa.csv`: `code, name, account_type, reconcile`, built
+from `D:\Others\Combine Spinning\coatoimport.xlsx` (a direct
+Code/Account Name/Type/Allow Reconciliation/Account Currency export
+from the live server's own Accounting > Chart of Accounts list, "Type"
+mapped from its display label - e.g. "Receivable" - to the internal
+selection value - e.g. `asset_receivable`). From the 1,017 rows in
+that export:
+- **2 stray generic-chart leftovers dropped** (`400000 Product Sales`,
+  `251000 Tax Received`) - the export itself accidentally picked these
+  up, recognisable the same way as everywhere else in this file: every
+  one of this company's own real codes is dotted (`3.09.01`,
+  `4.01.01.0001`), the generic chart's never are.
+- **323 "party-wise" Receivable/Payable leaf accounts dropped** - one
+  GL account per individual customer/vendor (e.g. `3.09.01.0106 HAJI
+  ASHRAF ALI ANSARI`, `2.07.06.0011 OLYMPIA TEXTILE INTERNATIONAL -
+  COMMISSION AGENT`) - this company does not want a separate account
+  per party in the Chart of Accounts. Only the **23 control-level**
+  Receivable/Payable accounts (3-segment codes, e.g. `3.09.01`,
+  `2.07.09`) remain; every customer/vendor is tracked through Odoo's
+  native Partner Ledger instead (see "Live Debtors" below and
+  `_combine001_ensure_default_accounts`).
+- **8 Debtors sub-ledger control codes added** -
+  `3.09.03/.05/.06/.07/.08/.09/.10/.12` - that genuinely don't exist
+  even in the real export (only individual party-wise leaf accounts
+  existed under them, now also dropped per the point above), merged in
+  so this file is the single, complete source of truth for every
+  Debtors control account, not just the 6 the real export happened to
+  already have at the group level.
+
+**Structure only - no opening balances are posted** (the source export
+carries no opening_debit/opening_credit column at all), same
+"stage 1 is master data only" discipline as the Yarn product catalog
+below. A full opening trial balance, if wanted later, is a separate,
+deliberate piece of work.
+
+**Full replace, every upgrade:** any account on this company whose
+code isn't in `coa.csv` is removed (unlinked if nothing references it
+yet, archived instead if something already does - e.g. a posted tax
+entry); clearing any company/journal/`ir.default` reference to it
+first so the delete isn't blocked. Everything that IS in the file
+always has its name/type/reconcile overwritten to match - `coa.csv` is
+the single source of truth, including correcting any placeholder name
+this module may have guessed before this import existed (e.g. `3.09.01`
+was first created by `_combine001_ensure_debtor_control_accounts` as
+"DEBTORS - LOCAL"; the real export's name is "TRADE DEBTORS - LOCAL
+SALES (GENERAL)").
+
+**Default accounts** (`_combine001_ensure_default_accounts`, runs
+right after): replacing the whole chart every upgrade blanks out every
+company/journal field that pointed at whatever just got removed - this
+re-sets the ones with an unambiguous, defensible answer:
+- `company.transfer_account_id` → `3.14.01.0001 CASH IN HAND - HEAD
+  OFFICE` (Odoo's internal-transfer technical account - any real
+  bank/cash account works here, it's just plumbing).
+- Company-wide default Receivable (`ir.default` on
+  `res.partner.property_account_receivable_id`) → `3.09.01 TRADE
+  DEBTORS - LOCAL SALES (GENERAL)` - the fallback for any
+  customer that doesn't get a specific sub-ledger from the Live
+  Debtors import below (and the control account every new customer's
+  master data shows by default).
+- Company-wide default Payable (`ir.default` on
+  `res.partner.property_account_payable_id`) → `2.07.09 CREDITORS -
+  OTHERS` - same role on the vendor side; this repo doesn't import a
+  vendor list, so this is every vendor's default payable control
+  account unless manually overridden.
+- `account.journal` of type `sale` → `default_account_id` =
+  `4.01.01.0001 LOCAL SALES - YARN` (the one real product line this
+  company actually sells).
+
+Deliberately NOT auto-set, logged as a warning instead listing exactly
+which journals still need one: `bank`/`cash`/`purchase`-type journals'
+`default_account_id`. There are 30 real bank accounts and 11
+split-by-fibre raw-material purchase accounts in the Chart of Accounts
+- which one a given Bank/Cash/Purchase journal should default to is a
+real decision, not something to guess at from the account name alone.
+
 ## Live Debtors (Customers) & Finished Goods (Yarn) data
 
 Unlike the rest of this repo, these two imports DO ship real data —
@@ -61,45 +139,19 @@ instruction — the other 28 daily sheets and the 3 unrelated historical
 sheets were not imported). Run on every install/upgrade, same
 idempotent find-or-update pattern as everything else in this file.
 
-**Generic Chart of Accounts removal** (`_combine001_remove_generic_coa`,
-runs first, before any of the account creation below): installing the
-`account` module unconditionally queues Odoo's own fallback "auto-
-install a generic Chart of Accounts" the moment the whole module graph
-finishes loading, on any company with no chart template set yet —
-which silently wiped out this module's own newly-created accounts the
-first time this ran against the live server.
-`_combine001_cancel_generic_coa_auto_install` (just above, in the
-GST/structural-accounts section) stops that happening again on a
-future upgrade, but doesn't undo a generic chart that already got
-installed before that guard existed — this method does: every account
-on this company whose code contains no `.` (Combine Spinning's own
-real numbering always uses dotted codes, e.g. `3.09.01` /
-`4.01.01.0001`; the generic template's are always plain digits, e.g.
-`101000` / `400000`) is unlinked, after first clearing any
-company/journal field or stale `ir.default` row pointing at it;
-anything still referenced by a posted journal entry is archived
-instead of left blocking. Verified against a company that had the
-generic chart auto-installed first (standalone `account` module
-install, no combine001) — installing combine001 on top removed 49 of
-51 generic accounts outright and archived the 2 with journal items,
-leaving only the 20 real accounts this module manages.
-
 **Customers** (`_combine001_import_live_customers`): 2,476 unique
 customers (2,492 rows in the source, 16 exact name+account duplicates
-collapsed), collapsed into **14 Debtors control accounts**
-(`3.09.01`–`3.09.14`, one per sub-ledger: Local, Export, Waste, Raw
-Material, Bad Debts Recoverables, Rotation, Others, Foreign, Export
-Business, Fabrics Venture, Combine Fabrics, Revive Business-Local,
-Revive Stitched Garments, Revive Stitching Services) rather than one GL
-account per customer — same "Customer accounting dimension" discipline
-as the full-import variant (see below, and native Partner Ledger per
-customer). 6 of the 14 control accounts already existed as real
-postable accounts on the live CoA (`3.09.01/.02/.04/.11/.13/.14`) and
-are found-and-reused as-is (existing name/account kept, never
-overwritten); the other 8 had no bare group-level account in the real
-CoA — only individual named customer accounts under some of them — so
-they're created here at the group-level code itself, the same pattern
-the real CoA already uses for the other 6.
+collapsed), each linked to its own one of the **14 Debtors control
+accounts** (`3.09.01`–`3.09.14`, one per sub-ledger: Local, Export,
+Waste, Raw Material, Bad Debts Recoverables, Rotation, Others,
+Foreign, Export Business, Fabrics Venture, Combine Fabrics, Revive
+Business-Local, Revive Stitched Garments, Revive Stitching Services) —
+see the "Chart of Accounts" section above for how those 14 control
+accounts themselves are sourced/created, and why no party-wise GL
+account per customer exists at all. This import only sets each
+customer's OWN specific sub-ledger account; the company-wide default
+(`3.09.01`, for any customer/vendor this repo doesn't otherwise cover)
+is handled by `_combine001_ensure_default_accounts` instead.
 
 **Products** (`_combine001_import_live_products`): **149 Yarn
 products**, sourced from the live server's own "Products List
