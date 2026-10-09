@@ -642,11 +642,19 @@ class ResCompany(models.Model):
 
         stale = Product.search([('categ_id', '=', categ.id), ('name', 'not in', names)])
         if stale:
-            try:
-                stale.unlink()
-            except Exception:
-                stale.write({'active': False})
-            _logger.info("Combine001 (live): %s stale Yarn product(s) retired.", len(stale))
+            removed = kept = 0
+            for product in stale:
+                try:
+                    with self.env.cr.savepoint():
+                        product.unlink()
+                    removed += 1
+                except Exception:
+                    product.write({'active': False})
+                    kept += 1
+            _logger.info(
+                "Combine001 (live): %s stale Yarn product(s) retired, %s archived (still referenced).",
+                removed, kept,
+            )
 
         unit = self.env.ref('uom.product_uom_unit')
         existing = {p.name: p for p in Product.search([('name', 'in', names)])}
