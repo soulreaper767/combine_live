@@ -10,17 +10,19 @@ from .combine001_constants import (
 
 _logger = logging.getLogger(__name__)
 
-# --- live Debtors / Finished Goods (Yarn) data --------------------------
-# Unlike the rest of this module, these two imports DO ship real data
-# (data/import/customers.csv, products.csv) - sourced from the live
-# server's own "CUSTOMERS LIST.xlsx" / "PRODUCTS LIST WITH INVENTORY
-# BALANCE.xls" (30-9 sheet), not the combine001 repo's CoA/opening-
-# balance bundle. See README.md for exactly what these two files are and
-# how they were derived (item names cleaned/standardised: whitespace
-# collapsed, consistent colour spelling, "<count/quality/packing> -
-# <colour>"; quantities only kept as a reference column, never applied
-# as opening stock - same discipline as the full-import variant's
-# product import).
+# --- live CoA / Debtors / Vendors / Finished Goods (Yarn) data ---------
+# Unlike the rest of this module, these imports DO ship real data
+# (data/import/coa.csv, customers.csv, vendors.csv, products.csv) -
+# sourced from the live server's own exports ("coatoimport.xlsx",
+# "CUSTOMERS LIST.xlsx", "Vendors List.xlsx", "Products List
+# FINAL.xlsx"), not the combine001 repo's own bundled demo-company CSV
+# set. See README.md for exactly what each file is and how it was
+# derived. Customers/Vendors are collapsed into real control accounts
+# rather than one GL account per party (see _combine001_import_coa's
+# "party-wise" filtering); product quantities, where a source carried
+# any, are kept as a reference column at most, never applied as
+# opening stock - same "stage 1 is master data only" discipline
+# throughout.
 _IMPORT_DIR = os.path.join(os.path.dirname(__file__), '..', 'data', 'import')
 
 
@@ -100,15 +102,18 @@ class ResCompany(models.Model):
         so the rest of the codebase - and the non-noupdate <function>
         tag that calls this on every install/upgrade, see
         data/combine001_import_run.xml - needs zero changes), this
-        variant does NOT import any opening balance / Customers /
-        Vendors / product catalog data the way the full-import repo
-        does. It DOES import the Chart of Accounts structure (account
+        variant does NOT import any opening balance / product catalog
+        data the way the full-import repo's own bundled demo CSVs do.
+        It DOES import: the Chart of Accounts structure (account
         codes/names/types only, no opening balances - see
         _combine001_import_coa) from this company's own real CoA
-        export, plus the handful of forward-looking accounts and
-        company-level feature toggles this module's own behavioural
-        customizations depend on - see the module-level docstring above
-        for the rest."""
+        export; Customers and Vendors, collapsed into real control
+        accounts rather than one GL account per party (see
+        _combine001_import_live_customers /
+        _combine001_import_live_vendors); the Yarn product catalog;
+        plus the handful of forward-looking accounts and company-level
+        feature toggles this module's own behavioural customizations
+        depend on - see the module-level docstring above for the rest."""
         company = self.env.company
         _logger.info("Combine001 (live): applying customizations for company %s", company.name)
 
@@ -121,6 +126,7 @@ class ResCompany(models.Model):
         self._combine001_ensure_uom_group()
         self._combine001_ensure_po_approval(company)
         self._combine001_import_live_customers(company)
+        self._combine001_import_live_vendors(company)
         self._combine001_import_live_products(company)
 
         _logger.info("Combine001 (live): customizations applied.")
@@ -523,6 +529,45 @@ class ResCompany(models.Model):
         if to_create:
             Partner.create(to_create)
         _logger.info("Combine001 (live): %s customers imported/updated.", len(rows))
+
+    # -- live Vendors -----------------------------------------------------
+
+    def _combine001_import_live_vendors(self, company):
+        """346 vendors from the live server's own "Vendors List.xlsx",
+        collapsed into the 9 real Creditors control accounts
+        (2.07.01/.02/.03/.04/.05/.07/.08/.09/.13 - all 9 already exist
+        in coa.csv, nothing new to create here, unlike the Debtors side)
+        rather than one GL account per vendor - same "no party-wise
+        codes in the Chart of Accounts" discipline as everywhere else
+        in this repo (see _combine001_import_coa)."""
+        Account = self.env['account.account']
+        rows = _read_csv('vendors.csv')
+        account_by_code = {a.code: a.id for a in Account.search([
+            ('company_ids', 'in', company.id),
+            ('code', 'in', list({r['payable_account_code'] for r in rows})),
+        ])}
+
+        Partner = self.env['res.partner']
+        existing = {p.name: p for p in Partner.search([('supplier_rank', '>', 0)])}
+
+        to_create = []
+        for row in rows:
+            account_id = account_by_code.get(row['payable_account_code'])
+            vals = {
+                'name': row['name'],
+                'company_type': 'company',
+                'supplier_rank': 1,
+            }
+            if account_id:
+                vals['property_account_payable_id'] = account_id
+            found = existing.get(row['name'])
+            if found:
+                found.write(vals)
+            else:
+                to_create.append(vals)
+        if to_create:
+            Partner.create(to_create)
+        _logger.info("Combine001 (live): %s vendors imported/updated.", len(rows))
 
     # -- live Finished Goods (Yarn) products -----------------------------
 

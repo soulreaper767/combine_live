@@ -5,13 +5,14 @@ module.** It contains every behavioural customization from that repo —
 price locks, approval workflows, commission processes, GST/withholding
 tax automation, document renaming, etc. — plus, unlike the rest of this
 module's original design, it DOES import this company's own real Chart
-of Accounts (structure only, no opening trial balance), Debtors
-control accounts, Yarn product catalog, and 2,476 customers - sourced
-directly from the live server's own exports, not the `combine001`
-repo's bundled demo-company CSVs. See the "Live Debtors & Yarn" and
-"Chart of Accounts" sections below for exactly what each import does.
-It still does NOT import Vendors, opening balances, or anything from
-`combine001`'s own bundled demo data.
+of Accounts (structure only, no opening trial balance), Debtors/
+Creditors control accounts, 2,476 customers, 346 vendors, and the Yarn
+product catalog - sourced directly from the live server's own exports,
+not the `combine001` repo's bundled demo-company CSVs. See the "Chart
+of Accounts" and "Live Debtors, Vendors & Finished Goods" sections
+below for exactly what each import does. It still does NOT import
+opening balances or anything from `combine001`'s own bundled demo
+data.
 
 If you need the full-import variant (e.g. for a fresh demo/UAT
 database with its own self-contained demo data instead of this
@@ -129,15 +130,16 @@ split-by-fibre raw-material purchase accounts in the Chart of Accounts
 - which one a given Bank/Cash/Purchase journal should default to is a
 real decision, not something to guess at from the account name alone.
 
-## Live Debtors (Customers) & Finished Goods (Yarn) data
+## Live Debtors (Customers), Vendors & Finished Goods (Yarn) data
 
-Unlike the rest of this repo, these two imports DO ship real data —
-`data/import/customers.csv` / `debtor_groups.csv` / `products.csv`,
-sourced directly from the live server's own `CUSTOMERS LIST.xlsx` and
-`PRODUCTS LIST WITH INVENTORY BALANCE.xls` (`30-9` sheet only, per
-instruction — the other 28 daily sheets and the 3 unrelated historical
-sheets were not imported). Run on every install/upgrade, same
-idempotent find-or-update pattern as everything else in this file.
+Unlike the rest of this repo, these imports DO ship real data —
+`data/import/customers.csv` / `debtor_groups.csv` / `vendors.csv` /
+`products.csv`, sourced directly from the live server's own
+`CUSTOMERS LIST.xlsx`, `Vendors List.xlsx` and `Products List
+FINAL.xlsx` (plus an earlier `PRODUCTS LIST WITH INVENTORY BALANCE.xls`
+sheet, since superseded — see Products below). Run on every
+install/upgrade, same idempotent find-or-update pattern as everything
+else in this file.
 
 **Customers** (`_combine001_import_live_customers`): 2,476 unique
 customers (2,492 rows in the source, 16 exact name+account duplicates
@@ -152,6 +154,14 @@ account per customer exists at all. This import only sets each
 customer's OWN specific sub-ledger account; the company-wide default
 (`3.09.01`, for any customer/vendor this repo doesn't otherwise cover)
 is handled by `_combine001_ensure_default_accounts` instead.
+
+**Vendors** (`_combine001_import_live_vendors`): 346 vendors from
+`Vendors List.xlsx`, each linked to its own one of the **9 Creditors
+control accounts** (`2.07.01`/`.02`/`.03`/`.04`/`.05`/`.07`/`.08`/`.09`/`.13`
+— Raw Material, Rags/Waste, Machinery/Assets, Stores, Contractors,
+Purchase Brokerage, Services, Others, Export Business) — same
+discipline as Customers above; all 9 control accounts already exist in
+`coa.csv`, so unlike the Debtors side nothing new needs creating here.
 
 **Products** (`_combine001_import_live_products`): **149 Yarn
 products**, sourced from the live server's own "Products List
