@@ -89,17 +89,25 @@ carries no opening_debit/opening_credit column at all), same
 below. A full opening trial balance, if wanted later, is a separate,
 deliberate piece of work.
 
-**Full replace, every upgrade:** any account on this company whose
-code isn't in `coa.csv` is removed (unlinked if nothing references it
-yet, archived instead if something already does - e.g. a posted tax
-entry); clearing any company/journal/`ir.default` reference to it
-first so the delete isn't blocked. Everything that IS in the file
-always has its name/type/reconcile overwritten to match - `coa.csv` is
-the single source of truth, including correcting any placeholder name
-this module may have guessed before this import existed (e.g. `3.09.01`
-was first created by `_combine001_ensure_debtor_control_accounts` as
-"DEBTORS - LOCAL"; the real export's name is "TRADE DEBTORS - LOCAL
-SALES (GENERAL)").
+**Not a full replace.** Only the narrow, unambiguous case of a
+leftover generic-chart account (no-dot code, e.g. `101000` - every one
+of this company's own real codes is dotted) is ever removed
+(unlinked if nothing references it yet, archived instead if something
+already does - e.g. a posted tax entry), clearing any
+company/journal/`ir.default` reference to it first so the delete isn't
+blocked. Everything that IS in `coa.csv` always has its
+name/type/reconcile overwritten to match, including correcting any
+placeholder name this module may have guessed before this import
+existed (e.g. `3.09.01` was first created by
+`_combine001_ensure_debtor_control_accounts` as "DEBTORS - LOCAL"; the
+real export's name is "TRADE DEBTORS - LOCAL SALES (GENERAL)"). An
+earlier version of this method removed ANY account not in `coa.csv`
+on every upgrade - which also silently archived legitimate accounts
+added independently on the live server between syncs (a real
+incident - see `_combine001_reactivate_wrongly_archived` below, which
+repairs it). The Yarn product import (further down) had the same bug
+and is fixed the same way: create-or-update only, no more blanket
+"anything not in my current list is stale" removal.
 
 **Default accounts** (`_combine001_ensure_default_accounts`, runs
 right after): replacing the whole chart every upgrade blanks out every
@@ -166,11 +174,15 @@ discipline as Customers above; all 9 control accounts already exist in
 **Products** (`_combine001_import_live_products`): **149 Yarn
 products**, sourced from the live server's own "Products List
 FINAL.xlsx" — supersedes an earlier 126-item list sourced from
-"PRODUCTS LIST WITH INVENTORY BALANCE.xls" (30-9 sheet), which this
-same method now also retires: any existing Yarn-category product whose
-name isn't in the current `products.csv` is unlinked (archived instead,
-if something still references it and unlink is blocked). All under one
-*Yarn* category (parent *Finished Goods*), posting to `4.01.01.0001
+"PRODUCTS LIST WITH INVENTORY BALANCE.xls" (30-9 sheet). That one-time
+retirement already happened (see
+`data/import/retired_yarn_products_2026-10.csv` and
+`_combine001_reactivate_wrongly_archived`) - this method is now
+create-or-update only, every upgrade; it does NOT keep removing
+"anything not in the current list" (see the Chart of Accounts section
+above for why that pattern was removed - the Yarn import had the same
+bug). All under one *Yarn* category (parent *Finished Goods*), posting
+to `4.01.01.0001
 LOCAL SALES - YARN` / `5.18.02.0002` / `3.08.01.0001` — this company's
 own real account codes (same ones the full-import variant's
 `product_categories.csv` also uses), found-and-reused if they already

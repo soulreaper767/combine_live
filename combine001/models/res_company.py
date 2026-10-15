@@ -118,6 +118,7 @@ class ResCompany(models.Model):
         _logger.info("Combine001 (live): applying customizations for company %s", company.name)
 
         self._combine001_cancel_generic_coa_auto_install()
+        self._combine001_reactivate_wrongly_archived(company)
         self._combine001_import_coa(company)
         self._combine001_ensure_default_accounts(company)
         structural_by_code = self._combine001_ensure_structural_accounts(company)
@@ -196,6 +197,64 @@ class ResCompany(models.Model):
             except (ValueError, TypeError):
                 continue
 
+    # -- one-time repair for the fixed-below over-eager removal bug -----
+
+    def _combine001_reactivate_wrongly_archived(self, company):
+        """One-time undo for a real incident: earlier versions of
+        _combine001_import_coa / _combine001_import_live_products
+        archived ANY account/product not in that run's static CSV,
+        every upgrade - which silently archived legitimate accounts
+        and products added independently on the live server between
+        syncs, not just the generic-chart leftovers and the one
+        explicitly-approved old-126-product retirement this was meant
+        to cover. Both are now fixed to never do that blanket sweep
+        again (see their own docstrings) - this repairs the damage
+        already done on databases that ran an upgrade before that fix
+        landed.
+
+        Reactivates:
+        - every archived account.account whose code is dotted (every
+          one of this company's real codes is dotted - a no-dot code
+          is the only case that was ever meant to be archived/removed,
+          so every dotted one caught by the bug is unconditionally
+          wrong and safe to restore).
+        - every archived Yarn product.template whose name is NOT on
+          the one specific, user-approved retirement list from
+          2026-10 (data/import/retired_yarn_products_2026-10.csv - the
+          original 126-item list superseded by Products List
+          FINAL.xlsx) - i.e. restores anything caught by the bug
+          without undoing that one deliberate, already-approved
+          cleanup.
+
+        Idempotent and safe to leave running every upgrade indefinitely
+        (reactivating an already-active record, or one with nothing
+        matching the search, is a no-op) - unlike the bugs it repairs,
+        this never removes or archives anything itself."""
+        Account = self.env['account.account'].with_context(active_test=False)
+        archived_accounts = Account.search([
+            ('company_ids', 'in', company.id), ('active', '=', False), ('code', 'like', '%.%'),
+        ])
+        if archived_accounts:
+            archived_accounts.write({'active': True})
+            _logger.info(
+                "Combine001 (live): reactivated %s account(s) wrongly archived by an earlier bug.",
+                len(archived_accounts),
+            )
+
+        retired_names = {r['name'] for r in _read_csv('retired_yarn_products_2026-10.csv')}
+        Product = self.env['product.template'].with_context(active_test=False)
+        yarn_categ = self.env['product.category'].search([('name', '=', 'Yarn')], limit=1)
+        archived_products = Product.search([
+            ('categ_id', '=', yarn_categ.id), ('active', '=', False),
+            ('name', 'not in', list(retired_names)),
+        ]) if yarn_categ else Product.browse()
+        if archived_products:
+            archived_products.write({'active': True})
+            _logger.info(
+                "Combine001 (live): reactivated %s product(s) wrongly archived by an earlier bug.",
+                len(archived_products),
+            )
+
     # -- real Chart of Accounts (structure only, no opening balances) ---
 
     def _combine001_import_coa(self, company):
@@ -230,22 +289,29 @@ class ResCompany(models.Model):
         everywhere else in this repo; a full opening trial balance, if
         wanted later, is a separate, deliberate piece of work.
 
-        Full replace, every upgrade: any account on this company whose
-        code is NOT in this file is removed first (unlinked if nothing
-        references it yet, archived instead if something already does -
-        same safety net as the generic-chart removal this replaced),
-        clearing any company/journal/ir.default reference to it first
-        so the delete isn't blocked. What IS in the file always has its
-        name/type/reconcile overwritten to match - this file is the
-        single source of truth, including correcting any placeholder
-        name this module itself may have guessed earlier (e.g. 3.09.01
-        was first created here as "DEBTORS - LOCAL"; the real export's
-        name is "TRADE DEBTORS - LOCAL SALES (GENERAL)")."""
+        Every account IN this file always has its name/type/reconcile
+        overwritten to match - this file is the single source of truth
+        for THOSE codes, including correcting any placeholder name this
+        module itself may have guessed earlier (e.g. 3.09.01 was first
+        created here as "DEBTORS - LOCAL"; the real export's name is
+        "TRADE DEBTORS - LOCAL SALES (GENERAL)"). It deliberately does
+        NOT remove every account not in this file - only the narrow,
+        unambiguous case of a leftover generic-chart account (see
+        _combine001_cancel_generic_coa_auto_install above: every one of
+        this company's own real codes is dotted, e.g. '3.09.01', the
+        generic chart's never are, e.g. '101000'). An earlier version
+        of this method removed ANY account not in coa.csv on every
+        upgrade - which also silently archived legitimate accounts
+        added independently on the live server between syncs (a real
+        incident, not hypothetical). Never widen this back to a blanket
+        "not in my file = stale" sweep against live, actively-edited
+        data - a one-time cleanup (like the original party-wise-account
+        removal) should be a one-time, explicitly-run action, not
+        something baked into every future upgrade."""
         rows = _read_csv('coa.csv')
-        target_codes = {r['code'] for r in rows}
         Account = self.env['account.account'].with_context(active_test=False)
 
-        stale = Account.search([('company_ids', 'in', company.id), ('code', 'not in', list(target_codes))])
+        stale = Account.search([('company_ids', 'in', company.id), ('code', 'not like', '%.%')])
         removed = kept = 0
         if stale:
             self._combine001_clear_account_references(company, stale)
@@ -258,8 +324,9 @@ class ResCompany(models.Model):
                     account.write({'active': False})
                     kept += 1
 
+        target_codes = [r['code'] for r in rows]
         existing = {a.code: a for a in Account.search([
-            ('company_ids', 'in', company.id), ('code', 'in', list(target_codes)),
+            ('company_ids', 'in', company.id), ('code', 'in', target_codes),
         ])}
         to_create = []
         updated = 0
@@ -280,8 +347,8 @@ class ResCompany(models.Model):
         if to_create:
             Account.create(to_create)
         _logger.info(
-            "Combine001 (live): Chart of Accounts replaced - %s account(s) removed, %s archived "
-            "(still referenced), %s created, %s updated.", removed, kept, len(to_create), updated,
+            "Combine001 (live): Chart of Accounts synced - %s generic leftover(s) removed, %s "
+            "archived (still referenced), %s created, %s updated.", removed, kept, len(to_create), updated,
         )
 
     def _combine001_ensure_default_accounts(self, company):
@@ -625,36 +692,31 @@ class ResCompany(models.Model):
     def _combine001_import_live_products(self, company):
         """149 Yarn products from the live server's own "Products List
         FINAL.xlsx" - supersedes the earlier 126-item list sourced from
-        "PRODUCTS LIST WITH INVENTORY BALANCE.xls" (30-9 sheet), which
-        this method now also retires (deletes/archives). Item names
-        standardised: whitespace collapsed, spelling typos fixed
-        (TWWERA->TWEERA, AUTAIRO/AUTOAIR->AUTOAIRO), unmatched stray
-        parentheses dropped. The source file has no quantity data at
-        all (unlike the previous list's reference-only bag counts) -
-        this is master data only, same "no opening stock without a
-        trustworthy count" discipline as everywhere else in this repo."""
+        "PRODUCTS LIST WITH INVENTORY BALANCE.xls" (30-9 sheet). That
+        126-item list's retirement was a one-time, explicitly-approved
+        cleanup (see data/import/retired_yarn_products_2026-10.csv and
+        _combine001_reactivate_wrongly_archived), already done - this
+        method does NOT keep re-removing/archiving "anything not in my
+        current list" on every upgrade any more. An earlier version
+        did exactly that and it silently archived legitimate Yarn
+        products added independently on the live server between syncs,
+        not just the intended old-126 cleanup - a real incident, not
+        hypothetical. Create-or-update only, going forward; a future
+        one-time retirement (if ever needed again) should be its own
+        explicit, guarded action, not baked into this perpetual sync.
+        Item names standardised: whitespace collapsed, spelling typos
+        fixed (TWWERA->TWEERA, AUTAIRO/AUTOAIR->AUTOAIRO), unmatched
+        stray parentheses dropped. The source file has no quantity
+        data at all (unlike the previous list's reference-only bag
+        counts) - this is master data only, same "no opening stock
+        without a trustworthy count" discipline as everywhere else in
+        this repo."""
         categ = self._combine001_ensure_yarn_category(company)
         if not categ:
             return
         rows = _read_csv('products.csv')
         names = [r['name'] for r in rows]
         Product = self.env['product.template']
-
-        stale = Product.search([('categ_id', '=', categ.id), ('name', 'not in', names)])
-        if stale:
-            removed = kept = 0
-            for product in stale:
-                try:
-                    with self.env.cr.savepoint():
-                        product.unlink()
-                    removed += 1
-                except Exception:
-                    product.write({'active': False})
-                    kept += 1
-            _logger.info(
-                "Combine001 (live): %s stale Yarn product(s) retired, %s archived (still referenced).",
-                removed, kept,
-            )
 
         unit = self.env.ref('uom.product_uom_unit')
         existing = {p.name: p for p in Product.search([('name', 'in', names)])}
