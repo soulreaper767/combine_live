@@ -225,6 +225,17 @@ class ResCompany(models.Model):
           FINAL.xlsx) - i.e. restores anything caught by the bug
           without undoing that one deliberate, already-approved
           cleanup.
+        - every archived Customer/Vendor res.partner whose name
+          matches a row in customers.csv or vendors.csv - neither
+          _combine001_import_live_customers nor
+          _combine001_import_live_vendors has ever contained any
+          archiving logic at all, so a partner from either list
+          showing up inactive can only be collateral damage from
+          something else (most likely the same incident, indirectly -
+          e.g. a company/journal reference that got cleared during the
+          old blanket CoA sweep) - restoring any of our own known
+          customers/vendors found inactive is always safe, regardless
+          of the exact mechanism that archived them.
 
         Idempotent and safe to leave running every upgrade indefinitely
         (reactivating an already-active record, or one with nothing
@@ -253,6 +264,16 @@ class ResCompany(models.Model):
             _logger.info(
                 "Combine001 (live): reactivated %s product(s) wrongly archived by an earlier bug.",
                 len(archived_products),
+            )
+
+        our_names = {r['name'] for r in _read_csv('customers.csv')} | {r['name'] for r in _read_csv('vendors.csv')}
+        Partner = self.env['res.partner'].with_context(active_test=False)
+        archived_partners = Partner.search([('active', '=', False), ('name', 'in', list(our_names))])
+        if archived_partners:
+            archived_partners.write({'active': True})
+            _logger.info(
+                "Combine001 (live): reactivated %s customer/vendor(s) wrongly archived by an earlier bug.",
+                len(archived_partners),
             )
 
     # -- real Chart of Accounts (structure only, no opening balances) ---
@@ -289,13 +310,24 @@ class ResCompany(models.Model):
         everywhere else in this repo; a full opening trial balance, if
         wanted later, is a separate, deliberate piece of work.
 
-        Every account IN this file always has its name/type/reconcile
-        overwritten to match - this file is the single source of truth
-        for THOSE codes, including correcting any placeholder name this
-        module itself may have guessed earlier (e.g. 3.09.01 was first
-        created here as "DEBTORS - LOCAL"; the real export's name is
-        "TRADE DEBTORS - LOCAL SALES (GENERAL)"). It deliberately does
-        NOT remove every account not in this file - only the narrow,
+        Create-only, same as every other import in this repo: an
+        account already on this company (by code) is left exactly as
+        it is, never overwritten - only accounts genuinely missing are
+        created from this file. An earlier version of this method
+        force-overwrote name/type/reconcile on EVERY account in
+        coa.csv on EVERY upgrade (meant only to correct this module's
+        own placeholder names, like 3.09.01 first being created here
+        as "DEBTORS - LOCAL" before the real export's name - "TRADE
+        DEBTORS - LOCAL SALES (GENERAL)" - was known) - that one-time
+        correction already happened; continuing to force-overwrite on
+        every future upgrade meant any manual edit an accountant made
+        on the live system afterwards (renaming an account, fixing a
+        type, adjusting reconcile) got silently reverted back to this
+        file's version on the next upgrade. Same root-cause family as
+        the archiving incident below - never keep perpetually
+        re-asserting a point-in-time snapshot's values against live,
+        human-editable data. It deliberately does NOT remove every
+        account not in this file either - only the narrow,
         unambiguous case of a leftover generic-chart account (see
         _combine001_cancel_generic_coa_auto_install above: every one of
         this company's own real codes is dotted, e.g. '3.09.01', the
@@ -325,30 +357,25 @@ class ResCompany(models.Model):
                     kept += 1
 
         target_codes = [r['code'] for r in rows]
-        existing = {a.code: a for a in Account.search([
+        existing_codes = {a.code for a in Account.search([
             ('company_ids', 'in', company.id), ('code', 'in', target_codes),
         ])}
         to_create = []
-        updated = 0
         for row in rows:
-            vals = {
+            if row['code'] in existing_codes:
+                continue
+            to_create.append({
                 'code': row['code'],
                 'name': row['name'],
                 'account_type': row['account_type'],
                 'reconcile': row['reconcile'] == 'True',
-            }
-            found = existing.get(row['code'])
-            if found:
-                found.write(vals)
-                updated += 1
-            else:
-                vals['company_ids'] = [(6, 0, [company.id])]
-                to_create.append(vals)
+                'company_ids': [(6, 0, [company.id])],
+            })
         if to_create:
             Account.create(to_create)
         _logger.info(
             "Combine001 (live): Chart of Accounts synced - %s generic leftover(s) removed, %s "
-            "archived (still referenced), %s created, %s updated.", removed, kept, len(to_create), updated,
+            "archived (still referenced), %s created.", removed, kept, len(to_create),
         )
 
     def _combine001_ensure_default_accounts(self, company):

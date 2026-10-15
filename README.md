@@ -89,19 +89,25 @@ carries no opening_debit/opening_credit column at all), same
 below. A full opening trial balance, if wanted later, is a separate,
 deliberate piece of work.
 
-**Not a full replace.** Only the narrow, unambiguous case of a
-leftover generic-chart account (no-dot code, e.g. `101000` - every one
-of this company's own real codes is dotted) is ever removed
-(unlinked if nothing references it yet, archived instead if something
-already does - e.g. a posted tax entry), clearing any
-company/journal/`ir.default` reference to it first so the delete isn't
-blocked. Everything that IS in `coa.csv` always has its
-name/type/reconcile overwritten to match, including correcting any
-placeholder name this module may have guessed before this import
-existed (e.g. `3.09.01` was first created by
-`_combine001_ensure_debtor_control_accounts` as "DEBTORS - LOCAL"; the
-real export's name is "TRADE DEBTORS - LOCAL SALES (GENERAL)"). An
-earlier version of this method removed ANY account not in `coa.csv`
+**Create-only, not a full replace or an ongoing overwrite.** Only the
+narrow, unambiguous case of a leftover generic-chart account (no-dot
+code, e.g. `101000` - every one of this company's own real codes is
+dotted) is ever removed (unlinked if nothing references it yet,
+archived instead if something already does - e.g. a posted tax
+entry), clearing any company/journal/`ir.default` reference to it
+first so the delete isn't blocked. An account already on the company
+(by code) is left exactly as-is, never overwritten - only genuinely
+missing accounts are created from `coa.csv`. An earlier version
+force-overwrote name/type/reconcile on every account in `coa.csv` on
+every upgrade (meant only to correct this module's own placeholder
+names, e.g. `3.09.01` was first created by
+`_combine001_ensure_debtor_control_accounts` as "DEBTORS - LOCAL"
+before the real export's name - "TRADE DEBTORS - LOCAL SALES
+(GENERAL)" - was known); that one-time correction already happened,
+and continuing to force-overwrite on every future upgrade silently
+reverted any manual edit an accountant made on the live system
+afterwards. Separately, an even earlier version of this method removed
+ANY account not in `coa.csv`
 on every upgrade - which also silently archived legitimate accounts
 added independently on the live server between syncs (a real
 incident - see `_combine001_reactivate_wrongly_archived` below, which
