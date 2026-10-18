@@ -1,0 +1,4 @@
+[submodule "soulreaper767/odoo_master_child"]
+	path = soulreaper767/odoo_master_child
+	url = git@github.com:soulreaper767/odoo_master_child.git
+	branch = main
