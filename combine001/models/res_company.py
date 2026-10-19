@@ -599,14 +599,30 @@ class ResCompany(models.Model):
         accounts (see _combine001_ensure_debtor_control_accounts) rather
         than one GL account per customer - same discipline as the
         full-import variant's customers.csv (see that repo's README,
-        "Customer accounting dimension" open item)."""
+        "Customer accounting dimension" open item).
+
+        Create-only, same as every other import in this repo (see
+        _combine001_import_coa): a customer already on file (by name)
+        is left exactly as-is, never overwritten. An earlier version
+        force-wrote name/receivable-account on every matching customer
+        on every upgrade - and because this module's import function
+        is wired to re-run on every upgrade (by design, so it refreshes
+        data on every deploy), that meant ANY unrelated deploy to this
+        repo (e.g. a trigger commit for a completely different change
+        elsewhere in the project) silently reverted manual edits and
+        new data entry made on the live system since the last one.
+        Confirmed as a real incident, not hypothetical - a mass
+        write_date spike across hundreds of customers exactly matching
+        when unrelated deploys landed."""
         account_by_code = self._combine001_ensure_debtor_control_accounts(company)
         rows = _read_csv('customers.csv')
         Partner = self.env['res.partner']
-        existing = {p.name: p for p in Partner.search([('customer_rank', '>', 0)])}
+        existing_names = {p.name for p in Partner.search([('customer_rank', '>', 0)])}
 
         to_create = []
         for row in rows:
+            if row['name'] in existing_names:
+                continue
             account_id = account_by_code.get(row['receivable_account_code'])
             vals = {
                 'name': row['name'],
@@ -615,14 +631,10 @@ class ResCompany(models.Model):
             }
             if account_id:
                 vals['property_account_receivable_id'] = account_id
-            found = existing.get(row['name'])
-            if found:
-                found.write(vals)
-            else:
-                to_create.append(vals)
+            to_create.append(vals)
         if to_create:
             Partner.create(to_create)
-        _logger.info("Combine001 (live): %s customers imported/updated.", len(rows))
+        _logger.info("Combine001 (live): %s customer(s) created (existing ones left untouched).", len(to_create))
 
     # -- live Vendors -----------------------------------------------------
 
@@ -633,7 +645,11 @@ class ResCompany(models.Model):
         in coa.csv, nothing new to create here, unlike the Debtors side)
         rather than one GL account per vendor - same "no party-wise
         codes in the Chart of Accounts" discipline as everywhere else
-        in this repo (see _combine001_import_coa)."""
+        in this repo (see _combine001_import_coa).
+
+        Create-only - see _combine001_import_live_customers for why:
+        same bug, same fix, same real incident (this one hit vendors
+        and products too, not just customers)."""
         Account = self.env['account.account']
         rows = _read_csv('vendors.csv')
         account_by_code = {a.code: a.id for a in Account.search([
@@ -642,10 +658,12 @@ class ResCompany(models.Model):
         ])}
 
         Partner = self.env['res.partner']
-        existing = {p.name: p for p in Partner.search([('supplier_rank', '>', 0)])}
+        existing_names = {p.name for p in Partner.search([('supplier_rank', '>', 0)])}
 
         to_create = []
         for row in rows:
+            if row['name'] in existing_names:
+                continue
             account_id = account_by_code.get(row['payable_account_code'])
             vals = {
                 'name': row['name'],
@@ -654,14 +672,10 @@ class ResCompany(models.Model):
             }
             if account_id:
                 vals['property_account_payable_id'] = account_id
-            found = existing.get(row['name'])
-            if found:
-                found.write(vals)
-            else:
-                to_create.append(vals)
+            to_create.append(vals)
         if to_create:
             Partner.create(to_create)
-        _logger.info("Combine001 (live): %s vendors imported/updated.", len(rows))
+        _logger.info("Combine001 (live): %s vendor(s) created (existing ones left untouched).", len(to_create))
 
     # -- live Finished Goods (Yarn) products -----------------------------
 
@@ -728,7 +742,7 @@ class ResCompany(models.Model):
         did exactly that and it silently archived legitimate Yarn
         products added independently on the live server between syncs,
         not just the intended old-126 cleanup - a real incident, not
-        hypothetical. Create-or-update only, going forward; a future
+        hypothetical. Create-only, going forward (see below); a future
         one-time retirement (if ever needed again) should be its own
         explicit, guarded action, not baked into this perpetual sync.
         Item names standardised: whitespace collapsed, spelling typos
@@ -737,7 +751,16 @@ class ResCompany(models.Model):
         data at all (unlike the previous list's reference-only bag
         counts) - this is master data only, same "no opening stock
         without a trustworthy count" discipline as everywhere else in
-        this repo."""
+        this repo.
+
+        Create-only - see _combine001_import_live_customers for why:
+        an earlier version force-wrote category/UoM/etc. on every
+        matching product on every upgrade, and because this module's
+        import re-runs on every deploy to this repo (by design), that
+        silently reverted manual edits (price, description, category
+        changes) made on the live system between deploys - confirmed
+        as a real incident, a mass write_date spike across the Yarn
+        catalog exactly matching unrelated deploys."""
         categ = self._combine001_ensure_yarn_category(company)
         if not categ:
             return
@@ -746,11 +769,13 @@ class ResCompany(models.Model):
         Product = self.env['product.template']
 
         unit = self.env.ref('uom.product_uom_unit')
-        existing = {p.name: p for p in Product.search([('name', 'in', names)])}
+        existing_names = {p.name for p in Product.search([('name', 'in', names)])}
 
         to_create = []
         for name in names:
-            vals = {
+            if name in existing_names:
+                continue
+            to_create.append({
                 'name': name,
                 'categ_id': categ.id,
                 'type': 'consu',
@@ -758,12 +783,7 @@ class ResCompany(models.Model):
                 'uom_id': unit.id,
                 'sale_ok': True,
                 'purchase_ok': True,
-            }
-            found = existing.get(name)
-            if found:
-                found.write(vals)
-            else:
-                to_create.append(vals)
+            })
         if to_create:
             Product.create(to_create)
-        _logger.info("Combine001 (live): %s Yarn products imported/updated.", len(rows))
+        _logger.info("Combine001 (live): %s Yarn product(s) created (existing ones left untouched).", len(to_create))
