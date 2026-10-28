@@ -1,6 +1,6 @@
 {
     'name': 'Custom Reports (Partner Ledger)',
-    'version': '19.0.3.0.2',
+    'version': '19.0.4.0.0',
     'category': 'Accounting/Accounting',
     'summary': "House for this company's custom reports - starts with the Partner Ledger "
                "Qty column and the itemized Partner Statement PDF",
@@ -39,28 +39,32 @@ instance is modified in any way. Safe to uninstall at any time - the
 native Partner Ledger report reverts to exactly its out-of-the-box
 state.
 
-Partner Statement PDF
----------------------
-A "Statement PDF" button on the Partner Ledger report's own toolbar
-(next to the native PDF/XLSX buttons) - filter the report to one
-partner, click it, get an itemized Statement of Account for that
-partner: one row per invoice/bill LINE ITEM (not per invoice), with the
-full pricing/tax breakdown - Voucher Date, Voucher No., Remarks, Item
-Name, Invoice Age, Gross Rate, Quantity, Discount, Net Rate, Ex. Amount,
-GST Rate, GST Amount, Incl Amount - then a thick vertical divider, then
-Debit, Credit, running Balance (advancing per line item). Payments/misc
+Partner Ledger Print (itemized Partner Statement PDF)
+------------------------------------------------------
+A dedicated menu item - Accounting > Reporting > Partner Ledger Print,
+right below the native "Partner Ledger" entry - opens a plain dialog:
+pick a Partner, pick a date range, click Generate Report. Produces an
+itemized Statement of Account for that partner: one row per
+invoice/bill LINE ITEM (not per invoice), with the full pricing/tax
+breakdown - Voucher Date, Voucher No., Remarks, Item Name, Invoice Age,
+Gross Rate, Quantity, Discount, Net Rate, Ex. Amount, GST Rate, GST
+Amount, Incl Amount - then a thick vertical divider, then Debit,
+Credit, running Balance (advancing per line item). Payments/misc
 entries still appear as their own row with the item/pricing columns
 blank.
+
+An earlier version of this put a "Statement PDF" button directly on
+the native Partner Ledger report's own toolbar, requiring that report
+to be filtered to one partner first via its own Partner filter - that
+filter turned out hard to find/use in practice, so this plain, simple
+dialog replaces it entirely.
 
 This is its own report with its own query and its own QWeb template -
 NOT a re-skin of the native Partner Ledger (see report/
 partner_statement_report.py for the full reasoning: that report's
 PDF export is rendered through account_reports' own generic template,
 shared by every report on that engine, with no per-report override of
-columns or header layout available). Uses account_reports' real
-per-report button mechanism (_init_options_buttons on account.report),
-scoped to only the Partner Ledger report - every other report's button
-bar is unaffected.
+columns or header layout available).
 
 Corporate letterhead-free design (no competing automatic header):
 built on web.html_container directly rather than web.external_layout,
@@ -77,6 +81,7 @@ a decorative one.
     'data': [
         'security/ir.model.access.csv',
         'data/qty_column.xml',
+        'wizard/partner_statement_wizard_views.xml',
         'report/partner_statement_report.xml',
     ],
     'installable': True,

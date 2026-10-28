@@ -2,15 +2,11 @@ from odoo import fields, models
 
 
 class PartnerStatementWizard(models.TransientModel):
-    """Carries the one partner + date range a Partner Statement print
-    needs. No form view of its own - the Partner Ledger report's
-    'Statement PDF' button (see models/account_partner_ledger_report.py)
-    creates one of these directly from that report's own Partner/date
-    filters and immediately calls action_print(), with no dialog shown.
-    The report (own query/template, not a reskin of the native Partner
-    Ledger - see report/partner_statement_report.py) is still a
-    completely different document, so a dedicated carrier record is
-    still needed for the print action to be bound to."""
+    """Entry point: Accounting > Reporting > Partner Ledger Print (a
+    dedicated menu item, not a button bolted onto the native Partner
+    Ledger report's own toolbar - that report's Partner filter turned
+    out hard to find/use in practice, so this is a plain, simple dialog
+    instead: pick a partner, pick a date range, click Generate Report."""
     _name = 'partner.ledger.statement.wizard'
     _description = 'Partner Statement - print options'
 

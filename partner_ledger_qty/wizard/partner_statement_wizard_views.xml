@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_partner_statement_wizard_form" model="ir.ui.view">
+        <field name="name">partner.ledger.statement.wizard.form</field>
+        <field name="model">partner.ledger.statement.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Partner Ledger Print">
+                <group>
+                    <field name="partner_id"/>
+                    <field name="date_from"/>
+                    <field name="date_to"/>
+                </group>
+                <footer>
+                    <button name="action_print" type="object" string="Generate Report" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_partner_statement_wizard" model="ir.actions.act_window">
+        <field name="name">Partner Ledger Print</field>
+        <field name="res_model">partner.ledger.statement.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <!-- Right below the native "Partner Ledger" menu item, same section. -->
+    <menuitem id="menu_partner_ledger_print"
+              name="Partner Ledger Print"
+              action="action_partner_statement_wizard"
+              parent="account.account_reports_partners_reports_menu"
+              groups="account.group_account_readonly,account.group_account_basic"
+              sequence="11"/>
+</odoo>
