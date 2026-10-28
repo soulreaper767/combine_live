@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_partner_statement" model="ir.actions.report">
+        <field name="name">Partner Statement</field>
+        <field name="model">partner.ledger.statement.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">partner_ledger_qty.partner_statement_document</field>
+        <field name="report_file">partner_ledger_qty.partner_statement_document</field>
+        <field name="print_report_name">'Statement - %s' % (object.partner_id.name)</field>
+        <field name="binding_model_id" eval="False"/>
+    </record>
+
+    <template id="partner_statement_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="wizard_doc">
+                <t t-set="data" t-value="get_statement_data(wizard_doc)"/>
+                <t t-call="web.external_layout">
+                    <t t-set="company" t-value="data['company']"/>
+                    <t t-set="company_partner" t-value="data['company'].partner_id"/>
+                    <t t-set="statement_partner" t-value="data['partner']"/>
+                    <div class="pls-statement">
+                        <div class="row pls-header">
+                            <div class="col-6 pls-party">
+                                <h5 class="pls-party-label">From</h5>
+                                <strong t-field="company_partner.name"/>
+                                <div t-out="company_partner.contact_address"/>
+                                <div t-if="company.vat">
+                                    <span>Tax/VAT: </span><span t-out="company.vat"/>
+                                </div>
+                            </div>
+                            <div class="col-6 pls-party pls-party-right text-end">
+                                <h5 class="pls-party-label">Statement For</h5>
+                                <strong t-field="statement_partner.name"/>
+                                <div t-out="statement_partner.contact_address"/>
+                                <div t-if="statement_partner.vat">
+                                    <span>Tax/VAT: </span><span t-out="statement_partner.vat"/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h2 class="pls-title">Partner Statement</h2>
+                        <div class="pls-subtitle">
+                            <span t-out="data['date_from']" t-options="{'widget': 'date'}"/>
+                            <span> to </span>
+                            <span t-out="data['date_to']" t-options="{'widget': 'date'}"/>
+                            <span class="pls-currency-note">
+                                &#8212; Amounts in <span t-out="data['currency'].name"/>
+                            </span>
+                        </div>
+
+                        <table class="table pls-table">
+                            <thead>
+                                <tr>
+                                    <th>Journal</th>
+                                    <th>Invoice Date</th>
+                                    <th class="text-end">Inv Qty</th>
+                                    <th class="text-end">Debit</th>
+                                    <th class="text-end">Credit</th>
+                                    <th class="text-end">Balance</th>
+                                    <th>Remarks</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="pls-opening-row">
+                                    <td colspan="5"><em>Opening Balance</em></td>
+                                    <td class="text-end">
+                                        <span t-out="'%.2f' % data['opening_balance']"/>
+                                    </td>
+                                    <td/>
+                                </tr>
+                                <tr t-foreach="data['rows']" t-as="row">
+                                    <td><span t-out="row['journal_code']"/></td>
+                                    <td><span t-out="row['invoice_date']" t-options="{'widget': 'date'}"/></td>
+                                    <td class="text-end">
+                                        <span t-if="row['quantity'] is not None" t-out="'%.2f' % row['quantity']"/>
+                                    </td>
+                                    <td class="text-end">
+                                        <span t-out="'%.2f' % row['debit']" t-if="row['debit']"/>
+                                    </td>
+                                    <td class="text-end">
+                                        <span t-out="'%.2f' % row['credit']" t-if="row['credit']"/>
+                                    </td>
+                                    <td class="text-end">
+                                        <span t-out="'%.2f' % row['running_balance']"/>
+                                    </td>
+                                    <td><span t-out="row['remarks'] or row['move_name'] or ''"/></td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr class="pls-total-row">
+                                    <td colspan="3"><strong>Total</strong></td>
+                                    <td class="text-end"><strong t-out="'%.2f' % data['total_debit']"/></td>
+                                    <td class="text-end"><strong t-out="'%.2f' % data['total_credit']"/></td>
+                                    <td class="text-end"><strong t-out="'%.2f' % data['closing_balance']"/></td>
+                                    <td/>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <record id="partner_statement_assets" model="ir.asset">
+        <field name="name">Partner Statement report CSS</field>
+        <field name="bundle">web.report_assets_common</field>
+        <field name="path">partner_ledger_qty/static/src/css/partner_statement.css</field>
+    </record>
+</odoo>
