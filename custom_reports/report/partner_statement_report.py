@@ -30,7 +30,7 @@ class PartnerStatementReport(models.AbstractModel):
       voucher, pricing/item columns blank, Debit/Credit from that
       line's own value, same as a conventional ledger line.
     """
-    _name = 'report.partner_ledger_qty.partner_statement_document'
+    _name = 'report.custom_reports.partner_statement_document'
     _description = 'Partner Statement document'
 
     def _get_report_values(self, docids, data=None):
@@ -40,7 +40,38 @@ class PartnerStatementReport(models.AbstractModel):
             'doc_model': 'partner.ledger.statement.wizard',
             'docs': wizard,
             'get_statement_data': self._get_statement_data,
+            'fmt_amount': self._fmt_amount,
+            'fmt_percent': self._fmt_percent,
+            'address_lines': self._address_lines,
         }
+
+    @staticmethod
+    def _address_lines(partner):
+        """Street/city/country only, deliberately excluding the partner's
+        own name - res.partner.contact_address (the usual shortcut)
+        includes the name as its own first line, which duplicated the
+        name this report already shows explicitly and prominently of
+        its own accord. Confirmed by testing: the company name appeared
+        twice in the rendered output before this fix."""
+        city_line = ' '.join(filter(None, [partner.city, partner.state_id.name, partner.zip]))
+        return [line for line in [
+            partner.street, partner.street2, city_line, partner.country_id.name,
+        ] if line]
+
+    @staticmethod
+    def _fmt_amount(value):
+        """1,234.50 / (1,234.50) for negatives / blank for None - never a
+        bare minus sign, accounting convention throughout this report."""
+        if value is None:
+            return ''
+        formatted = '{:,.2f}'.format(abs(value))
+        return '(%s)' % formatted if value < 0 else formatted
+
+    @staticmethod
+    def _fmt_percent(value):
+        if value is None:
+            return ''
+        return '%.2f%%' % value
 
     def _get_statement_data(self, wizard):
         partner = wizard.partner_id

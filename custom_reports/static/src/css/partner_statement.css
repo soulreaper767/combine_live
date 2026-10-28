@@ -1,0 +1,43 @@
+/* Dense, SAP-style line-item layout: one accent colour, thin horizontal
+   rules only, no vertical borders except the one deliberate divider,
+   centered headings, tabular numeric alignment. */
+
+.pls-statement, .pls-statement * { border-radius: 0 !important; box-shadow: none !important; }
+.pls-statement { font-family: Arial, Helvetica, sans-serif; color: #1f1f1f; font-size: 9px; }
+
+.pls-letterhead { width: 100%; border-collapse: collapse; margin-bottom: 8px; border-bottom: 1.5px solid #1d6b3f; padding-bottom: 6px; }
+.pls-letterhead td { vertical-align: top; padding-bottom: 6px; }
+.pls-letterhead-company { width: 55%; font-size: 9.5px; line-height: 1.45; }
+.pls-company-name { font-size: 13px; font-weight: 700; color: #124a2b; margin-bottom: 3px; }
+.pls-letterhead-title { width: 45%; text-align: right; }
+.pls-title { font-size: 16px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: #124a2b; margin-bottom: 4px; }
+.pls-meta { margin-left: auto; border-collapse: collapse; font-size: 9.5px; }
+.pls-meta td { padding: 1px 0 1px 10px; text-align: right; }
+.pls-label { color: #5a5a5a; font-size: 8px; text-transform: uppercase; letter-spacing: 0.04em; padding-right: 6px; }
+
+.pls-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.pls-table thead th {
+    background-color: #1d6b3f;
+    color: #ffffff;
+    font-size: 7.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    text-align: center;
+    padding: 5px 4px;
+    border: none;
+    white-space: nowrap;
+}
+.pls-table tbody td, .pls-table tfoot td {
+    padding: 3px 4px;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    border-bottom: 0.5px solid #d4d4d4;
+    font-size: 8.5px;
+    white-space: nowrap;
+}
+.pls-num { text-align: right; }
+.pls-opening-row td { background-color: #f3f6f4; font-style: italic; color: #5a5a5a; }
+.pls-total-row td { border-top: 1.5px solid #124a2b; border-bottom: none; padding-top: 5px; font-size: 9px; }
+.pls-divider { border-right: 2px solid #124a2b !important; }
