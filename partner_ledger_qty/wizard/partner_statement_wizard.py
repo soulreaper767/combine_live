@@ -21,4 +21,4 @@ class PartnerStatementWizard(models.TransientModel):
 
     def action_print(self):
         self.ensure_one()
-        return self.env.ref('custom_reports.action_report_partner_statement').report_action(self)
+        return self.env.ref('partner_ledger_qty.action_report_partner_statement').report_action(self)

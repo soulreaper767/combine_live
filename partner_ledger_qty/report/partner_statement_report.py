@@ -30,7 +30,7 @@ class PartnerStatementReport(models.AbstractModel):
       voucher, pricing/item columns blank, Debit/Credit from that
       line's own value, same as a conventional ledger line.
     """
-    _name = 'report.custom_reports.partner_statement_document'
+    _name = 'report.partner_ledger_qty.partner_statement_document'
     _description = 'Partner Statement document'
 
     def _get_report_values(self, docids, data=None):

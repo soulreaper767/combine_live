@@ -20,8 +20,8 @@
         <field name="name">Partner Statement</field>
         <field name="model">partner.ledger.statement.wizard</field>
         <field name="report_type">qweb-pdf</field>
-        <field name="report_name">custom_reports.partner_statement_document</field>
-        <field name="report_file">custom_reports.partner_statement_document</field>
+        <field name="report_name">partner_ledger_qty.partner_statement_document</field>
+        <field name="report_file">partner_ledger_qty.partner_statement_document</field>
         <field name="print_report_name">'Statement - %s' % (object.partner_id.name)</field>
         <field name="paperformat_id" ref="paperformat_partner_statement"/>
         <field name="binding_model_id" eval="False"/>
@@ -166,6 +166,6 @@
     <record id="partner_statement_assets" model="ir.asset">
         <field name="name">Partner Statement report CSS</field>
         <field name="bundle">web.report_assets_common</field>
-        <field name="path">custom_reports/static/src/css/partner_statement.css</field>
+        <field name="path">partner_ledger_qty/static/src/css/partner_statement.css</field>
     </record>
 </odoo>
