@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_partner_statement_wizard_form" model="ir.ui.view">
+        <field name="name">partner.ledger.statement.wizard.form</field>
+        <field name="model">partner.ledger.statement.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Print Partner Statement">
+                <group>
+                    <field name="partner_id" invisible="context.get('default_partner_id')"/>
+                    <field name="date_from"/>
+                    <field name="date_to"/>
+                </group>
+                <footer>
+                    <button name="action_print" type="object" string="Print PDF" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_partner_statement_wizard" model="ir.actions.act_window">
+        <field name="name">Print Partner Statement</field>
+        <field name="res_model">partner.ledger.statement.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <!-- "Print Statement" button on the partner form - the only touch
+         to an existing view in this whole module, additive only
+         (one new button, nothing else on res.partner's form changed). -->
+    <record id="res_partner_view_form_statement_button" model="ir.ui.view">
+        <field name="name">res.partner.form.statement.button</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button type="action"
+                        name="%(action_partner_statement_wizard)d"
+                        context="{'default_partner_id': id}"
+                        string="Print Statement"
+                        icon="fa-file-pdf-o"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
