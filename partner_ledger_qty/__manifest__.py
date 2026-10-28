@@ -1,19 +1,26 @@
 {
-    'name': 'Custom Reports',
-    'version': '19.0.3.0.0',
+    'name': 'Custom Reports (Partner Ledger)',
+    'version': '19.0.3.0.2',
     'category': 'Accounting/Accounting',
     'summary': "House for this company's custom reports - starts with the Partner Ledger "
                "Qty column and the itemized Partner Statement PDF",
     'description': """
 Custom Reports
 ==============
-General-purpose home for this company's custom reporting work (renamed
-from the original "Partner Ledger - Qty Column" once it grew beyond
-that one feature) - deliberately its own standalone module, independent
-of every other customization on this instance (combine001 included).
-Installing, upgrading or uninstalling this module touches nothing
-else, and nothing else touches this. Depends only on Odoo's own
-`account_reports`.
+General-purpose home for this company's custom reporting work, grown
+beyond the original single Qty-column feature - deliberately its own
+standalone module, independent of every other customization on this
+instance (combine001 included). Installing, upgrading or uninstalling
+this module touches nothing else, and nothing else touches this.
+Depends only on Odoo's own `account_reports`.
+
+Display name only, technical name unchanged on purpose: this module's
+folder/technical identity is still `partner_ledger_qty` (only the
+`name` field shown in Apps changed to "Custom Reports") - a real
+rename was tried and reverted after it left the old technical module
+stuck mid-upgrade with no code to upgrade to, blocking the whole
+registry from loading. Updating code under the same technical name
+instead lets Odoo finish whatever it already has in progress.
 
 Partner Ledger - Qty column
 ----------------------------
