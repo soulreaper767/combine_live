@@ -92,11 +92,16 @@ class PartnerStatementReport(models.AbstractModel):
 
         running = opening_balance
         total_debit = total_credit = 0.0
+        total_qty = total_ex = total_gst = total_incl = 0.0
         for row in rows:
             running += row['debit'] - row['credit']
             row['running_balance'] = running
             total_debit += row['debit']
             total_credit += row['credit']
+            total_qty += row['quantity'] or 0.0
+            total_ex += row['ex_amount'] or 0.0
+            total_gst += row['gst_amount'] or 0.0
+            total_incl += row['incl_amount'] or 0.0
 
         return {
             'company': company,
@@ -108,6 +113,10 @@ class PartnerStatementReport(models.AbstractModel):
             'rows': rows,
             'total_debit': total_debit,
             'total_credit': total_credit,
+            'total_qty': total_qty,
+            'total_ex': total_ex,
+            'total_gst': total_gst,
+            'total_incl': total_incl,
             'closing_balance': running,
         }
 

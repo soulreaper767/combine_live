@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Shared building blocks for every custom report in this module.
+
+         Usage in a new report:
+             <t t-call="web.html_container">
+                 <t t-foreach="docs" t-as="doc">
+                     <div class="page cr">
+                         <t t-call="partner_ledger_qty.cr_style"/>
+                         <t t-call="partner_ledger_qty.cr_header">
+                             <t t-set="cr_title">Sales Register</t>
+                             <t t-set="cr_party" t-value="some_partner"/>     (optional)
+                             <t t-set="cr_date_from" t-value="..."/>          (optional)
+                             <t t-set="cr_date_to" t-value="..."/>            (optional)
+                         </t>
+                         <table class="cr-tbl"> ... </table>
+                     </div>
+                 </t>
+             </t>
+
+         Table cell classes: n = right-aligned number, c = centered,
+         nw = no wrap, gap = narrow divider column; row classes: open =
+         opening line, tot = total line (double underline).
+
+         The style is inline on purpose: CSS delivered through an
+         ir.asset on web.report_assets_common did not reach the PDF at
+         all (confirmed by rendering - no borders/fills, logo at full
+         size), so every report would come out unstyled. Inline styles
+         always travel with the page. Built on web.html_container, not
+         web.external_layout, so there is never a second, automatic
+         company letterhead on top of this one. -->
+
+    <template id="cr_style">
+        <style>
+            .cr { font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, "Liberation Sans", sans-serif;
+                  font-size: 12px; line-height: 1.35; color: #1f2937; }
+            .cr * { border-radius: 0; box-shadow: none; }
+
+            .cr-head { width: 100%; border-collapse: collapse; border-bottom: 3px double #1f2937; margin-bottom: 10px; }
+            .cr-head td { vertical-align: middle; padding: 0 0 8px 0; border: none; }
+            .cr-logo-cell { width: 90px; padding-right: 14px !important; }
+            .cr-logo { max-height: 60px; max-width: 90px; }
+            .cr-co { font-size: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; margin-bottom: 3px; }
+            .cr-meta { font-size: 12px; }
+            .cr-meta .lbl { color: #6b7280; display: inline-block; width: 90px; }
+            .cr-title { text-align: right; font-size: 20px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; }
+            .cr-sub { text-align: right; font-size: 11px; color: #6b7280; }
+
+            .cr-tbl { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+            .cr-tbl th { background: #f3f4f6; color: #1f2937; font-weight: 700; text-align: center;
+                         vertical-align: middle; padding: 6px 4px; font-size: 11px;
+                         border-top: 1px solid #1f2937; border-bottom: 2px solid #1f2937;
+                         border-left: 1px solid #cbd5e1; border-right: 1px solid #cbd5e1; }
+            .cr-tbl td { padding: 5px 4px; border: 1px solid #e5e7eb; vertical-align: top; }
+            .cr-tbl .n { text-align: right; white-space: nowrap; }
+            .cr-tbl .c { text-align: center; white-space: nowrap; }
+            .cr-tbl .nw { white-space: nowrap; }
+            .cr-tbl .gap { width: 6px; padding: 0; border-top: none; border-bottom: none;
+                           border-left: 1px solid #1f2937; border-right: 1px solid #1f2937; background: #ffffff; }
+            .cr-tbl th.gap { background: #ffffff; border-top: none; border-bottom: none; }
+            .cr-tbl tr.open td { font-style: italic; color: #4b5563; border-bottom: 1px solid #cbd5e1; }
+            .cr-tbl tr.tot td { background: #f3f4f6; font-weight: 700; border-top: 1px solid #1f2937;
+                                border-bottom: 3px double #1f2937; }
+            .cr-tbl tr.tot td.gap { background: #ffffff; border-top: none; border-bottom: none; }
+        </style>
+    </template>
+
+    <template id="cr_header">
+        <t t-set="cr_company" t-value="cr_company or env.company"/>
+        <table class="cr-head">
+            <tr>
+                <td class="cr-logo-cell" t-if="cr_company.logo">
+                    <img class="cr-logo" t-att-src="image_data_uri(cr_company.logo)"/>
+                </td>
+                <td>
+                    <div class="cr-co" t-out="cr_company.name"/>
+                    <div class="cr-meta" t-if="cr_party">
+                        <span class="lbl">Party Name:</span><strong t-out="cr_party.name"/>
+                    </div>
+                    <div class="cr-meta" t-if="cr_date_from or cr_date_to">
+                        <span class="lbl">Period:</span>
+                        <span t-out="cr_date_from" t-options="{'widget': 'date'}"/>
+                        to
+                        <span t-out="cr_date_to" t-options="{'widget': 'date'}"/>
+                    </div>
+                </td>
+                <td>
+                    <div class="cr-title" t-out="cr_title"/>
+                    <div class="cr-sub">Amounts in <span t-out="cr_company.currency_id.name"/></div>
+                </td>
+            </tr>
+        </table>
+    </template>
+</odoo>

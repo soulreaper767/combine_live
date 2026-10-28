@@ -82,6 +82,7 @@ a decorative one.
         'security/ir.model.access.csv',
         'data/qty_column.xml',
         'wizard/partner_statement_wizard_views.xml',
+        'report/report_base_templates.xml',
         'report/partner_statement_report.xml',
     ],
     'installable': True,

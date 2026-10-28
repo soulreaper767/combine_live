@@ -1,90 +1,69 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Design reference D:\Others\Combine Spinning\reports\partner_ledger.xlsx
-         used Legal landscape - switched to A4 landscape (more standard
-         here) at the user's own call once the layout itself was
-         confirmed; same tight margins as the reference (0.1in
-         left/right, 0.5in top/bottom), no separate header/footer
-         space. A4 is ~16% narrower than Legal, compensated with
-         slightly smaller fonts/padding (see the CSS). -->
+    <!-- Shared A4 landscape format for this module's reports. -->
     <record id="paperformat_partner_statement" model="report.paperformat">
-        <field name="name">Partner Statement - A4 Landscape</field>
+        <field name="name">Custom Reports - A4 Landscape</field>
         <field name="format">A4</field>
         <field name="page_height">0</field>
         <field name="page_width">0</field>
         <field name="orientation">Landscape</field>
-        <field name="margin_top">12.7</field>
-        <field name="margin_bottom">12.7</field>
-        <field name="margin_left">2.5</field>
-        <field name="margin_right">2.5</field>
+        <field name="margin_top">10</field>
+        <field name="margin_bottom">10</field>
+        <field name="margin_left">6</field>
+        <field name="margin_right">6</field>
         <field name="header_line" eval="False"/>
         <field name="header_spacing">0</field>
-        <field name="dpi">90</field>
-        <field name="css_margins" eval="True"/>
+        <field name="dpi">96</field>
+        <field name="disable_shrinking" eval="True"/>
+        <field name="css_margins" eval="False"/>
     </record>
 
     <record id="action_report_partner_statement" model="ir.actions.report">
-        <field name="name">Partner Statement</field>
+        <field name="name">Partner Ledger</field>
         <field name="model">partner.ledger.statement.wizard</field>
         <field name="report_type">qweb-pdf</field>
         <field name="report_name">partner_ledger_qty.partner_statement_document</field>
         <field name="report_file">partner_ledger_qty.partner_statement_document</field>
-        <field name="print_report_name">'Statement - %s' % (object.partner_id.name)</field>
+        <field name="print_report_name">'Partner Ledger - %s' % (object.partner_id.name)</field>
         <field name="paperformat_id" ref="paperformat_partner_statement"/>
         <field name="binding_model_id" eval="False"/>
     </record>
 
-    <!-- Built directly on web.html_container, NOT web.external_layout -
-         that template draws its own automatic company letterhead, which
-         duplicated/overlapped the header this report builds for itself
-         (confirmed by testing: company name rendered twice). This report
-         owns its entire header, once, deliberately. -->
+    <!-- Fields follow the user's Excel reference (partner_ledger.xlsx);
+         look comes from the shared cr_style / cr_header templates. -->
     <template id="partner_statement_document">
         <t t-call="web.html_container">
             <t t-foreach="docs" t-as="wizard_doc">
                 <t t-set="data" t-value="get_statement_data(wizard_doc)"/>
-                <div class="page pls-statement">
-                    <!-- Fields/layout follow the Excel reference: logo,
-                         company name, Party Name:, Period:, one stacked
-                         column. Colours/border treatment (double rule,
-                         doc-title underline) follow the "Ledger" variant
-                         of the user's own print_formats app. -->
-                    <div class="pls-headerblock">
-                        <img t-if="data['company'].logo" class="pls-logo"
-                             t-att-src="image_data_uri(data['company'].logo)"/>
-                        <div class="pls-company-name" t-out="data['company'].name"/>
-                        <div>
-                            <span class="pls-fieldlabel">Party Name: </span>
-                            <strong t-out="data['partner'].name"/>
-                        </div>
-                        <div>
-                            <span class="pls-fieldlabel">Period: </span>
-                            <span t-out="data['date_from']" t-options="{'widget': 'date'}"/>
-                            <span> to </span>
-                            <span t-out="data['date_to']" t-options="{'widget': 'date'}"/>
-                        </div>
-                    </div>
-                    <div class="pls-doctitle">Partner Statement</div>
+                <div class="page cr">
+                    <t t-call="partner_ledger_qty.cr_style"/>
+                    <t t-call="partner_ledger_qty.cr_header">
+                        <t t-set="cr_title">Partner Ledger</t>
+                        <t t-set="cr_company" t-value="data['company']"/>
+                        <t t-set="cr_party" t-value="data['partner']"/>
+                        <t t-set="cr_date_from" t-value="data['date_from']"/>
+                        <t t-set="cr_date_to" t-value="data['date_to']"/>
+                    </t>
 
-                    <table class="table pls-table">
+                    <table class="cr-tbl">
                         <colgroup>
-                            <col style="width: 6%"/>
-                            <col style="width: 7%"/>
-                            <col style="width: 13%"/>
+                            <col style="width: 6.5%"/>
                             <col style="width: 9%"/>
+                            <col style="width: 14%"/>
+                            <col style="width: 8%"/>
+                            <col style="width: 3.5%"/>
+                            <col style="width: 5%"/>
                             <col style="width: 4%"/>
+                            <col style="width: 3.5%"/>
+                            <col style="width: 5%"/>
                             <col style="width: 6%"/>
                             <col style="width: 4%"/>
-                            <col style="width: 4%"/>
+                            <col style="width: 5%"/>
                             <col style="width: 6%"/>
-                            <col style="width: 6%"/>
-                            <col style="width: 4%"/>
-                            <col style="width: 6%"/>
-                            <col style="width: 6%"/>
-                            <col style="width: 1%"/>
-                            <col style="width: 6%"/>
-                            <col style="width: 6%"/>
-                            <col style="width: 6%"/>
+                            <col style="width: 0.5%"/>
+                            <col style="width: 6.5%"/>
+                            <col style="width: 6.5%"/>
+                            <col style="width: 7%"/>
                         </colgroup>
                         <thead>
                             <tr>
@@ -101,84 +80,58 @@
                                 <th>GST Rate</th>
                                 <th>GST Amt</th>
                                 <th>Incl. Amt</th>
-                                <th class="pls-spacer"/>
+                                <th class="gap"/>
                                 <th>Debit</th>
                                 <th>Credit</th>
                                 <th>Balance</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr class="pls-opening-row">
-                                <td colspan="12"><em>Opening balance</em></td>
-                                <td class="pls-spacer"/>
-                                <td/>
-                                <td/>
-                                <td class="pls-num">
-                                    <span t-out="fmt_amount(data['opening_balance'])"/>
-                                </td>
+                            <tr class="open">
+                                <td class="c"><span t-out="data['date_from']" t-options="{'widget': 'date'}"/></td>
+                                <td colspan="12">Opening balance</td>
+                                <td class="gap"/>
+                                <td class="n"/>
+                                <td class="n"/>
+                                <td class="n"><span t-out="fmt_amount(data['opening_balance'])"/></td>
                             </tr>
                             <tr t-foreach="data['rows']" t-as="row">
-                                <td><span t-out="row['voucher_date']" t-options="{'widget': 'date'}"/></td>
-                                <td><span t-out="row['voucher_no'] or ''"/></td>
-                                <td class="pls-wrap"><span t-out="row['remarks'] or ''"/></td>
+                                <td class="c"><span t-out="row['voucher_date']" t-options="{'widget': 'date'}"/></td>
+                                <td class="nw"><span t-out="row['voucher_no'] or ''"/></td>
+                                <td><span t-out="row['remarks'] or ''"/></td>
                                 <td><span t-out="row['item_name'] or ''"/></td>
-                                <td class="pls-num">
-                                    <span t-if="row['invoice_age'] is not None" t-out="row['invoice_age']"/>
-                                </td>
-                                <td class="pls-num">
-                                    <span t-out="fmt_amount(row['gross_rate'])"/>
-                                </td>
-                                <td class="pls-num">
-                                    <span t-out="fmt_amount(row['quantity'])"/>
-                                </td>
-                                <td class="pls-num">
-                                    <span t-out="fmt_percent(row['discount'])"/>
-                                </td>
-                                <td class="pls-num">
-                                    <span t-out="fmt_amount(row['net_rate'])"/>
-                                </td>
-                                <td class="pls-num">
-                                    <span t-out="fmt_amount(row['ex_amount'])"/>
-                                </td>
-                                <td class="pls-num">
-                                    <span t-out="fmt_percent(row['gst_rate'])"/>
-                                </td>
-                                <td class="pls-num">
-                                    <span t-out="fmt_amount(row['gst_amount'])"/>
-                                </td>
-                                <td class="pls-num">
-                                    <span t-out="fmt_amount(row['incl_amount'])"/>
-                                </td>
-                                <td class="pls-spacer"/>
-                                <td class="pls-num">
-                                    <span t-if="row['debit']" t-out="fmt_amount(row['debit'])"/>
-                                </td>
-                                <td class="pls-num">
-                                    <span t-if="row['credit']" t-out="fmt_amount(row['credit'])"/>
-                                </td>
-                                <td class="pls-num">
-                                    <span t-out="fmt_amount(row['running_balance'])"/>
-                                </td>
+                                <td class="c"><span t-if="row['invoice_age'] is not None" t-out="row['invoice_age']"/></td>
+                                <td class="n"><span t-out="fmt_amount(row['gross_rate'])"/></td>
+                                <td class="n"><span t-out="fmt_amount(row['quantity'])"/></td>
+                                <td class="c"><span t-out="fmt_percent(row['discount'])"/></td>
+                                <td class="n"><span t-out="fmt_amount(row['net_rate'])"/></td>
+                                <td class="n"><span t-out="fmt_amount(row['ex_amount'])"/></td>
+                                <td class="c"><span t-out="fmt_percent(row['gst_rate'])"/></td>
+                                <td class="n"><span t-out="fmt_amount(row['gst_amount'])"/></td>
+                                <td class="n"><span t-out="fmt_amount(row['incl_amount'])"/></td>
+                                <td class="gap"/>
+                                <td class="n"><span t-if="row['debit']" t-out="fmt_amount(row['debit'])"/></td>
+                                <td class="n"><span t-if="row['credit']" t-out="fmt_amount(row['credit'])"/></td>
+                                <td class="n"><span t-out="fmt_amount(row['running_balance'])"/></td>
+                            </tr>
+                            <tr class="tot">
+                                <td colspan="6" class="c">TOTAL</td>
+                                <td class="n"><span t-out="fmt_amount(data['total_qty'])"/></td>
+                                <td/>
+                                <td/>
+                                <td class="n"><span t-out="fmt_amount(data['total_ex'])"/></td>
+                                <td/>
+                                <td class="n"><span t-out="fmt_amount(data['total_gst'])"/></td>
+                                <td class="n"><span t-out="fmt_amount(data['total_incl'])"/></td>
+                                <td class="gap"/>
+                                <td class="n"><span t-out="fmt_amount(data['total_debit'])"/></td>
+                                <td class="n"><span t-out="fmt_amount(data['total_credit'])"/></td>
+                                <td class="n"><span t-out="fmt_amount(data['closing_balance'])"/></td>
                             </tr>
                         </tbody>
-                        <tfoot>
-                            <tr class="pls-total-row">
-                                <td colspan="12"><strong>TOTAL</strong></td>
-                                <td class="pls-spacer"/>
-                                <td class="pls-num"><strong t-out="fmt_amount(data['total_debit'])"/></td>
-                                <td class="pls-num"><strong t-out="fmt_amount(data['total_credit'])"/></td>
-                                <td class="pls-num"><strong t-out="fmt_amount(data['closing_balance'])"/></td>
-                            </tr>
-                        </tfoot>
                     </table>
                 </div>
             </t>
         </t>
     </template>
-
-    <record id="partner_statement_assets" model="ir.asset">
-        <field name="name">Partner Statement report CSS</field>
-        <field name="bundle">web.report_assets_common</field>
-        <field name="path">partner_ledger_qty/static/src/css/partner_statement.css</field>
-    </record>
 </odoo>
