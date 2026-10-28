@@ -1,4 +1,5 @@
-from odoo import models
+from odoo import _, fields, models
+from odoo.exceptions import UserError
 from odoo.tools import SQL
 
 
@@ -37,3 +38,50 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
             ") ELSE NULL END AS quantity,",
             base,
         )
+
+    def action_print_partner_statement(self, options):
+        """Handler for the 'Statement PDF' button added to this report's
+        own toolbar (see AccountReportPartnerStatementButton below) -
+        account_reports' dispatch_report_action() looks for the action
+        name on the report's custom handler model FIRST, before falling
+        back to account.report itself, so defining it here (rather than
+        on account.report) scopes it to only ever run for this report.
+
+        Requires the report's own Partner filter to be narrowed to
+        exactly one partner first - this report (unlike the native
+        Partner Ledger) is always about one specific partner's
+        statement, and options['partner_ids'] is exactly how that
+        filter already communicates the selection."""
+        partner_ids = options.get('partner_ids') or []
+        if len(partner_ids) != 1:
+            raise UserError(_(
+                "Filter this report to exactly one partner first (use the "
+                "Partner filter above), then click Statement PDF again."
+            ))
+        date_options = options.get('date') or {}
+        wizard = self.env['partner.ledger.statement.wizard'].create({
+            'partner_id': partner_ids[0],
+            'date_from': date_options.get('date_from') or fields.Date.context_today(self).replace(month=1, day=1),
+            'date_to': date_options.get('date_to') or fields.Date.context_today(self),
+        })
+        return wizard.action_print()
+
+
+class AccountReportPartnerStatementButton(models.Model):
+    """Adds the 'Statement PDF' button itself to the Partner Ledger
+    report's own toolbar, right next to the native PDF/XLSX buttons -
+    _init_options_buttons is defined on account.report (shared by every
+    report on this engine), so the override is scoped to only the
+    Partner Ledger report by checking the report's own id; every other
+    report's button bar is built by the untouched super() call alone."""
+    _inherit = 'account.report'
+
+    def _init_options_buttons(self, options, previous_options):
+        super()._init_options_buttons(options, previous_options)
+        if self == self.env.ref('account_reports.partner_ledger_report'):
+            options['buttons'].append({
+                'name': _('Statement PDF'),
+                'action': 'action_print_partner_statement',
+                'sequence': 15,
+                'always_show': True,
+            })
