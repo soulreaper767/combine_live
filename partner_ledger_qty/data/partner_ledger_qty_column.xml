@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Adds a 'Qty' column to the native Partner Ledger report, between
+         Matching (sequence 60) and Debit (sequence 70). Attaches via
+         account.report.column's own report_id field - the existing
+         report record, its other columns and every other report are
+         never touched. See models/account_partner_ledger_report.py for
+         where the value itself (invoiced quantity, Sales Invoice lines
+         only) comes from. -->
+    <record id="partner_ledger_report_quantity" model="account.report.column">
+        <field name="report_id" ref="account_reports.partner_ledger_report"/>
+        <field name="name">Qty</field>
+        <field name="expression_label">quantity</field>
+        <field name="figure_type">float</field>
+        <field name="sequence">65</field>
+    </record>
+</odoo>
