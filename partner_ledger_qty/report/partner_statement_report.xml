@@ -44,23 +44,27 @@
             <t t-foreach="docs" t-as="wizard_doc">
                 <t t-set="data" t-value="get_statement_data(wizard_doc)"/>
                 <div class="page pls-statement">
-                    <!-- Plain stacked header, matching the reference file
-                         exactly: logo, company name, Party Name:, Period:
-                         - one column, no boxes/panels/colours, bold only
-                         where the reference itself is bold. -->
-                    <img t-if="data['company'].logo" class="pls-logo"
-                         t-att-src="image_data_uri(data['company'].logo)"/>
-                    <div class="pls-company-name" t-out="data['company'].name"/>
-                    <div>
-                        <span class="pls-fieldlabel">Party Name: </span>
-                        <strong t-out="data['partner'].name"/>
+                    <!-- Fields/layout follow the Excel reference: logo,
+                         company name, Party Name:, Period:, one stacked
+                         column. Colours/border treatment (double rule,
+                         doc-title underline) follow the "Ledger" variant
+                         of the user's own print_formats app. -->
+                    <div class="pls-headerblock">
+                        <img t-if="data['company'].logo" class="pls-logo"
+                             t-att-src="image_data_uri(data['company'].logo)"/>
+                        <div class="pls-company-name" t-out="data['company'].name"/>
+                        <div>
+                            <span class="pls-fieldlabel">Party Name: </span>
+                            <strong t-out="data['partner'].name"/>
+                        </div>
+                        <div>
+                            <span class="pls-fieldlabel">Period: </span>
+                            <span t-out="data['date_from']" t-options="{'widget': 'date'}"/>
+                            <span> to </span>
+                            <span t-out="data['date_to']" t-options="{'widget': 'date'}"/>
+                        </div>
                     </div>
-                    <div>
-                        <span class="pls-fieldlabel">Period: </span>
-                        <span t-out="data['date_from']" t-options="{'widget': 'date'}"/>
-                        <span> to </span>
-                        <span t-out="data['date_to']" t-options="{'widget': 'date'}"/>
-                    </div>
+                    <div class="pls-doctitle">Partner Statement</div>
 
                     <table class="table pls-table">
                         <colgroup>
