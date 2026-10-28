@@ -37,39 +37,46 @@
             <t t-foreach="docs" t-as="wizard_doc">
                 <t t-set="data" t-value="get_statement_data(wizard_doc)"/>
                 <div class="page pls-statement">
+                    <div class="pls-doctitle">Partner Statement</div>
                     <table class="pls-letterhead">
                         <tr>
                             <td class="pls-letterhead-company">
-                                <div class="pls-company-name" t-out="data['company'].name"/>
-                                <div t-foreach="address_lines(data['company'].partner_id)" t-as="line" t-out="line"/>
-                                <div t-if="data['company'].vat">
-                                    <span class="pls-label">Tax/VAT </span><span t-out="data['company'].vat"/>
+                                <div class="pls-panel pls-panel-company">
+                                    <table class="pls-company-block">
+                                        <tr>
+                                            <td t-if="data['company'].logo" class="pls-logo-cell">
+                                                <img class="pls-logo" t-att-src="image_data_uri(data['company'].logo)"/>
+                                            </td>
+                                            <td>
+                                                <div class="pls-company-name" t-out="data['company'].name"/>
+                                                <div t-foreach="address_lines(data['company'].partner_id)" t-as="line" t-out="line"/>
+                                                <div t-if="data['company'].phone">
+                                                    <span class="pls-label">Tel </span><span t-out="data['company'].phone"/>
+                                                </div>
+                                                <div t-if="data['company'].email">
+                                                    <span class="pls-label">Email </span><span t-out="data['company'].email"/>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </table>
                                 </div>
                             </td>
-                            <td class="pls-letterhead-title">
-                                <div class="pls-title">Partner Statement</div>
-                                <table class="pls-meta">
-                                    <tr><td class="pls-label">Partner</td><td t-out="data['partner'].name"/></tr>
-                                    <tr t-if="address_lines(data['partner'])">
-                                        <td class="pls-label">Address</td>
-                                        <td>
-                                            <t t-foreach="address_lines(data['partner'])" t-as="line">
-                                                <span t-out="line"/><br/>
-                                            </t>
-                                        </td>
-                                    </tr>
-                                    <tr><td class="pls-label">Period</td>
-                                        <td>
-                                            <span t-out="data['date_from']" t-options="{'widget': 'date'}"/>
-                                            <span> to </span>
-                                            <span t-out="data['date_to']" t-options="{'widget': 'date'}"/>
-                                        </td>
-                                    </tr>
-                                    <tr><td class="pls-label">Currency</td><td t-out="data['currency'].name"/></tr>
-                                    <tr t-if="data['partner'].vat">
-                                        <td class="pls-label">Tax/VAT</td><td t-out="data['partner'].vat"/>
-                                    </tr>
-                                </table>
+                            <td class="pls-letterhead-party">
+                                <div class="pls-panel pls-panel-party">
+                                    <table class="pls-meta">
+                                        <tr><td class="pls-label">Party Name</td><td><strong t-out="data['partner'].name"/></td></tr>
+                                        <tr>
+                                            <td class="pls-label">Period</td>
+                                            <td>
+                                                <strong>
+                                                    <span t-out="data['date_from']" t-options="{'widget': 'date'}"/>
+                                                    <span> to </span>
+                                                    <span t-out="data['date_to']" t-options="{'widget': 'date'}"/>
+                                                </strong>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
                             </td>
                         </tr>
                     </table>
@@ -107,9 +114,9 @@
                             </tr>
                             <tr t-foreach="data['rows']" t-as="row">
                                 <td><span t-out="row['voucher_date']" t-options="{'widget': 'date'}"/></td>
-                                <td><span t-out="row['voucher_no'] or ''"/></td>
-                                <td><span t-out="row['remarks'] or ''"/></td>
-                                <td><span t-out="row['item_name'] or ''"/></td>
+                                <td><strong t-out="row['voucher_no'] or ''"/></td>
+                                <td><em t-out="row['remarks'] or ''"/></td>
+                                <td><em t-out="row['item_name'] or ''"/></td>
                                 <td class="pls-num">
                                     <span t-if="row['invoice_age'] is not None" t-out="row['invoice_age']"/>
                                 </td>
@@ -157,6 +164,16 @@
                                 <td class="pls-num"><strong t-out="fmt_amount(data['closing_balance'])"/></td>
                             </tr>
                         </tfoot>
+                    </table>
+
+                    <table class="pls-summary">
+                        <tr><td class="pls-label"><em>Opening Balance</em></td><td class="pls-num"><strong t-out="fmt_amount(data['opening_balance'])"/></td></tr>
+                        <tr><td class="pls-label">Total Debit</td><td class="pls-num"><strong t-out="fmt_amount(data['total_debit'])"/></td></tr>
+                        <tr><td class="pls-label">Total Credit</td><td class="pls-num"><strong t-out="fmt_amount(data['total_credit'])"/></td></tr>
+                        <tr class="pls-summary-closing">
+                            <td><strong><u>Closing Balance</u></strong></td>
+                            <td class="pls-num"><strong><u t-out="fmt_amount(data['closing_balance'])"/></strong></td>
+                        </tr>
                     </table>
                 </div>
             </t>
