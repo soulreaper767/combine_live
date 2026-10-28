@@ -60,18 +60,27 @@ class PartnerStatementReport(models.AbstractModel):
 
     @staticmethod
     def _fmt_amount(value):
-        """1,234.50 / (1,234.50) for negatives / blank for None - never a
-        bare minus sign, accounting convention throughout this report."""
+        """1,234 / (1,234) for negatives / "-" for exactly zero / blank for
+        None - matching the reference file's Excel accounting number
+        format exactly (_(* #,##0_);_(* \\(#,##0\\);_(* "-"??_);_(@_) -
+        zero decimal places, a dash for zero, parentheses for
+        negative, never a bare minus sign)."""
         if value is None:
             return ''
-        formatted = '{:,.2f}'.format(abs(value))
+        if value == 0:
+            return '-'
+        formatted = '{:,.0f}'.format(abs(value))
         return '(%s)' % formatted if value < 0 else formatted
 
     @staticmethod
     def _fmt_percent(value):
+        """Zero decimal places, matching the reference file's "0%" format
+        for its GST Rate column - the underlying value is real system
+        data (actual tax/discount %), only the display precision is a
+        design-reference match."""
         if value is None:
             return ''
-        return '%.2f%%' % value
+        return '%.0f%%' % value
 
     def _get_statement_data(self, wizard):
         partner = wizard.partner_id

@@ -1,99 +1,53 @@
-/* Dense, SAP-style line-item layout: green header bar, light-blue title
-   and totals, thin horizontal rules only, no vertical borders except
-   the one deliberate divider (which runs the full height of the table,
-   header through totals), centered headings, tabular numeric
-   alignment, zero rounded corners/shadows anywhere. */
+/* Matches D:\Others\Combine Spinning\reports\partner_ledger.xlsx as a
+   design reference: plain Arial 9pt throughout, no colour panels or
+   title banner, a light pastel-blue fill on the header/total rows
+   only (Excel's "Accent 5, Lighter 80%"), thin borders on every data
+   row, a medium border framing the header and the total row, and a
+   narrow blank spacer column standing in for a divider rather than a
+   coloured line. Zero rounded corners/shadows anywhere. */
 
 .pls-statement, .pls-statement * { border-radius: 0 !important; box-shadow: none !important; }
 .pls-statement {
-    font-family: 'Aptos', Arial, Helvetica, sans-serif;
-    color: #1f1f1f;
-    font-size: 10px;
-}
-
-.pls-doctitle {
-    text-align: center;
-    font-size: 18px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: #0a5fa8;
-    background-color: #eaf4fc;
-    border: 1px solid #0a5fa8;
-    padding: 5px 0;
-    margin-bottom: 8px;
-}
-
-.pls-letterhead { width: 100%; border-collapse: separate; border-spacing: 10px 0; margin-bottom: 10px; }
-.pls-letterhead td { vertical-align: top; }
-.pls-letterhead-company { width: 60%; }
-.pls-letterhead-party { width: 40%; vertical-align: bottom; }
-
-/* Matched panels, equal visual weight on both sides - green-tinted for
-   the company (left), blue-tinted for the party (right), tying into
-   the same two accent colours used throughout the rest of the page. */
-.pls-panel { border: 1px solid; padding: 8px 10px; height: 100%; }
-.pls-panel-company { border-color: #1d6b3f; background-color: #f3f8f5; font-size: 10px; line-height: 1.5; }
-.pls-panel-party { border-color: #0a5fa8; background-color: #eaf4fc; text-align: right; }
-
-.pls-company-block { border-collapse: collapse; }
-.pls-company-block td { vertical-align: top; padding: 0; }
-.pls-logo-cell { padding-right: 12px; width: 1%; }
-.pls-logo { max-height: 50px; max-width: 160px; }
-.pls-company-name { font-size: 14px; font-weight: 700; color: #124a2b; margin-bottom: 3px; }
-
-.pls-meta { margin-left: auto; border-collapse: collapse; font-size: 10.5px; width: 100%; }
-.pls-meta td { padding: 2px 0; text-align: right; }
-.pls-meta td.pls-label { text-align: left; }
-.pls-label { color: #5a5a5a; font-size: 8.5px; text-transform: uppercase; letter-spacing: 0.04em; padding-right: 6px; }
-
-.pls-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-.pls-table thead th {
-    background-color: #1d6b3f;
-    color: #ffffff;
+    font-family: Arial, Helvetica, sans-serif;
     font-size: 8px;
+    color: #000000;
+}
+
+.pls-logo { max-height: 34px; max-width: 120px; display: block; margin-bottom: 3px; }
+.pls-company-name { font-size: 9px; font-weight: 700; margin-bottom: 2px; }
+.pls-fieldlabel { color: #000000; }
+
+/* A4 landscape is ~16% narrower than the Legal landscape the design
+   reference used - font/padding trimmed slightly from the reference's
+   9px/3px so the same 17 columns still fit comfortably. */
+.pls-table { width: 100%; border-collapse: collapse; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.pls-table thead th {
+    background-color: #d9e2f3;
+    color: #000000;
+    font-size: 7px;
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
     text-align: center;
-    padding: 6px 4px;
-    border: 1px solid #ffffff44;
+    vertical-align: middle;
+    padding: 2px 2px;
+    border-top: 1px solid #000000;
+    border-bottom: 2px solid #000000;
     white-space: nowrap;
 }
-.pls-table tbody td, .pls-table tfoot td {
-    padding: 3px 4px;
-    border-left: none;
-    border-right: none;
-    border-top: none;
-    border-bottom: 0.5px solid #d4d4d4;
-    font-size: 9px;
+.pls-table tbody td {
+    padding: 1.5px 2px;
+    border-top: 1px solid #000000;
+    border-bottom: 1px solid #000000;
     white-space: nowrap;
 }
+.pls-table tfoot td {
+    background-color: #d9e2f3;
+    font-weight: 700;
+    padding: 2px 2px;
+    border-top: 1px solid #000000;
+    border-bottom: 2px solid #000000;
+    white-space: nowrap;
+}
+.pls-wrap { white-space: normal; }
 .pls-num { text-align: right; }
-.pls-opening-row td { background-color: #f3f6f4; font-style: italic; color: #5a5a5a; }
-
-.pls-total-row td {
-    background-color: #eaf4fc;
-    border-top: 1.5px solid #0a5fa8;
-    border-bottom: 1.5px solid #0a5fa8;
-    padding-top: 5px;
-    padding-bottom: 5px;
-    font-size: 9.5px;
-    color: #0a5fa8;
-}
-
-/* Thick divider between Incl Amount and Debit, running the full height
-   of the table - header bar, every data row, the totals row. */
-.pls-divider { border-right: 2px solid #124a2b !important; }
-
-.pls-summary {
-    margin-top: 10px;
-    margin-left: auto;
-    border: 1.5px solid #124a2b;
-    border-collapse: collapse;
-    width: 260px;
-}
-.pls-summary td { padding: 4px 10px; border-bottom: 0.5px solid #d4d4d4; font-size: 9.5px; }
-.pls-summary tr:last-child td { border-bottom: none; }
-.pls-summary .pls-label { font-size: 8.5px; }
-.pls-summary-closing td { background-color: #eaf4fc; color: #0a5fa8; font-size: 10.5px; padding-top: 5px; padding-bottom: 5px; }
+.pls-opening-row td { border-top: 2px solid #000000; }
+.pls-spacer { width: 6px; padding: 0 !important; border-top: none !important; border-bottom: none !important; background: none !important; }

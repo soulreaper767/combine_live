@@ -1,15 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!-- Design reference D:\Others\Combine Spinning\reports\partner_ledger.xlsx
+         used Legal landscape - switched to A4 landscape (more standard
+         here) at the user's own call once the layout itself was
+         confirmed; same tight margins as the reference (0.1in
+         left/right, 0.5in top/bottom), no separate header/footer
+         space. A4 is ~16% narrower than Legal, compensated with
+         slightly smaller fonts/padding (see the CSS). -->
     <record id="paperformat_partner_statement" model="report.paperformat">
         <field name="name">Partner Statement - A4 Landscape</field>
         <field name="format">A4</field>
         <field name="page_height">0</field>
         <field name="page_width">0</field>
         <field name="orientation">Landscape</field>
-        <field name="margin_top">12</field>
-        <field name="margin_bottom">15</field>
-        <field name="margin_left">6</field>
-        <field name="margin_right">6</field>
+        <field name="margin_top">12.7</field>
+        <field name="margin_bottom">12.7</field>
+        <field name="margin_left">2.5</field>
+        <field name="margin_right">2.5</field>
         <field name="header_line" eval="False"/>
         <field name="header_spacing">0</field>
         <field name="dpi">90</field>
@@ -37,66 +44,60 @@
             <t t-foreach="docs" t-as="wizard_doc">
                 <t t-set="data" t-value="get_statement_data(wizard_doc)"/>
                 <div class="page pls-statement">
-                    <div class="pls-doctitle">Partner Statement</div>
-                    <table class="pls-letterhead">
-                        <tr>
-                            <td class="pls-letterhead-company">
-                                <div class="pls-panel pls-panel-company">
-                                    <table class="pls-company-block">
-                                        <tr>
-                                            <td t-if="data['company'].logo" class="pls-logo-cell">
-                                                <img class="pls-logo" t-att-src="image_data_uri(data['company'].logo)"/>
-                                            </td>
-                                            <td>
-                                                <div class="pls-company-name" t-out="data['company'].name"/>
-                                                <div t-foreach="address_lines(data['company'].partner_id)" t-as="line" t-out="line"/>
-                                                <div t-if="data['company'].phone">
-                                                    <span class="pls-label">Tel </span><span t-out="data['company'].phone"/>
-                                                </div>
-                                                <div t-if="data['company'].email">
-                                                    <span class="pls-label">Email </span><span t-out="data['company'].email"/>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </div>
-                            </td>
-                            <td class="pls-letterhead-party">
-                                <div class="pls-panel pls-panel-party">
-                                    <table class="pls-meta">
-                                        <tr><td class="pls-label">Party Name</td><td><strong t-out="data['partner'].name"/></td></tr>
-                                        <tr>
-                                            <td class="pls-label">Period</td>
-                                            <td>
-                                                <strong>
-                                                    <span t-out="data['date_from']" t-options="{'widget': 'date'}"/>
-                                                    <span> to </span>
-                                                    <span t-out="data['date_to']" t-options="{'widget': 'date'}"/>
-                                                </strong>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </div>
-                            </td>
-                        </tr>
-                    </table>
+                    <!-- Plain stacked header, matching the reference file
+                         exactly: logo, company name, Party Name:, Period:
+                         - one column, no boxes/panels/colours, bold only
+                         where the reference itself is bold. -->
+                    <img t-if="data['company'].logo" class="pls-logo"
+                         t-att-src="image_data_uri(data['company'].logo)"/>
+                    <div class="pls-company-name" t-out="data['company'].name"/>
+                    <div>
+                        <span class="pls-fieldlabel">Party Name: </span>
+                        <strong t-out="data['partner'].name"/>
+                    </div>
+                    <div>
+                        <span class="pls-fieldlabel">Period: </span>
+                        <span t-out="data['date_from']" t-options="{'widget': 'date'}"/>
+                        <span> to </span>
+                        <span t-out="data['date_to']" t-options="{'widget': 'date'}"/>
+                    </div>
 
                     <table class="table pls-table">
+                        <colgroup>
+                            <col style="width: 6%"/>
+                            <col style="width: 7%"/>
+                            <col style="width: 13%"/>
+                            <col style="width: 9%"/>
+                            <col style="width: 4%"/>
+                            <col style="width: 6%"/>
+                            <col style="width: 4%"/>
+                            <col style="width: 4%"/>
+                            <col style="width: 6%"/>
+                            <col style="width: 6%"/>
+                            <col style="width: 4%"/>
+                            <col style="width: 6%"/>
+                            <col style="width: 6%"/>
+                            <col style="width: 1%"/>
+                            <col style="width: 6%"/>
+                            <col style="width: 6%"/>
+                            <col style="width: 6%"/>
+                        </colgroup>
                         <thead>
                             <tr>
-                                <th>Voucher Date</th>
-                                <th>Voucher No.</th>
+                                <th>Date</th>
+                                <th>V. No.</th>
                                 <th>Remarks</th>
-                                <th>Item Name</th>
-                                <th>Invoice Age</th>
+                                <th>Item</th>
+                                <th>Inv Age</th>
                                 <th>Gross Rate</th>
-                                <th>Quantity</th>
-                                <th>Discount</th>
+                                <th>Qty</th>
+                                <th>Disc.</th>
                                 <th>Net Rate</th>
-                                <th>Ex. Amount</th>
+                                <th>Ex. Amt</th>
                                 <th>GST Rate</th>
-                                <th>GST Amount</th>
-                                <th class="pls-divider">Incl Amount</th>
+                                <th>GST Amt</th>
+                                <th>Incl. Amt</th>
+                                <th class="pls-spacer"/>
                                 <th>Debit</th>
                                 <th>Credit</th>
                                 <th>Balance</th>
@@ -104,8 +105,8 @@
                         </thead>
                         <tbody>
                             <tr class="pls-opening-row">
-                                <td colspan="12"><em>Opening Balance</em></td>
-                                <td class="pls-divider"/>
+                                <td colspan="12"><em>Opening balance</em></td>
+                                <td class="pls-spacer"/>
                                 <td/>
                                 <td/>
                                 <td class="pls-num">
@@ -114,9 +115,9 @@
                             </tr>
                             <tr t-foreach="data['rows']" t-as="row">
                                 <td><span t-out="row['voucher_date']" t-options="{'widget': 'date'}"/></td>
-                                <td><strong t-out="row['voucher_no'] or ''"/></td>
-                                <td><em t-out="row['remarks'] or ''"/></td>
-                                <td><em t-out="row['item_name'] or ''"/></td>
+                                <td><span t-out="row['voucher_no'] or ''"/></td>
+                                <td class="pls-wrap"><span t-out="row['remarks'] or ''"/></td>
+                                <td><span t-out="row['item_name'] or ''"/></td>
                                 <td class="pls-num">
                                     <span t-if="row['invoice_age'] is not None" t-out="row['invoice_age']"/>
                                 </td>
@@ -141,9 +142,10 @@
                                 <td class="pls-num">
                                     <span t-out="fmt_amount(row['gst_amount'])"/>
                                 </td>
-                                <td class="pls-num pls-divider">
+                                <td class="pls-num">
                                     <span t-out="fmt_amount(row['incl_amount'])"/>
                                 </td>
+                                <td class="pls-spacer"/>
                                 <td class="pls-num">
                                     <span t-if="row['debit']" t-out="fmt_amount(row['debit'])"/>
                                 </td>
@@ -157,23 +159,13 @@
                         </tbody>
                         <tfoot>
                             <tr class="pls-total-row">
-                                <td colspan="12"><strong>Total</strong></td>
-                                <td class="pls-divider"/>
+                                <td colspan="12"><strong>TOTAL</strong></td>
+                                <td class="pls-spacer"/>
                                 <td class="pls-num"><strong t-out="fmt_amount(data['total_debit'])"/></td>
                                 <td class="pls-num"><strong t-out="fmt_amount(data['total_credit'])"/></td>
                                 <td class="pls-num"><strong t-out="fmt_amount(data['closing_balance'])"/></td>
                             </tr>
                         </tfoot>
-                    </table>
-
-                    <table class="pls-summary">
-                        <tr><td class="pls-label"><em>Opening Balance</em></td><td class="pls-num"><strong t-out="fmt_amount(data['opening_balance'])"/></td></tr>
-                        <tr><td class="pls-label">Total Debit</td><td class="pls-num"><strong t-out="fmt_amount(data['total_debit'])"/></td></tr>
-                        <tr><td class="pls-label">Total Credit</td><td class="pls-num"><strong t-out="fmt_amount(data['total_credit'])"/></td></tr>
-                        <tr class="pls-summary-closing">
-                            <td><strong><u>Closing Balance</u></strong></td>
-                            <td class="pls-num"><strong><u t-out="fmt_amount(data['closing_balance'])"/></strong></td>
-                        </tr>
                     </table>
                 </div>
             </t>
