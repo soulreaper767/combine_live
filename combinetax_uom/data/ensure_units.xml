@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Not noupdate: re-runs on every upgrade; only creates what is
+         missing, never touches anything that already exists. -->
+    <function model="uom.uom" name="_combinetax_ensure_units"/>
+</odoo>
