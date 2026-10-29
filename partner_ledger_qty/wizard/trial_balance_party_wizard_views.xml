@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_trial_balance_party_wizard_form" model="ir.ui.view">
+        <field name="name">trial.balance.party.wizard.form</field>
+        <field name="model">trial.balance.party.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Trial Balance with Party">
+                <group>
+                    <field name="date_from"/>
+                    <field name="date_to"/>
+                    <field name="hide_zero"/>
+                </group>
+                <footer>
+                    <button name="action_print" type="object" string="Generate Report" class="btn-primary"/>
+                    <button name="action_print_xlsx" type="object" string="Generate Excel" class="btn-secondary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_trial_balance_party_wizard" model="ir.actions.act_window">
+        <field name="name">Trial Balance with Party</field>
+        <field name="res_model">trial.balance.party.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <!-- Same menu section as the native Trial Balance / General Ledger. -->
+    <menuitem id="menu_trial_balance_party"
+              name="Trial Balance with Party"
+              action="action_trial_balance_party_wizard"
+              parent="account_reports.account_reports_audit_menu"
+              groups="account.group_account_readonly,account.group_account_basic"
+              sequence="99"/>
+</odoo>
