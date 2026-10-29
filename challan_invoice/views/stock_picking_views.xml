@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_picking_form_challan_invoice" model="ir.ui.view">
+        <field name="name">stock.picking.form.challan.invoice</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <field name="x_challan_invoice_count" invisible="1"/>
+                <button name="action_challan_invoice" type="object" string="Invoice this Challan"
+                        class="btn-primary" groups="account.group_account_invoice"
+                        invisible="picking_type_code != 'outgoing' or state != 'done' or not sale_id or x_challan_invoice_count"/>
+            </xpath>
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_challan_invoices" type="object" class="oe_stat_button"
+                        icon="fa-pencil-square-o" groups="account.group_account_invoice"
+                        invisible="not x_challan_invoice_count">
+                    <field name="x_challan_invoice_count" widget="statinfo" string="Invoice"/>
+                </button>
+            </xpath>
+        </field>
+    </record>
+</odoo>
