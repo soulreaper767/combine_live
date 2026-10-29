@@ -43,7 +43,8 @@ Partner Ledger Print (itemized Partner Statement PDF)
 ------------------------------------------------------
 A dedicated menu item - Accounting > Reporting > Partner Ledger Print,
 right below the native "Partner Ledger" entry - opens a plain dialog:
-pick a Partner, pick a date range, click Generate Report. Produces an
+pick a Partner, pick a date range, click Generate Report (PDF) or
+Generate Excel (.xlsx, same columns/totals/number formats). Produces an
 itemized Statement of Account for that partner: one row per
 invoice/bill LINE ITEM (not per invoice), with the full pricing/tax
 breakdown - Voucher Date, Voucher No., Remarks, Item Name, Invoice Age,
