@@ -62,6 +62,12 @@
             .cr-tbl tr.tot td { background: #f3f4f6; font-weight: 700; border-top: 1px solid #1f2937;
                                 border-bottom: 3px double #1f2937; }
             .cr-tbl tr.tot td.gap { background: #ffffff; border-top: none; border-bottom: none; }
+            .cr-tbl th.grp { border-bottom: 1px solid #cbd5e1; }
+            .cr-tbl tr.ctl td { font-weight: 700; background: #fafafa; border-top: 1px solid #cbd5e1; }
+            .cr-tbl tr.pty td { color: #374151; }
+            .cr-tbl tr.und td { font-style: italic; }
+            .cr-tbl tr.ctl td.gap, .cr-tbl tr.pty td.gap, .cr-tbl tr.und td.gap { background: #ffffff; border-top: none; }
+            .cr-tbl td.ind { padding-left: 22px; }
         </style>
     </template>
 

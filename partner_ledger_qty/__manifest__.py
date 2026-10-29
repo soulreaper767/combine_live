@@ -1,6 +1,6 @@
 {
     'name': 'Custom Reports (Partner Ledger)',
-    'version': '19.0.4.0.0',
+    'version': '19.0.5.0.0',
     'category': 'Accounting/Accounting',
     'summary': "House for this company's custom reports - starts with the Partner Ledger "
                "Qty column and the itemized Partner Statement PDF",
@@ -67,6 +67,18 @@ PDF export is rendered through account_reports' own generic template,
 shared by every report on that engine, with no per-report override of
 columns or header layout available).
 
+Trial Balance with Party
+------------------------
+Accounting > Reporting > Trial Balance with Party (next to the native
+Trial Balance): pick a date range, Generate Report (PDF) or Generate
+Excel. Same figures as the native Trial Balance - Opening / Period
+Debit & Credit / Closing per account, income/expense accounts reset at
+the fiscal-year start with earlier years on one "Undistributed
+Profits/Losses" line - plus each customer's / vendor's own balance
+listed, indented, under its receivable / payable control account.
+Party lines are a breakdown of the control account above them and are
+not added again into the totals.
+
 Corporate letterhead-free design (no competing automatic header):
 built on web.html_container directly rather than web.external_layout,
 so there is exactly one company/partner header block, not two
@@ -85,6 +97,8 @@ a decorative one.
         'wizard/partner_statement_wizard_views.xml',
         'report/report_base_templates.xml',
         'report/partner_statement_report.xml',
+        'wizard/trial_balance_party_wizard_views.xml',
+        'report/trial_balance_party_report.xml',
     ],
     'installable': True,
     'application': False,

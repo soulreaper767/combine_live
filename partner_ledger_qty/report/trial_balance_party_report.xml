@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_trial_balance_party" model="ir.actions.report">
+        <field name="name">Trial Balance with Party</field>
+        <field name="model">trial.balance.party.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">partner_ledger_qty.trial_balance_party_document</field>
+        <field name="report_file">partner_ledger_qty.trial_balance_party_document</field>
+        <field name="print_report_name">'Trial Balance with Party - %s to %s' % (object.date_from, object.date_to)</field>
+        <field name="paperformat_id" ref="paperformat_partner_statement"/>
+        <field name="binding_model_id" eval="False"/>
+    </record>
+
+    <template id="trial_balance_party_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="wizard_doc">
+                <t t-set="data" t-value="get_tb_data(wizard_doc)"/>
+                <div class="page cr">
+                    <t t-call="partner_ledger_qty.cr_style"/>
+                    <t t-call="partner_ledger_qty.cr_header">
+                        <t t-set="cr_title">Trial Balance with Party</t>
+                        <t t-set="cr_company" t-value="data['company']"/>
+                        <t t-set="cr_date_from" t-value="data['date_from']"/>
+                        <t t-set="cr_date_to" t-value="data['date_to']"/>
+                    </t>
+
+                    <table class="cr-tbl">
+                        <colgroup>
+                            <col style="width: 9%"/>
+                            <col style="width: 33%"/>
+                            <col style="width: 9.5%"/>
+                            <col style="width: 9.5%"/>
+                            <col style="width: 0.5%"/>
+                            <col style="width: 9.5%"/>
+                            <col style="width: 9.5%"/>
+                            <col style="width: 0.5%"/>
+                            <col style="width: 9.5%"/>
+                            <col style="width: 9.5%"/>
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th rowspan="2">Code</th>
+                                <th rowspan="2">Account / Party</th>
+                                <th colspan="2" class="grp">Opening Balance</th>
+                                <th rowspan="2" class="gap"/>
+                                <th colspan="2" class="grp">Period</th>
+                                <th rowspan="2" class="gap"/>
+                                <th colspan="2" class="grp">Closing Balance</th>
+                            </tr>
+                            <tr>
+                                <th>Debit</th><th>Credit</th>
+                                <th>Debit</th><th>Credit</th>
+                                <th>Debit</th><th>Credit</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="data['rows']" t-as="row"
+                                t-att-class="{'control': 'ctl', 'party': 'pty', 'undistributed': 'und'}.get(row['kind'], '')">
+                                <td class="nw"><span t-out="row['code']"/></td>
+                                <td t-att-class="'ind' if row['kind'] == 'party' else ''"><span t-out="row['name']"/></td>
+                                <td class="n"><span t-out="fmt_amount(row['open_dr'])"/></td>
+                                <td class="n"><span t-out="fmt_amount(row['open_cr'])"/></td>
+                                <td class="gap"/>
+                                <td class="n"><span t-out="fmt_amount(row['dr'])"/></td>
+                                <td class="n"><span t-out="fmt_amount(row['cr'])"/></td>
+                                <td class="gap"/>
+                                <td class="n"><span t-out="fmt_amount(row['close_dr'])"/></td>
+                                <td class="n"><span t-out="fmt_amount(row['close_cr'])"/></td>
+                            </tr>
+                            <tr class="tot">
+                                <td colspan="2" class="c">TOTAL</td>
+                                <td class="n"><span t-out="fmt_amount(data['totals']['open_dr'])"/></td>
+                                <td class="n"><span t-out="fmt_amount(data['totals']['open_cr'])"/></td>
+                                <td class="gap"/>
+                                <td class="n"><span t-out="fmt_amount(data['totals']['dr'])"/></td>
+                                <td class="n"><span t-out="fmt_amount(data['totals']['cr'])"/></td>
+                                <td class="gap"/>
+                                <td class="n"><span t-out="fmt_amount(data['totals']['close_dr'])"/></td>
+                                <td class="n"><span t-out="fmt_amount(data['totals']['close_cr'])"/></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </t>
+        </t>
+    </template>
+</odoo>

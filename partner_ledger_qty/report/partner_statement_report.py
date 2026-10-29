@@ -86,6 +86,8 @@ class PartnerStatementReport(models.AbstractModel):
         partner = wizard.partner_id
         company = self.env.company
         account_types = ('asset_receivable', 'liability_payable')
+        # raw SQL below: push pending ORM writes first, as Odoo's own reports do
+        self.env.flush_all()
 
         opening_balance = self._get_opening_balance(partner, account_types, wizard.date_from)
         rows = self._get_lines(partner, account_types, wizard.date_from, wizard.date_to)
