@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_party_outstanding_wizard_form" model="ir.ui.view">
+        <field name="name">party.outstanding.wizard.form</field>
+        <field name="model">party.outstanding.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Party Outstanding Report">
+                <group>
+                    <field name="party_type" widget="radio" options="{'horizontal': true}"/>
+                    <field name="date_from"/>
+                    <field name="date_to"/>
+                    <field name="category_ids" widget="many2many_tags" options="{'no_create': true}"
+                           placeholder="All categories"/>
+                    <field name="hide_zero"/>
+                </group>
+                <footer>
+                    <button name="action_print" type="object" string="Generate Report" class="btn-primary"/>
+                    <button name="action_print_xlsx" type="object" string="Generate Excel" class="btn-secondary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_party_outstanding_wizard" model="ir.actions.act_window">
+        <field name="name">Party Outstanding Report</field>
+        <field name="res_model">party.outstanding.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <!-- Same section as the native Partner Ledger / Aged reports. -->
+    <menuitem id="menu_party_outstanding"
+              name="Party Outstanding Report"
+              action="action_party_outstanding_wizard"
+              parent="account.account_reports_partners_reports_menu"
+              groups="account.group_account_readonly,account.group_account_basic"
+              sequence="12"/>
+</odoo>

@@ -1,6 +1,6 @@
 {
     'name': 'Custom Reports (Partner Ledger)',
-    'version': '19.0.5.0.0',
+    'version': '19.0.6.0.0',
     'category': 'Accounting/Accounting',
     'summary': "House for this company's custom reports - starts with the Partner Ledger "
                "Qty column and the itemized Partner Statement PDF",
@@ -79,6 +79,18 @@ listed, indented, under its receivable / payable control account.
 Party lines are a breakdown of the control account above them and are
 not added again into the totals.
 
+Party Outstanding Report
+------------------------
+Accounting > Reporting > Party Outstanding Report: Customers or
+Vendors, a date range, optionally one or more partner categories
+(tags). One line per party: Sr., Party Name, Last Delivery (receipt,
+for vendors) Date, Last Invoice Date, Opening, Gross Sales/Purchases,
+Net (after credit notes), Receipts/Payments, Others, Closing - all read
+from the party's own receivable/payable journal items, so
+Closing = Opening + Net - Receipts/Payments + Others always holds.
+Vendor amounts are shown as positive amounts owed. Delivery dates are
+read only when the Inventory app is installed (no new dependency).
+
 Corporate letterhead-free design (no competing automatic header):
 built on web.html_container directly rather than web.external_layout,
 so there is exactly one company/partner header block, not two
@@ -99,6 +111,8 @@ a decorative one.
         'report/partner_statement_report.xml',
         'wizard/trial_balance_party_wizard_views.xml',
         'report/trial_balance_party_report.xml',
+        'wizard/party_outstanding_wizard_views.xml',
+        'report/party_outstanding_report.xml',
     ],
     'installable': True,
     'application': False,
