@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_party_outstanding" model="ir.actions.report">
+        <field name="name">Party Outstanding Report</field>
+        <field name="model">party.outstanding.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">partner_ledger_qty.party_outstanding_document</field>
+        <field name="report_file">partner_ledger_qty.party_outstanding_document</field>
+        <field name="print_report_name">'Party Outstanding - %s' % (object.date_to)</field>
+        <field name="paperformat_id" ref="paperformat_partner_statement"/>
+        <field name="binding_model_id" eval="False"/>
+    </record>
+
+    <template id="party_outstanding_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="wizard_doc">
+                <t t-set="data" t-value="get_po_data(wizard_doc)"/>
+                <div class="page cr">
+                    <t t-call="partner_ledger_qty.cr_style"/>
+                    <t t-call="partner_ledger_qty.cr_header">
+                        <t t-set="cr_title" t-value="data['title']"/>
+                        <t t-set="cr_company" t-value="data['company']"/>
+                        <t t-set="cr_date_from" t-value="data['date_from']"/>
+                        <t t-set="cr_date_to" t-value="data['date_to']"/>
+                    </t>
+                    <div t-if="data['categories']" class="cr-meta" style="margin: -4px 0 8px 0;">
+                        <span class="lbl" style="color: #6b7280;">Categories:</span>
+                        <strong t-out="data['categories']"/>
+                    </div>
+
+                    <table class="cr-tbl">
+                        <colgroup>
+                            <col style="width: 4%"/>
+                            <col style="width: 26%"/>
+                            <col style="width: 8%"/>
+                            <col style="width: 8%"/>
+                            <col style="width: 9%"/>
+                            <col style="width: 9%"/>
+                            <col style="width: 9%"/>
+                            <col style="width: 9%"/>
+                            <col style="width: 8%"/>
+                            <col style="width: 10%"/>
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th>Sr.</th>
+                                <th>Party Name</th>
+                                <th t-out="data['labels']['dlv']"/>
+                                <th>Last Inv Date</th>
+                                <th>Opening</th>
+                                <th t-out="data['labels']['gross']"/>
+                                <th t-out="data['labels']['net']"/>
+                                <th t-out="data['labels']['settled']"/>
+                                <th>Others</th>
+                                <th>Closing</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="data['rows']" t-as="row">
+                                <td class="c"><span t-out="row['sr']"/></td>
+                                <td><span t-out="row['partner']"/></td>
+                                <td class="c"><span t-if="row['last_dlv']" t-out="row['last_dlv']" t-options="{'widget': 'date'}"/></td>
+                                <td class="c"><span t-if="row['last_inv']" t-out="row['last_inv']" t-options="{'widget': 'date'}"/></td>
+                                <td class="n"><span t-out="fmt_amount(row['opening'])"/></td>
+                                <td class="n"><span t-out="fmt_amount(row['gross'])"/></td>
+                                <td class="n"><span t-out="fmt_amount(row['net'])"/></td>
+                                <td class="n"><span t-out="fmt_amount(row['settled'])"/></td>
+                                <td class="n"><span t-out="fmt_amount(row['others'])"/></td>
+                                <td class="n"><strong t-out="fmt_amount(row['closing'])"/></td>
+                            </tr>
+                            <tr class="tot">
+                                <td colspan="4" class="c">TOTAL</td>
+                                <td class="n"><span t-out="fmt_amount(data['totals']['opening'])"/></td>
+                                <td class="n"><span t-out="fmt_amount(data['totals']['gross'])"/></td>
+                                <td class="n"><span t-out="fmt_amount(data['totals']['net'])"/></td>
+                                <td class="n"><span t-out="fmt_amount(data['totals']['settled'])"/></td>
+                                <td class="n"><span t-out="fmt_amount(data['totals']['others'])"/></td>
+                                <td class="n"><span t-out="fmt_amount(data['totals']['closing'])"/></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </t>
+        </t>
+    </template>
+</odoo>
