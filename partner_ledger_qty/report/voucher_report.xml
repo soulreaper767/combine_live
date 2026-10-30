@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="paperformat_voucher" model="report.paperformat">
+        <field name="name">Custom Reports - A4 Portrait</field>
+        <field name="format">A4</field>
+        <field name="page_height">0</field>
+        <field name="page_width">0</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">10</field>
+        <field name="margin_bottom">10</field>
+        <field name="margin_left">8</field>
+        <field name="margin_right">8</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">0</field>
+        <field name="dpi">96</field>
+        <field name="disable_shrinking" eval="True"/>
+        <field name="css_margins" eval="False"/>
+    </record>
+
+    <record id="action_report_voucher" model="ir.actions.report">
+        <field name="name">Voucher</field>
+        <field name="model">account.move</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">partner_ledger_qty.report_voucher</field>
+        <field name="report_file">partner_ledger_qty.report_voucher</field>
+        <field name="print_report_name">'Voucher - %s' % (object.name or 'Draft').replace('/', '-')</field>
+        <field name="paperformat_id" ref="paperformat_voucher"/>
+        <field name="binding_model_id" ref="account.model_account_move"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <record id="action_report_payment_voucher" model="ir.actions.report">
+        <field name="name">Payment Voucher</field>
+        <field name="model">account.payment</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">partner_ledger_qty.report_payment_voucher</field>
+        <field name="report_file">partner_ledger_qty.report_payment_voucher</field>
+        <field name="print_report_name">'Voucher - %s' % (object.name or 'Draft').replace('/', '-')</field>
+        <field name="paperformat_id" ref="paperformat_voucher"/>
+        <field name="binding_model_id" ref="account.model_account_payment"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <record id="action_report_fbr_invoice" model="ir.actions.report">
+        <field name="name">Sales Tax Invoice (FBR)</field>
+        <field name="model">account.move</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">partner_ledger_qty.report_fbr_invoice</field>
+        <field name="report_file">partner_ledger_qty.report_fbr_invoice</field>
+        <field name="print_report_name">'Sales Tax Invoice - %s' % (object.name or 'Draft').replace('/', '-')</field>
+        <field name="paperformat_id" ref="paperformat_voucher"/>
+        <field name="binding_model_id" ref="account.model_account_move"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- Extra building blocks for the document prints; additive classes
+         only, the shared cr_style is unchanged. -->
+    <template id="doc_style">
+        <style>
+            .cr-info { width: 100%; border-collapse: collapse; margin: 0 0 8px 0; font-size: 11.5px; }
+            .cr-info td { padding: 1px 8px 1px 0; border: none; vertical-align: top; }
+            .cr-info td.lbl { color: #6b7280; white-space: nowrap; width: 1%; }
+            .cr-boxes { width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 8px; }
+            .cr-boxes > tbody > tr > td, .cr-boxes > tr > td { width: 50%; vertical-align: top; border: 1px solid #cbd5e1; padding: 6px 8px; }
+            .cr-boxes td + td { border-left: none; }
+            .cr-box-t { font-size: 10px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; color: #6b7280;
+                        border-bottom: 1px solid #e5e7eb; padding-bottom: 2px; margin-bottom: 4px; }
+            .cr-box-n { font-size: 12.5px; font-weight: 700; }
+            .cr-box-l { font-size: 11px; }
+            .cr-box-l .lbl { color: #6b7280; display: inline-block; width: 46px; }
+            .cr-words { margin-top: 6px; font-size: 11.5px; }
+            .cr-words .lbl { color: #6b7280; padding-right: 6px; }
+            .cr-note { margin-top: 4px; font-size: 11px; color: #374151; }
+            .cr-note p { margin: 0; }
+            .cr-sign { width: 100%; border-collapse: separate; border-spacing: 24px 0; margin: 46px -24px 0 -24px; }
+            .cr-sign td { border-top: 1px solid #1f2937; text-align: center; padding-top: 4px; font-size: 11px; color: #374151; width: 25%; }
+            .cr-sign td span { display: block; min-height: 13px; font-size: 10px; color: #6b7280; }
+            .cr-decl { margin-top: 10px; font-size: 10.5px; color: #374151; }
+            .cr-foot { margin-top: 10px; font-size: 9.5px; color: #9ca3af; text-align: center; }
+            .cr-stamp { display: inline-block; border: 1px solid #b91c1c; color: #b91c1c; font-weight: 700;
+                        font-size: 10px; letter-spacing: .8px; padding: 1px 6px; margin-left: 6px; }
+            .cr-tbl td.sm { font-size: 10px; color: #6b7280; }
+        </style>
+    </template>
+
+    <!-- ======================================================== VOUCHER -->
+    <template id="voucher_body">
+        <t t-set="v" t-value="voucher_data(move)"/>
+        <div class="page cr" t-att-style="'page-break-before: always;' if cr_break else None">
+            <t t-call="partner_ledger_qty.cr_style"/>
+            <t t-call="partner_ledger_qty.doc_style"/>
+            <t t-call="partner_ledger_qty.cr_header">
+                <t t-set="cr_title" t-value="v['title']"/>
+                <t t-set="cr_company" t-value="move.company_id"/>
+            </t>
+            <table class="cr-info">
+                <tr>
+                    <td class="lbl">Voucher No.</td>
+                    <td><strong t-out="move.name or 'Draft'"/>
+                        <span t-if="move.state != 'posted'" class="cr-stamp" t-out="v['state'].upper()"/></td>
+                    <td class="lbl">Date</td>
+                    <td><span t-out="move.date" t-options="{'widget': 'date'}"/></td>
+                </tr>
+                <tr>
+                    <td class="lbl">Journal</td>
+                    <td t-out="move.journal_id.name"/>
+                    <td class="lbl">Reference</td>
+                    <td t-out="move.ref or '-'"/>
+                </tr>
+                <tr t-if="v['partner']">
+                    <td class="lbl">Party</td>
+                    <td colspan="3"><strong t-out="v['partner'].name"/></td>
+                </tr>
+            </table>
+            <table class="cr-tbl">
+                <colgroup>
+                    <col style="width: 4%"/>
+                    <col style="width: 12%"/>
+                    <col style="width: 22%"/>
+                    <col style="width: 18%"/>
+                    <col style="width: 18%"/>
+                    <col style="width: 13%"/>
+                    <col style="width: 13%"/>
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>Sr.</th>
+                        <th>Account Code</th>
+                        <th>Account</th>
+                        <th>Party</th>
+                        <th>Narration</th>
+                        <th>Debit</th>
+                        <th>Credit</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr t-foreach="v['lines']" t-as="l">
+                        <td class="c" t-out="l['sr']"/>
+                        <td class="nw" t-out="l['code']"/>
+                        <td t-out="l['account']"/>
+                        <td t-out="l['partner']"/>
+                        <td t-out="l['label']"/>
+                        <td class="n" t-out="l['debit']"/>
+                        <td class="n" t-out="l['credit']"/>
+                    </tr>
+                    <tr class="tot">
+                        <td colspan="5" class="c">TOTAL</td>
+                        <td class="n" t-out="v['total_debit']"/>
+                        <td class="n" t-out="v['total_credit']"/>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="cr-words" t-if="v['words']">
+                <span class="lbl">Amount in words:</span> <strong t-out="v['words']"/>
+            </div>
+            <div class="cr-note" t-if="move.narration">
+                <span style="color: #6b7280;">Remarks:</span> <t t-out="move.narration"/>
+            </div>
+            <table class="cr-sign">
+                <tr>
+                    <td>Prepared by<span t-out="move.create_uid.name"/></td>
+                    <td>Checked by<span/></td>
+                    <td>Approved by<span/></td>
+                    <td>Received by<span/></td>
+                </tr>
+            </table>
+        </div>
+    </template>
+
+    <template id="report_voucher">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="move">
+                <t t-set="cr_break" t-value="not move_first"/>
+                <t t-call="partner_ledger_qty.voucher_body"/>
+            </t>
+        </t>
+    </template>
+
+    <template id="report_payment_voucher">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="payment">
+                <t t-set="move" t-value="payment.move_id"/>
+                <t t-set="cr_break" t-value="not payment_first"/>
+                <t t-call="partner_ledger_qty.voucher_body"/>
+            </t>
+        </t>
+    </template>
+
+    <!-- ============================================ SALES TAX INVOICE (FBR)
+         Particulars of section 23(1), Sales Tax Act 1990: supplier and
+         recipient name / address / registration (NTN, STRN), serial number,
+         date of issue, description and quantity of goods, value exclusive
+         of tax, rate and amount of sales tax, value inclusive of tax. -->
+    <template id="fbr_invoice_body">
+        <t t-set="f" t-value="fbr_data(move)"/>
+        <div class="page cr" t-att-style="'page-break-before: always;' if cr_break else None">
+            <t t-call="partner_ledger_qty.cr_style"/>
+            <t t-call="partner_ledger_qty.doc_style"/>
+            <t t-call="partner_ledger_qty.cr_header">
+                <t t-set="cr_title" t-value="f['title']"/>
+                <t t-set="cr_company" t-value="move.company_id"/>
+            </t>
+            <table class="cr-info">
+                <tr>
+                    <td class="lbl">Invoice No.</td>
+                    <td><strong t-out="move.name or 'Draft'"/>
+                        <span t-if="move.state != 'posted'" class="cr-stamp">NOT POSTED</span></td>
+                    <td class="lbl">Date of Issue</td>
+                    <td><span t-out="move.invoice_date or move.date" t-options="{'widget': 'date'}"/></td>
+                    <td class="lbl">Due Date</td>
+                    <td><span t-out="move.invoice_date_due" t-options="{'widget': 'date'}"/></td>
+                </tr>
+                <tr>
+                    <td class="lbl">Contract</td>
+                    <td t-out="move.invoice_origin or '-'"/>
+                    <td class="lbl">Delivery Challan</td>
+                    <td t-out="f['challan'] or '-'"/>
+                    <td class="lbl">Buyer Ref.</td>
+                    <td t-out="move.ref or '-'"/>
+                </tr>
+            </table>
+            <table class="cr-boxes">
+                <tr>
+                    <td>
+                        <div class="cr-box-t">Supplier</div>
+                        <div class="cr-box-n" t-out="f['supplier'].name"/>
+                        <div class="cr-box-l" t-out="f['supplier_address']"/>
+                        <div class="cr-box-l"><span class="lbl">NTN</span><t t-out="f['supplier_ids']['ntn'] or '-'"/></div>
+                        <div class="cr-box-l"><span class="lbl">STRN</span><t t-out="f['supplier_ids']['strn'] or '-'"/></div>
+                    </td>
+                    <td>
+                        <div class="cr-box-t">Buyer</div>
+                        <div class="cr-box-n" t-out="f['buyer'].name"/>
+                        <div class="cr-box-l" t-out="f['buyer_address']"/>
+                        <div class="cr-box-l"><span class="lbl">NTN</span><t t-out="f['buyer_ids']['ntn'] or '-'"/></div>
+                        <div class="cr-box-l"><span class="lbl">STRN</span><t t-out="f['buyer_ids']['strn'] or '-'"/>
+                            <t t-if="f['buyer_ids']['status']"> (<t t-out="f['buyer_ids']['status']"/>)</t></div>
+                    </td>
+                </tr>
+            </table>
+            <table class="cr-tbl">
+                <colgroup>
+                    <col style="width: 4%"/>
+                    <col t-att-style="'width: 23%' if f['has_hs'] else 'width: 30%'"/>
+                    <col t-if="f['has_hs']" style="width: 7%"/>
+                    <col style="width: 8%"/>
+                    <col style="width: 5%"/>
+                    <col style="width: 9%"/>
+                    <col style="width: 11%"/>
+                    <col style="width: 6%"/>
+                    <col style="width: 11%"/>
+                    <col style="width: 12%"/>
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>Sr.</th>
+                        <th>Description of Goods</th>
+                        <th t-if="f['has_hs']">HS Code</th>
+                        <th>Quantity</th>
+                        <th>UoM</th>
+                        <th>Rate (Excl. ST)</th>
+                        <th>Value Excl. Sales Tax</th>
+                        <th>ST Rate</th>
+                        <th>Sales Tax</th>
+                        <th>Value Incl. Sales Tax</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr t-foreach="f['rows']" t-as="r">
+                        <td class="c" t-out="r['sr']"/>
+                        <td><t t-out="r['desc']"/><div t-if="r['note']" class="sm" style="color: #6b7280; font-size: 10px;" t-out="r['note']"/></td>
+                        <td t-if="f['has_hs']" class="c" t-out="r['hs'] or '-'"/>
+                        <td class="n" t-out="r['qty']"/>
+                        <td class="c" t-out="r['uom']"/>
+                        <td class="n" t-out="r['rate']"/>
+                        <td class="n" t-out="r['ex']"/>
+                        <td class="c" t-out="r['tax_rate']"/>
+                        <td class="n" t-out="r['tax']"/>
+                        <td class="n" t-out="r['inc']"/>
+                    </tr>
+                    <tr class="tot">
+                        <td t-att-colspan="3 if f['has_hs'] else 2" class="c">TOTAL</td>
+                        <td class="n" t-out="f['qty_total']"/>
+                        <td colspan="2"/>
+                        <td class="n" t-out="f['ex_total']"/>
+                        <td/>
+                        <td class="n" t-out="f['tax_total']"/>
+                        <td class="n" t-out="f['inc_total']"/>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="cr-words">
+                <span class="lbl">Amount in words:</span> <strong t-out="f['words']"/>
+            </div>
+            <div class="cr-note" t-if="move.narration">
+                <span style="color: #6b7280;">Terms:</span> <t t-out="move.narration"/>
+            </div>
+            <div class="cr-decl">Certified that the particulars given above are true and correct.</div>
+            <table class="cr-sign">
+                <tr>
+                    <td style="border-top: none;"/>
+                    <td style="border-top: none;"/>
+                    <td>Received by<span>Buyer's signature &amp; stamp</span></td>
+                    <td>For <t t-out="move.company_id.name"/><span>Authorised signatory</span></td>
+                </tr>
+            </table>
+            <div class="cr-foot">Sales tax invoice issued under section 23 of the Sales Tax Act, 1990. Computer generated.</div>
+        </div>
+    </template>
+
+    <template id="report_fbr_invoice">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="move">
+                <t t-set="cr_break" t-value="not move_first"/>
+                <t t-if="move.move_type in ('out_invoice', 'out_refund')">
+                    <t t-call="partner_ledger_qty.fbr_invoice_body"/>
+                </t>
+                <t t-else="">
+                    <t t-call="partner_ledger_qty.voucher_body"/>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

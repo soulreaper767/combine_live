@@ -1,6 +1,6 @@
 {
     'name': 'Custom Reports (Partner Ledger)',
-    'version': '19.0.6.0.0',
+    'version': '19.0.7.0.0',
     'category': 'Accounting/Accounting',
     'summary': "House for this company's custom reports - starts with the Partner Ledger "
                "Qty column and the itemized Partner Statement PDF",
@@ -91,6 +91,22 @@ Closing = Opening + Net - Receipts/Payments + Others always holds.
 Vendor amounts are shown as positive amounts owed. Delivery dates are
 read only when the Inventory app is installed (no new dependency).
 
+Voucher and Sales Tax Invoice prints
+------------------------------------
+Print menu of journal entries / invoices / bills: "Voucher" - one
+format for every accounting voucher, titled from the entry itself
+(Journal, Bank/Cash Payment or Receipt, Sales, Purchase, Credit/Debit
+Note Voucher): account lines with debit/credit, amount in words,
+signature boxes. Payments: "Payment Voucher" (same format, from the
+payment's own entry). Customer invoices / credit notes: "Sales Tax
+Invoice (FBR)" carrying every particular of section 23(1) of the Sales
+Tax Act 1990 - supplier and buyer name, address, NTN and STRN; serial
+number; date of issue; description, HS code and quantity; value
+excluding tax; sales tax rate and amount; value including tax.
+Odoo's own "Invoices" print used to fail with "Only invoices could be
+printed." on any selection containing a plain journal entry; such
+selections now print as vouchers instead.
+
 Corporate letterhead-free design (no competing automatic header):
 built on web.html_container directly rather than web.external_layout,
 so there is exactly one company/partner header block, not two
@@ -113,6 +129,7 @@ a decorative one.
         'report/trial_balance_party_report.xml',
         'wizard/party_outstanding_wizard_views.xml',
         'report/party_outstanding_report.xml',
+        'report/voucher_report.xml',
     ],
     'installable': True,
     'application': False,
