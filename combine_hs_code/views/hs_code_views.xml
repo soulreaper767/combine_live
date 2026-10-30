@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="product_template_form_view_hs_code" model="ir.ui.view">
+        <field name="name">product.template.form.hs_code</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_form_view"/>
+        <field name="arch" type="xml">
+            <field name="categ_id" position="after">
+                <field name="hs_code" placeholder="e.g. 5205.1200"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="product_template_list_view_hs_code" model="ir.ui.view">
+        <field name="name">product.template.list.hs_code</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_tree_view"/>
+        <field name="arch" type="xml">
+            <field name="default_code" position="after">
+                <field name="hs_code" optional="show"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="product_template_search_view_hs_code" model="ir.ui.view">
+        <field name="name">product.template.search.hs_code</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_search_view"/>
+        <field name="arch" type="xml">
+            <field name="categ_id" position="after">
+                <field name="hs_code"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="sale_report_search_hs_code" model="ir.ui.view">
+        <field name="name">sale.report.search.hs_code</field>
+        <field name="model">sale.report</field>
+        <field name="inherit_id" ref="sale.view_order_product_search"/>
+        <field name="arch" type="xml">
+            <field name="categ_id" position="after">
+                <field name="hs_code"/>
+            </field>
+            <filter name="product_tmpl_id" position="after">
+                <filter string="HS Code" name="group_hs_code" context="{'group_by': 'hs_code'}"/>
+            </filter>
+        </field>
+    </record>
+
+    <record id="purchase_report_search_hs_code" model="ir.ui.view">
+        <field name="name">purchase.report.search.hs_code</field>
+        <field name="model">purchase.report</field>
+        <field name="inherit_id" ref="purchase.view_purchase_order_search"/>
+        <field name="arch" type="xml">
+            <field name="category_id" position="after">
+                <field name="hs_code"/>
+            </field>
+            <filter name="group_category_id" position="after">
+                <filter string="HS Code" name="group_hs_code" context="{'group_by': 'hs_code'}"/>
+            </filter>
+        </field>
+    </record>
+</odoo>
