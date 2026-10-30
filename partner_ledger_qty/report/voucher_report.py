@@ -115,7 +115,8 @@ class VoucherReportMixin(models.AbstractModel):
         return {
             'title': 'Sales Tax Credit Note' if move.move_type == 'out_refund' else 'Sales Tax Invoice',
             'rows': rows,
-            'has_hs': any(r['hs'] for r in rows),
+            # column shown whenever products carry an HS Code field at all
+            'has_hs': 'hs_code' in self.env['product.product']._fields,
             'qty_total': _num(sum(lines.mapped('quantity')), 2),
             'ex_total': _num(move.amount_untaxed),
             'tax_total': _num(move.amount_tax),
