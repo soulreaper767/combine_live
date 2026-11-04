@@ -1,5 +1,5 @@
 from odoo import api, models
-from odoo.tools import float_is_zero
+from odoo.tools import float_is_zero, format_date
 
 INVOICE_TITLES = {
     'out_invoice': 'Sales Voucher',
@@ -132,13 +132,16 @@ class VoucherReportMixin(models.AbstractModel):
         }
 
     @api.model
-    def _order_data(self, order):
-        """Contract (before confirmation) / Sales Order (after), same columns as the sales tax invoice."""
-        lines = order.order_line.filtered(lambda l: not l.display_type and not l.is_downpayment)
+    def _party_box(self, label, partner, extra=None):
+        return {'label': label, 'partner': partner.commercial_partner_id, 'address': self._address(partner),
+                'ids': self._tax_ids_text(partner), 'extra': extra or []}
+
+    @api.model
+    def _order_rows(self, lines, qty_field):
         rows = []
         for i, line in enumerate(lines, 1):
             rates = line.tax_ids.filtered(lambda t: t.amount_type == 'percent')
-            qty = line.product_uom_qty
+            qty = line[qty_field]
             rows.append({
                 'sr': i,
                 'desc': line.product_id.display_name or line.name or '',
@@ -152,30 +155,109 @@ class VoucherReportMixin(models.AbstractModel):
                 'tax': _num(line.price_total - line.price_subtotal),
                 'inc': _num(line.price_total),
             })
-        company_partner = order.company_id.partner_id
-        confirmed = order.state == 'sale'
+        return rows
+
+    @api.model
+    def _order_totals(self, order, qty):
         return {
-            'title': 'Sales Order' if confirmed else 'Contract',
-            'number_label': 'Order No.' if confirmed else 'Contract No.',
-            'rows': rows,
             'has_hs': 'hs_code' in self.env['product.product']._fields,
-            'qty_total': _num(sum(lines.mapped('product_uom_qty')), 2),
+            'qty_total': _num(qty, 2),
             'ex_total': _num(order.amount_untaxed),
             'tax_total': _num(order.amount_tax),
             'inc_total': _num(order.amount_total),
             'words': order.currency_id.amount_to_text(order.amount_total),
-            'supplier': company_partner,
-            'supplier_address': self._address(company_partner),
-            'supplier_ids': self._tax_ids_text(company_partner),
-            'buyer': order.partner_id.commercial_partner_id,
-            'buyer_address': self._address(order.partner_id),
-            'buyer_ids': self._tax_ids_text(order.partner_id),
-            'delivery_address': self._address(order.partner_shipping_id) if order.partner_shipping_id != order.partner_id else '',
+        }
+
+    @api.model
+    def _po_data(self, order):
+        """Request for Quotation (until confirmed) / Purchase Order (after) - Contract layout."""
+        lines = order.order_line.filtered(lambda l: not l.display_type)
+        confirmed = order.state in ('purchase', 'done')
+        company = order.company_id.partner_id
+        deliver_to = order.picking_type_id.warehouse_id.partner_id or company
+        return {
+            'title': 'Purchase Order' if confirmed else 'Request for Quotation',
+            'info': [('PO No.' if confirmed else 'RFQ No.', order.name),
+                     ('Order Date', format_date(self.env, order.date_order)),
+                     ('Expected', format_date(self.env, order.date_planned) if order.date_planned else '-'),
+                     ('Payment Terms', order.payment_term_id.name or '-'),
+                     ('Buyer', order.user_id.name or '-'),
+                     ('Vendor Ref.', order.partner_ref or '-')],
+            'boxes': [self._party_box('Vendor', order.partner_id),
+                      self._party_box('Buyer / Deliver To', company,
+                                      [('Deliver', self._address(deliver_to))] if deliver_to != company else [])],
+            'rows': self._order_rows(lines, 'product_qty'),
+            **self._order_totals(order, sum(lines.mapped('product_qty'))),
+            'terms_label': 'Terms & Conditions',
+            'terms': order.note,
+            'signatures': [('Prepared by', order.user_id.name or order.create_uid.name), ('Approved by', ''),
+                           ('Accepted by Vendor', 'Signature & stamp'), (f'For {order.company_id.name}', 'Authorised signatory')],
+            'cancelled': order.state == 'cancel',
+        }
+
+    @api.model
+    def _picking_data(self, picking):
+        """Delivery Challan / Receipt / Transfer - quantities and weights, no prices."""
+        code = picking.picking_type_code
+        title = {'outgoing': 'Delivery Challan', 'incoming': 'Goods Receipt', 'internal': 'Internal Transfer'}.get(code, 'Transfer')
+        moves = picking.move_ids.filtered(lambda m: m.state != 'cancel')
+        rows, total_qty, total_wt = [], 0.0, 0.0
+        for i, move in enumerate(moves, 1):
+            qty = move.quantity if picking.state == 'done' else move.product_uom_qty
+            weight = (move.product_id.weight or 0.0) * move.product_uom._compute_quantity(qty, move.product_id.uom_id)
+            total_qty += qty
+            total_wt += weight
+            rows.append([i, move.product_id.display_name, _field(move.product_id, 'hs_code') or '-',
+                         _num(move.product_uom_qty, 2), _num(move.quantity, 2), move.product_uom.name, _num(weight, 2)])
+        origin = picking.sale_id.name if 'sale_id' in picking._fields and picking.sale_id else picking.origin
+        party_label = {'outgoing': 'Deliver To', 'incoming': 'Received From'}.get(code, 'Party')
+        return {
+            'title': title,
+            'info': [({'outgoing': 'Challan No.', 'incoming': 'Receipt No.'}.get(code, 'Transfer No.'), picking.name),
+                     ('Date', format_date(self.env, picking.date_done or picking.scheduled_date)),
+                     ('Contract / Source', origin or '-'),
+                     ('Operation', picking.picking_type_id.name),
+                     ('From', picking.location_id.display_name), ('To', picking.location_dest_id.display_name)],
+            'boxes': [self._party_box(party_label, picking.partner_id)] if picking.partner_id else [],
+            'columns': [('Sr.', 'c'), ('Item', ''), ('HS Code', 'c'), ('Ordered', 'n'), ('Delivered' if code == 'outgoing' else 'Done', 'n'),
+                        ('UoM', 'c'), ('Weight', 'n')],
+            'rows': rows,
+            'totals': {4: _num(total_qty, 2), 6: _num(total_wt, 2)},
+            'note': picking.note,
+            'signatures': [('Prepared by', picking.create_uid.name), ('Store Incharge', ''), ('Gate Officer', ''),
+                           ('Received by' if code == 'outgoing' else 'Checked by', '')],
+            'cancelled': picking.state == 'cancel',
+        }
+
+    @api.model
+    def _order_data(self, order):
+        """Contract (before confirmation) / Sales Order (after), same columns as the sales tax invoice."""
+        lines = order.order_line.filtered(lambda l: not l.display_type and not l.is_downpayment)
+        confirmed = order.state == 'sale'
+        extra = [('Deliver', self._address(order.partner_shipping_id))] if order.partner_shipping_id != order.partner_id else []
+        info = [('Order No.' if confirmed else 'Contract No.', order.name),
+                ('Date', format_date(self.env, order.date_order))]
+        if order.validity_date and not confirmed:
+            info.append(('Valid Until', format_date(self.env, order.validity_date)))
+        info += [('Payment Terms', order.payment_term_id.name or '-'), ('Salesperson', order.user_id.name or '-'),
+                 ('Buyer Ref.', order.client_order_ref or '-')]
+        return {
+            'title': 'Sales Order' if confirmed else 'Contract',
+            'info': info,
+            'boxes': [self._party_box('Seller', order.company_id.partner_id), self._party_box('Buyer', order.partner_id, extra)],
+            'rows': self._order_rows(lines, 'product_uom_qty'),
+            **self._order_totals(order, sum(lines.mapped('product_uom_qty'))),
+            'terms_label': 'Terms & Conditions',
+            'terms': order.note,
+            'signatures': [('Prepared by', order.user_id.name or order.create_uid.name), ('Approved by', ''),
+                           ('Accepted by Buyer', 'Signature & stamp'), (f'For {order.company_id.name}', 'Authorised signatory')],
+            'cancelled': order.state == 'cancel',
         }
 
     @api.model
     def _helpers(self):
-        return {'voucher_data': self._voucher_data, 'fbr_data': self._fbr_data, 'order_data': self._order_data}
+        return {'voucher_data': self._voucher_data, 'fbr_data': self._fbr_data, 'order_data': self._order_data,
+                'po_data': self._po_data, 'picking_data': self._picking_data}
 
 
 class ReportVoucher(models.AbstractModel):
@@ -215,4 +297,24 @@ class ReportSaleOrder(models.AbstractModel):
     @api.model
     def _get_report_values(self, docids, data=None):
         return {'docs': self.env['sale.order'].browse(docids),
+                **self.env['partner_ledger_qty.voucher.mixin']._helpers()}
+
+
+class ReportPurchaseOrder(models.AbstractModel):
+    _name = 'report.partner_ledger_qty.report_purchase_order'
+    _description = 'Custom Reports - RFQ / Purchase Order'
+
+    @api.model
+    def _get_report_values(self, docids, data=None):
+        return {'docs': self.env['purchase.order'].browse(docids),
+                **self.env['partner_ledger_qty.voucher.mixin']._helpers()}
+
+
+class ReportPicking(models.AbstractModel):
+    _name = 'report.partner_ledger_qty.report_picking'
+    _description = 'Custom Reports - Delivery Challan / Transfer'
+
+    @api.model
+    def _get_report_values(self, docids, data=None):
+        return {'docs': self.env['stock.picking'].browse(docids),
                 **self.env['partner_ledger_qty.voucher.mixin']._helpers()}

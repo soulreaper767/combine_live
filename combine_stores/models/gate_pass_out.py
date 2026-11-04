@@ -117,3 +117,45 @@ class GatePassOutLine(models.Model):
     def _compute_uom(self):
         for line in self:
             line.uom_id = line.uom_id or line.product_id.uom_id
+
+
+class Combine001GatePass(models.Model):
+    """House-style print for combine001's own Gate Pass (made from a Delivery
+    Challan). Print methods only - no fields, so nothing changes in its table."""
+    _name = 'combine001.gate.pass'
+    _inherit = ['combine001.gate.pass', 'combine.stores.print.mixin']
+
+    def _print_title(self):
+        return 'Gate Pass'
+
+    def _print_info(self):
+        invoices = self.sale_order_id.invoice_ids.filtered(lambda m: m.state == 'posted' and m.move_type == 'out_invoice')
+        return [('Gate Pass No.', self.name),
+                ('Date', fields.Datetime.to_string(fields.Datetime.context_timestamp(self, self.date))[:16] if self.date else ''),
+                ('Delivery Challan', self.picking_id.name or '-'),
+                ('Contract', self.sale_order_id.name or '-'),
+                ('Invoice Ref.', ', '.join(invoices.mapped('name')) or '-'),
+                ('GST Status', dict(self._fields['x_gst_status']._description_selection(self.env)).get(self.x_gst_status, '-') if self.x_gst_status else '-')]
+
+    def _print_party(self):
+        return self.partner_id
+
+    def _print_columns(self):
+        return [('Sr.', 'c'), ('Item', ''), ('Quantity Delivered', 'n'), ('UoM', 'c'), ('Weight', 'n')]
+
+    def _print_rows(self):
+        rows = []
+        for i, line in enumerate(self.line_ids, 1):
+            weight = (line.product_id.weight or 0.0) * line.product_uom._compute_quantity(line.quantity, line.product_id.uom_id)
+            rows.append([i, line.product_id.display_name, num(line.quantity), line.product_uom.name, num(weight)])
+        return rows
+
+    def _print_totals(self):
+        weight = sum((l.product_id.weight or 0.0) * l.product_uom._compute_quantity(l.quantity, l.product_id.uom_id) for l in self.line_ids)
+        return {2: num(sum(self.line_ids.mapped('quantity'))), 4: num(weight)}
+
+    def _print_note(self):
+        return False
+
+    def _print_signatures(self):
+        return ['Store Incharge', 'Gate Officer', 'Driver / Receiver']

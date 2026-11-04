@@ -12,54 +12,40 @@
         <field name="binding_type">report</field>
     </record>
 
-    <template id="sale_order_body">
-        <t t-set="o" t-value="order_data(order)"/>
+    <record id="action_report_purchase_order" model="ir.actions.report">
+        <field name="name">RFQ / Purchase Order</field>
+        <field name="model">purchase.order</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">partner_ledger_qty.report_purchase_order</field>
+        <field name="report_file">partner_ledger_qty.report_purchase_order</field>
+        <field name="print_report_name">('Purchase Order - %s' if object.state in ('purchase', 'done') else 'RFQ - %s') % (object.name or '').replace('/', '-')</field>
+        <field name="paperformat_id" ref="paperformat_voucher"/>
+        <field name="binding_model_id" ref="purchase.model_purchase_order"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <record id="action_report_picking" model="ir.actions.report">
+        <field name="name">Delivery Challan / Transfer</field>
+        <field name="model">stock.picking</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">partner_ledger_qty.report_picking</field>
+        <field name="report_file">partner_ledger_qty.report_picking</field>
+        <field name="print_report_name">'%s - %s' % ({'outgoing': 'Delivery Challan', 'incoming': 'Goods Receipt'}.get(object.picking_type_code, 'Transfer'), (object.name or '').replace('/', '-'))</field>
+        <field name="paperformat_id" ref="paperformat_voucher"/>
+        <field name="binding_model_id" ref="stock.model_stock_picking"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- Shared order layout: Contract / Sales Order and RFQ / Purchase Order -->
+    <template id="order_body">
         <div class="page cr" t-att-style="'page-break-before: always;' if cr_break else None">
             <t t-call="partner_ledger_qty.cr_style"/>
             <t t-call="partner_ledger_qty.doc_style"/>
             <t t-call="partner_ledger_qty.cr_header">
                 <t t-set="cr_title" t-value="o['title']"/>
-                <t t-set="cr_company" t-value="order.company_id"/>
+                <t t-set="cr_company" t-value="doc.company_id"/>
             </t>
-            <table class="cr-info">
-                <tr>
-                    <td class="lbl" t-out="o['number_label']"/>
-                    <td><strong t-out="order.name"/>
-                        <span t-if="order.state == 'cancel'" class="cr-stamp">CANCELLED</span></td>
-                    <td class="lbl">Date</td>
-                    <td><span t-out="order.date_order" t-options="{'widget': 'date'}"/></td>
-                    <td class="lbl" t-if="order.validity_date and order.state != 'sale'">Valid Until</td>
-                    <td t-if="order.validity_date and order.state != 'sale'"><span t-out="order.validity_date" t-options="{'widget': 'date'}"/></td>
-                </tr>
-                <tr>
-                    <td class="lbl">Payment Terms</td>
-                    <td t-out="order.payment_term_id.name or '-'"/>
-                    <td class="lbl">Salesperson</td>
-                    <td t-out="order.user_id.name or '-'"/>
-                    <td class="lbl">Buyer Ref.</td>
-                    <td t-out="order.client_order_ref or '-'"/>
-                </tr>
-            </table>
-            <table class="cr-boxes">
-                <tr>
-                    <td>
-                        <div class="cr-box-t">Seller</div>
-                        <div class="cr-box-n" t-out="o['supplier'].name"/>
-                        <div class="cr-box-l" t-out="o['supplier_address']"/>
-                        <div class="cr-box-l"><span class="lbl">NTN</span><t t-out="o['supplier_ids']['ntn'] or '-'"/></div>
-                        <div class="cr-box-l"><span class="lbl">STRN</span><t t-out="o['supplier_ids']['strn'] or '-'"/></div>
-                    </td>
-                    <td>
-                        <div class="cr-box-t">Buyer</div>
-                        <div class="cr-box-n" t-out="o['buyer'].name"/>
-                        <div class="cr-box-l" t-out="o['buyer_address']"/>
-                        <div class="cr-box-l"><span class="lbl">NTN</span><t t-out="o['buyer_ids']['ntn'] or '-'"/></div>
-                        <div class="cr-box-l"><span class="lbl">STRN</span><t t-out="o['buyer_ids']['strn'] or '-'"/>
-                            <t t-if="o['buyer_ids']['status']"> (<t t-out="o['buyer_ids']['status']"/>)</t></div>
-                        <div class="cr-box-l" t-if="o['delivery_address']"><span class="lbl">Deliver</span><t t-out="o['delivery_address']"/></div>
-                    </td>
-                </tr>
-            </table>
+            <t t-call="partner_ledger_qty.doc_info_boxes"/>
             <table class="cr-tbl">
                 <colgroup>
                     <col style="width: 4%"/>
@@ -114,25 +100,103 @@
             <div class="cr-words">
                 <span class="lbl">Amount in words:</span> <strong t-out="o['words']"/>
             </div>
-            <div class="cr-note" t-if="order.note">
-                <span style="color: #6b7280;">Terms &amp; Conditions:</span> <t t-out="order.note"/>
+            <div class="cr-note" t-if="o['terms']">
+                <span style="color: #6b7280;"><t t-out="o['terms_label']"/>:</span> <t t-out="o['terms']"/>
             </div>
-            <table class="cr-sign">
-                <tr>
-                    <td>Prepared by<span t-out="order.user_id.name or order.create_uid.name"/></td>
-                    <td>Approved by<span/></td>
-                    <td>Accepted by Buyer<span>Signature &amp; stamp</span></td>
-                    <td>For <t t-out="order.company_id.name"/><span>Authorised signatory</span></td>
-                </tr>
-            </table>
+            <t t-call="partner_ledger_qty.doc_signatures"/>
         </div>
+    </template>
+
+    <!-- info pairs (3 per row) + party boxes, shared by the document prints -->
+    <template id="doc_info_boxes">
+        <table class="cr-info">
+            <t t-foreach="range(0, len(o['info']), 3)" t-as="i">
+                <tr>
+                    <t t-foreach="o['info'][i:i + 3]" t-as="pair">
+                        <td class="lbl" t-out="pair[0]"/>
+                        <td>
+                            <t t-if="i == 0 and pair_first"><strong t-out="pair[1]"/>
+                                <span t-if="o.get('cancelled')" class="cr-stamp">CANCELLED</span></t>
+                            <t t-else="" t-out="pair[1]"/>
+                        </td>
+                    </t>
+                </tr>
+            </t>
+        </table>
+        <table class="cr-boxes" t-if="o['boxes']">
+            <tr>
+                <td t-foreach="o['boxes']" t-as="box">
+                    <div class="cr-box-t" t-out="box['label']"/>
+                    <div class="cr-box-n" t-out="box['partner'].name"/>
+                    <div class="cr-box-l" t-out="box['address']"/>
+                    <div class="cr-box-l"><span class="lbl">NTN</span><t t-out="box['ids']['ntn'] or '-'"/></div>
+                    <div class="cr-box-l"><span class="lbl">STRN</span><t t-out="box['ids']['strn'] or '-'"/>
+                        <t t-if="box['ids']['status']"> (<t t-out="box['ids']['status']"/>)</t></div>
+                    <div class="cr-box-l" t-foreach="box['extra']" t-as="ex"><span class="lbl" t-out="ex[0]"/><t t-out="ex[1]"/></div>
+                </td>
+            </tr>
+        </table>
+    </template>
+
+    <template id="doc_signatures">
+        <table class="cr-sign">
+            <tr>
+                <td t-foreach="o['signatures']" t-as="sig"><t t-out="sig[0]"/><span t-out="sig[1]"/></td>
+            </tr>
+        </table>
     </template>
 
     <template id="report_sale_order">
         <t t-call="web.html_container">
-            <t t-foreach="docs" t-as="order">
-                <t t-set="cr_break" t-value="not order_first"/>
-                <t t-call="partner_ledger_qty.sale_order_body"/>
+            <t t-foreach="docs" t-as="doc">
+                <t t-set="cr_break" t-value="not doc_first"/>
+                <t t-set="o" t-value="order_data(doc)"/>
+                <t t-call="partner_ledger_qty.order_body"/>
+            </t>
+        </t>
+    </template>
+
+    <template id="report_purchase_order">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-set="cr_break" t-value="not doc_first"/>
+                <t t-set="o" t-value="po_data(doc)"/>
+                <t t-call="partner_ledger_qty.order_body"/>
+            </t>
+        </t>
+    </template>
+
+    <!-- Delivery Challan / Receipt / Transfer: quantities and weights, no prices -->
+    <template id="report_picking">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-set="o" t-value="picking_data(doc)"/>
+                <div class="page cr" t-att-style="'page-break-before: always;' if not doc_first else None">
+                    <t t-call="partner_ledger_qty.cr_style"/>
+                    <t t-call="partner_ledger_qty.doc_style"/>
+                    <t t-call="partner_ledger_qty.cr_header">
+                        <t t-set="cr_title" t-value="o['title']"/>
+                        <t t-set="cr_company" t-value="doc.company_id"/>
+                    </t>
+                    <t t-call="partner_ledger_qty.doc_info_boxes"/>
+                    <table class="cr-tbl">
+                        <thead><tr><th t-foreach="o['columns']" t-as="col" t-out="col[0]"/></tr></thead>
+                        <tbody>
+                            <tr t-foreach="o['rows']" t-as="row">
+                                <td t-foreach="row" t-as="cell" t-att-class="o['columns'][cell_index][1]" t-out="cell"/>
+                            </tr>
+                            <tr class="tot">
+                                <t t-foreach="o['columns']" t-as="col">
+                                    <td t-if="col_index == 0" class="c">TOTAL</td>
+                                    <td t-elif="col_index in o['totals']" class="n" t-out="o['totals'][col_index]"/>
+                                    <td t-else=""/>
+                                </t>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="cr-note" t-if="o['note']"><span style="color: #6b7280;">Notes:</span> <t t-out="o['note']"/></div>
+                    <t t-call="partner_ledger_qty.doc_signatures"/>
+                </div>
             </t>
         </t>
     </template>

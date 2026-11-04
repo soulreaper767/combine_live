@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_conversion_order" model="ir.actions.report">
+        <field name="name">Conversion Order</field>
+        <field name="model">combine.conversion.order</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">combine_conversion.report_conversion_order</field>
+        <field name="report_file">combine_conversion.report_conversion_order</field>
+        <field name="print_report_name">'Conversion Order - %s' % (object.name or '').replace('/', '-')</field>
+        <field name="paperformat_id" ref="partner_ledger_qty.paperformat_voucher"/>
+        <field name="binding_model_id" ref="model_combine_conversion_order"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_conversion_order">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <div class="page cr" t-att-style="'page-break-before: always;' if not doc_first else None">
+                    <t t-call="partner_ledger_qty.cr_style"/>
+                    <t t-call="partner_ledger_qty.doc_style"/>
+                    <t t-call="partner_ledger_qty.cr_header">
+                        <t t-set="cr_title">Conversion Order</t>
+                        <t t-set="cr_company" t-value="doc.company_id"/>
+                    </t>
+                    <table class="cr-info">
+                        <tr>
+                            <td class="lbl">Order No.</td><td><strong t-out="doc.name"/>
+                                <span t-if="doc.state == 'cancel'" class="cr-stamp">CANCELLED</span></td>
+                            <td class="lbl">Date Sent</td><td><span t-out="doc.date" t-options="{'widget': 'date'}"/></td>
+                            <td class="lbl">Status</td><td t-out="dict(doc._fields['state'].selection)[doc.state]"/>
+                        </tr>
+                        <tr>
+                            <td class="lbl">Process</td><td t-out="doc.process_id.name"/>
+                            <td class="lbl">Category</td><td t-out="doc.category_id.name"/>
+                            <td class="lbl">Output Item</td><td t-out="doc.output_product_id.display_name"/>
+                        </tr>
+                        <tr t-if="doc.previous_order_id or doc.date_closed">
+                            <td class="lbl">Previous Process</td><td t-out="doc.previous_order_id.name or '-'"/>
+                            <td class="lbl">Closed</td><td><span t-if="doc.date_closed" t-out="doc.date_closed" t-options="{'widget': 'date'}"/></td>
+                            <td/><td/>
+                        </tr>
+                    </table>
+                    <table class="cr-boxes">
+                        <tr>
+                            <td>
+                                <div class="cr-box-t">Processor / Vendor</div>
+                                <div class="cr-box-n" t-out="doc.partner_id.commercial_partner_id.name"/>
+                                <div class="cr-box-l" t-out="', '.join(p for p in [doc.partner_id.street, doc.partner_id.city, doc.partner_id.country_id.name] if p)"/>
+                            </td>
+                            <td>
+                                <div class="cr-box-t">Terms</div>
+                                <div class="cr-box-l">Standard yield <strong t-out="doc._cv_pct(doc.standard_yield)"/>, wastage tolerance <t t-out="doc._cv_pct(doc.wastage_tolerance)"/></div>
+                                <div class="cr-box-l">Excess wastage: <t t-out="dict(doc._fields['recovery_basis'].selection).get(doc.recovery_basis, '-')"/></div>
+                                <div class="cr-box-l" t-foreach="doc.charge_line_ids" t-as="c"><t t-out="c.name"/>: <t t-out="doc._cv_fmt(c.rate, 4)"/>
+                                    (<t t-out="dict(c._fields['basis'].selection)[c.basis]"/>)</div>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <div class="cr-box-t" style="margin-top: 4px;">Material Sent</div>
+                    <table class="cr-tbl">
+                        <thead><tr><th>Sr.</th><th>Item</th><th>Size / Count</th><th>Packaging</th><th>Packages</th><th>Wt / Pkg</th>
+                            <th>Quantity</th><th>UoM</th><th>Cost / Unit</th><th>Cost</th></tr></thead>
+                        <tbody>
+                            <tr t-foreach="doc.input_line_ids" t-as="l">
+                                <td class="c" t-out="l_index + 1"/><td t-out="l.product_id.display_name"/><td class="c" t-out="l.size or '-'"/>
+                                <td class="c" t-out="l.packaging or '-'"/><td class="n" t-out="l.packages or '-'"/><td class="n" t-out="doc._cv_fmt(l.weight_per_package)"/>
+                                <td class="n" t-out="doc._cv_fmt(l.qty)"/><td class="c" t-out="l.uom_id.name"/><td class="n" t-out="doc._cv_fmt(l.unit_cost, 4)"/>
+                                <td class="n" t-out="doc._cv_fmt(l.value)"/>
+                            </tr>
+                            <tr class="tot"><td colspan="6" class="c">TOTAL</td><td class="n" t-out="doc._cv_fmt(sum(doc.input_line_ids.mapped('qty')))"/>
+                                <td/><td/><td class="n" t-out="doc._cv_fmt(doc.input_value)"/></tr>
+                        </tbody>
+                    </table>
+
+                    <t t-if="doc.receipt_line_ids">
+                        <div class="cr-box-t" style="margin-top: 8px;">Received</div>
+                        <table class="cr-tbl">
+                            <thead><tr><th>Sr.</th><th>Date</th><th>Packages</th><th>Wt / Pkg</th><th>Qty Received</th><th>Waste Returned</th><th>Remarks</th></tr></thead>
+                            <tbody>
+                                <tr t-foreach="doc.receipt_line_ids" t-as="r">
+                                    <td class="c" t-out="r_index + 1"/><td class="c"><span t-out="r.date" t-options="{'widget': 'date'}"/></td>
+                                    <td class="n" t-out="r.packages or '-'"/><td class="n" t-out="doc._cv_fmt(r.weight_per_package)"/>
+                                    <td class="n" t-out="doc._cv_fmt(r.qty)"/><td class="n" t-out="doc._cv_fmt(r.waste_qty)"/><td t-out="r.note or ''"/>
+                                </tr>
+                                <tr class="tot"><td colspan="4" class="c">TOTAL</td><td class="n" t-out="doc._cv_fmt(doc.received_qty)"/>
+                                    <td class="n" t-out="doc._cv_fmt(doc.waste_qty)"/><td/></tr>
+                            </tbody>
+                        </table>
+                    </t>
+
+                    <table class="cr-boxes" style="margin-top: 8px;">
+                        <tr>
+                            <td>
+                                <div class="cr-box-t">Yield (<t t-out="doc.output_uom_id.name"/>)</div>
+                                <table class="cr-info" style="margin: 0;">
+                                    <tr><td class="lbl">Sent</td><td class="n" t-out="doc._cv_fmt(doc.input_qty)"/></tr>
+                                    <tr><td class="lbl">Standard output</td><td class="n" t-out="doc._cv_fmt(doc.expected_qty)"/></tr>
+                                    <tr><td class="lbl">Received</td><td class="n" t-out="doc._cv_fmt(doc.received_qty)"/></tr>
+                                    <tr><td class="lbl">Standard / actual yield</td><td class="n"><t t-out="doc._cv_pct(doc.standard_yield)"/> / <strong t-out="doc._cv_pct(doc.actual_yield)"/></td></tr>
+                                    <tr><td class="lbl">Actual wastage</td><td class="n" t-out="doc._cv_fmt(doc.actual_wastage_qty)"/></tr>
+                                    <tr><td class="lbl">Excess wastage</td><td class="n"><strong t-out="doc._cv_fmt(doc.excess_wastage_qty)"/></td></tr>
+                                </table>
+                            </td>
+                            <td>
+                                <div class="cr-box-t">Costing (<t t-out="doc.currency_id.name"/>)</div>
+                                <table class="cr-info" style="margin: 0;">
+                                    <tr><td class="lbl">Cost of material sent</td><td class="n" t-out="doc._cv_fmt(doc.input_value)"/></tr>
+                                    <tr><td class="lbl">Conversion charges</td><td class="n" t-out="doc._cv_fmt(doc.charges_amount)"/></tr>
+                                    <tr><td class="lbl">Less: recovery from vendor</td><td class="n" t-out="doc._cv_fmt(doc.recovery_amount)"/></tr>
+                                    <tr><td class="lbl">Less: waste value</td><td class="n" t-out="doc._cv_fmt(doc.waste_value)"/></tr>
+                                    <tr><td class="lbl">Total cost</td><td class="n"><strong t-out="doc._cv_fmt(doc.total_cost)"/></td></tr>
+                                    <tr><td class="lbl">Standard / actual cost per unit</td><td class="n"><t t-out="doc._cv_fmt(doc.standard_unit_cost, 4)"/> / <strong t-out="doc._cv_fmt(doc.unit_cost, 4)"/></td></tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                    <table class="cr-sign">
+                        <tr><td>Prepared by<span t-out="doc.create_uid.name"/></td><td>Store Incharge<span/></td>
+                            <td>Received by (Vendor)<span>Signature &amp; stamp</span></td><td>Approved by<span/></td></tr>
+                    </table>
+                </div>
+            </t>
+        </t>
+    </template>
+</odoo>

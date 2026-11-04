@@ -1,6 +1,6 @@
 {
     'name': 'Custom Reports (Partner Ledger)',
-    'version': '19.0.7.2.0',
+    'version': '19.0.7.3.0',
     'category': 'Accounting/Accounting',
     'summary': "House for this company's custom reports - starts with the Partner Ledger "
                "Qty column and the itemized Partner Statement PDF",
@@ -103,6 +103,9 @@ Invoice (FBR)" carrying every particular of section 23(1) of the Sales
 Tax Act 1990 - supplier and buyer name, address, NTN and STRN; serial
 number; date of issue; description, HS code and quantity; value
 excluding tax; sales tax rate and amount; value including tax.
+Purchase orders: "RFQ / Purchase Order" in the same layout as the
+contract. Deliveries, receipts and transfers: "Delivery Challan /
+Transfer" (quantities and weights, no prices).
 Contracts and sales orders: "Contract / Sales Order" in the same layout
 (titled Contract until confirmed, Sales Order after) - seller and buyer
 with NTN / STRN, HS code, quantities, rates and values with and without
@@ -122,7 +125,7 @@ a decorative one.
 """,
     'author': 'Sibyl Technologies',
     'license': 'LGPL-3',
-    'depends': ['account_reports', 'sale'],
+    'depends': ['account_reports', 'sale', 'purchase_stock'],
     'data': [
         'security/ir.model.access.csv',
         'data/qty_column.xml',

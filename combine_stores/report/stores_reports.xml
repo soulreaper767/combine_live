@@ -116,4 +116,14 @@
         <field name="binding_model_id" ref="model_combine_gate_pass_out"/>
         <field name="binding_type">report</field>
     </record>
+    <record id="action_report_combine001_gate_pass" model="ir.actions.report">
+        <field name="name">Gate Pass (house style)</field>
+        <field name="model">combine001.gate.pass</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">combine_stores.report_stores_doc</field>
+        <field name="print_report_name">'Gate Pass - %s' % (object.name or '').replace('/', '-')</field>
+        <field name="paperformat_id" ref="partner_ledger_qty.paperformat_voucher"/>
+        <field name="binding_model_id" ref="combine001.model_combine001_gate_pass"/>
+        <field name="binding_type">report</field>
+    </record>
 </odoo>
