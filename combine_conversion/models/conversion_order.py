@@ -419,6 +419,13 @@ class ConversionOrder(models.Model):
             },
         }
 
+    # print helpers (QWeb has no lambdas / % formatting)
+    def _cv_fmt(self, value, digits=2):
+        return f'{value:,.{digits}f}' if value else '-'
+
+    def _cv_pct(self, value):
+        return f'{value:.2f}%'
+
     def _view_records(self, records, name):
         action = {'type': 'ir.actions.act_window', 'name': name, 'res_model': records._name}
         if len(records) == 1:

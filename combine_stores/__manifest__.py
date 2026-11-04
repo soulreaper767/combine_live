@@ -1,6 +1,6 @@
 {
     'name': 'Combine - Stores',
-    'version': '19.0.1.0.0',
+    'version': '19.0.1.1.0',
     'category': 'Inventory/Inventory',
     'summary': 'Demand Note -> Purchase Orders per supplier -> Gate Pass Inward -> Inspection -> GRN; Gate Pass Outward',
     'description': """
@@ -29,12 +29,13 @@ Purchasing and gate control for the stores:
    quantities, weights), rejected goods going back to the vendor, and
    any other outward movement.
 
-Every document prints in the same layout as the Custom Reports.
+Every document prints in the same layout as the Custom Reports, and so
+does combine001's own Gate Pass ("Gate Pass (house style)").
 Installing it changes no existing data.
 """,
     'author': 'Sibyl Technologies',
     'license': 'LGPL-3',
-    'depends': ['purchase_stock', 'sale_stock', 'partner_ledger_qty'],
+    'depends': ['purchase_stock', 'sale_stock', 'partner_ledger_qty', 'combine001'],
     'data': [
         'security/stores_security.xml',
         'security/ir.model.access.csv',

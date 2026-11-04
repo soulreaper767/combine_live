@@ -1,6 +1,6 @@
 {
     'name': 'Combine - Job Work Conversion',
-    'version': '19.0.1.0.0',
+    'version': '19.0.1.1.0',
     'category': 'Inventory/Inventory',
     'summary': 'Send material to a vendor for conversion, track standard vs actual yield, '
                'charge excess wastage back to the vendor and carry the full cost into the item',
@@ -31,12 +31,13 @@ Accounting - not on combine001 or any other customization.
 """,
     'author': 'Sibyl Technologies',
     'license': 'LGPL-3',
-    'depends': ['stock_account'],
+    'depends': ['stock_account', 'partner_ledger_qty'],
     'data': [
         'security/ir.model.access.csv',
         'data/conversion_data.xml',
         'wizard/conversion_receive_views.xml',
         'views/conversion_views.xml',
+        'report/conversion_report.xml',
     ],
     'installable': True,
     'application': True,
