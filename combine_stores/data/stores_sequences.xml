@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="seq_demand_note" model="ir.sequence">
+        <field name="name">Demand Note</field>
+        <field name="code">combine.demand.note</field>
+        <field name="prefix">DN/%(year)s/</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+    <record id="seq_gate_pass_in" model="ir.sequence">
+        <field name="name">Gate Pass Inward</field>
+        <field name="code">combine.gate.pass.in</field>
+        <field name="prefix">IGP/%(year)s/</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+    <record id="seq_inspection" model="ir.sequence">
+        <field name="name">Quality Inspection</field>
+        <field name="code">combine.inspection</field>
+        <field name="prefix">INS/%(year)s/</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+    <record id="seq_grn" model="ir.sequence">
+        <field name="name">Goods Receipt Note</field>
+        <field name="code">combine.grn</field>
+        <field name="prefix">GRN/%(year)s/</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+    <record id="seq_gate_pass_out" model="ir.sequence">
+        <field name="name">Gate Pass Outward</field>
+        <field name="code">combine.gate.pass.out</field>
+        <field name="prefix">OGP/%(year)s/</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+</odoo>

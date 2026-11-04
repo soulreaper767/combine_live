@@ -1,0 +1,464 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ================================================= DEMAND NOTE -->
+    <record id="view_demand_note_list" model="ir.ui.view">
+        <field name="name">combine.demand.note.list</field>
+        <field name="model">combine.demand.note</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="state == 'cancel'" decoration-info="state == 'submitted' and procurement_status == 'pending'">
+                <header>
+                    <button name="action_create_purchase" type="object" string="Create Purchase Orders"
+                            groups="purchase.group_purchase_user"/>
+                </header>
+                <field name="name"/>
+                <field name="date"/>
+                <field name="user_id"/>
+                <field name="department" optional="show"/>
+                <field name="date_required" optional="show"/>
+                <field name="state" widget="badge" decoration-info="state == 'submitted'"/>
+                <field name="procurement_status" widget="badge" decoration-success="procurement_status == 'received'"
+                       decoration-warning="procurement_status in ('partial', 'partly_received')"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_demand_note_form" model="ir.ui.view">
+        <field name="name">combine.demand.note.form</field>
+        <field name="model">combine.demand.note</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_submit" type="object" string="Submit" class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_create_purchase" type="object" string="Create Purchase Orders" class="btn-primary"
+                            invisible="state != 'submitted' or procurement_status in ('ordered', 'received')"
+                            groups="purchase.group_purchase_user"/>
+                    <button name="action_cancel" type="object" string="Cancel" invisible="state == 'cancel'"/>
+                    <button name="action_draft" type="object" string="Reset to Draft" invisible="state != 'cancel'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,submitted"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_purchases" type="object" class="oe_stat_button" icon="fa-shopping-cart"
+                                invisible="not purchase_count">
+                            <field name="purchase_count" widget="statinfo" string="Purchase Orders"/>
+                        </button>
+                    </div>
+                    <div class="oe_title"><h1><field name="name" readonly="1"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="user_id" readonly="state != 'draft'"/>
+                            <field name="department" readonly="state != 'draft'"/>
+                        </group>
+                        <group>
+                            <field name="date" readonly="state != 'draft'"/>
+                            <field name="date_required" readonly="state != 'draft'"/>
+                            <field name="procurement_status" widget="badge"/>
+                            <field name="company_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <field name="line_ids" readonly="state != 'draft'">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="product_id"/>
+                            <field name="qty"/>
+                            <field name="uom_id"/>
+                            <field name="note"/>
+                            <field name="ordered_qty" readonly="1"/>
+                            <field name="received_qty" readonly="1"/>
+                            <field name="pending_qty" readonly="1" decoration-warning="pending_qty &gt; 0"/>
+                        </list>
+                    </field>
+                    <field name="note" placeholder="Notes"/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="view_demand_note_search" model="ir.ui.view">
+        <field name="name">combine.demand.note.search</field>
+        <field name="model">combine.demand.note</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="user_id"/>
+                <field name="line_ids" string="Item" filter_domain="[('line_ids.product_id', 'ilike', self)]"/>
+                <filter string="To Order" name="to_order" domain="[('state', '=', 'submitted'), ('procurement_status', 'in', ('pending', 'partial'))]"/>
+                <filter string="Draft" name="draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="Submitted" name="submitted" domain="[('state', '=', 'submitted')]"/>
+                <group>
+                    <filter string="Requested By" name="group_user" context="{'group_by': 'user_id'}"/>
+                    <filter string="Procurement" name="group_proc" context="{'group_by': 'procurement_status'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_demand_note" model="ir.actions.act_window">
+        <field name="name">Demand Notes</field>
+        <field name="res_model">combine.demand.note</field>
+        <field name="view_mode">list,form</field>
+    </record>
+    <record id="action_demand_note_to_order" model="ir.actions.act_window">
+        <field name="name">Demand Notes to Order</field>
+        <field name="res_model">combine.demand.note</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_to_order': 1}</field>
+    </record>
+    <record id="view_demand_line_list" model="ir.ui.view">
+        <field name="name">combine.demand.note.line.list</field>
+        <field name="model">combine.demand.note.line</field>
+        <field name="arch" type="xml">
+            <list create="0">
+                <field name="demand_id"/>
+                <field name="product_id"/>
+                <field name="qty"/>
+                <field name="uom_id"/>
+                <field name="ordered_qty"/>
+                <field name="received_qty"/>
+                <field name="pending_qty" decoration-warning="pending_qty &gt; 0"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_demand_lines" model="ir.actions.act_window">
+        <field name="name">Demand Status by Item</field>
+        <field name="res_model">combine.demand.note.line</field>
+        <field name="view_mode">list,pivot</field>
+        <field name="domain">[('state', '=', 'submitted')]</field>
+    </record>
+
+    <!-- ================================================= GATE PASS INWARD -->
+    <record id="view_gate_pass_in_list" model="ir.ui.view">
+        <field name="name">combine.gate.pass.in.list</field>
+        <field name="model">combine.gate.pass.in</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="state == 'cancel'">
+                <field name="name"/>
+                <field name="date"/>
+                <field name="partner_id"/>
+                <field name="purchase_id"/>
+                <field name="party_ref"/>
+                <field name="vehicle_no" optional="show"/>
+                <field name="state" widget="badge" decoration-success="state == 'done'" decoration-info="state in ('in', 'inspected')"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_gate_pass_in_form" model="ir.ui.view">
+        <field name="name">combine.gate.pass.in.form</field>
+        <field name="model">combine.gate.pass.in</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_gate_in" type="object" string="Gate In" class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_cancel" type="object" string="Cancel" invisible="state in ('done', 'cancel')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,in,inspected,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_inspection" type="object" class="oe_stat_button" icon="fa-search" invisible="not inspection_ids">
+                            <span>Inspection</span>
+                        </button>
+                        <button name="action_view_grn" type="object" class="oe_stat_button" icon="fa-cubes" invisible="not grn_ids">
+                            <span>GRN</span>
+                        </button>
+                    </div>
+                    <div class="oe_title"><h1><field name="name" readonly="1"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="partner_id" readonly="state != 'draft'"/>
+                            <field name="purchase_id" readonly="state != 'draft'"/>
+                            <field name="party_ref" readonly="state != 'draft'"/>
+                        </group>
+                        <group>
+                            <field name="date" readonly="state != 'draft'"/>
+                            <field name="vehicle_no" readonly="state != 'draft'"/>
+                            <field name="driver" readonly="state != 'draft'"/>
+                            <field name="company_id" invisible="1"/>
+                            <field name="inspection_ids" invisible="1"/>
+                            <field name="grn_ids" invisible="1"/>
+                        </group>
+                    </group>
+                    <field name="line_ids" readonly="state != 'draft'">
+                        <list editable="bottom">
+                            <field name="product_id"/>
+                            <field name="purchase_line_id" optional="hide"/>
+                            <field name="qty_doc"/>
+                            <field name="qty_received"/>
+                            <field name="uom_id"/>
+                            <field name="packages"/>
+                            <field name="gross_weight"/>
+                            <field name="tare_weight"/>
+                            <field name="net_weight"/>
+                            <field name="note" optional="show"/>
+                        </list>
+                    </field>
+                    <field name="note" placeholder="Notes"/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="action_gate_pass_in" model="ir.actions.act_window">
+        <field name="name">Gate Pass Inward</field>
+        <field name="res_model">combine.gate.pass.in</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- ================================================= INSPECTION -->
+    <record id="view_inspection_list" model="ir.ui.view">
+        <field name="name">combine.inspection.list</field>
+        <field name="model">combine.inspection</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="state == 'cancel'">
+                <field name="name"/>
+                <field name="date"/>
+                <field name="gate_pass_id"/>
+                <field name="partner_id"/>
+                <field name="purchase_id"/>
+                <field name="inspector_id"/>
+                <field name="state" widget="badge" decoration-success="state == 'done'"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_inspection_form" model="ir.ui.view">
+        <field name="name">combine.inspection.form</field>
+        <field name="model">combine.inspection</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_done" type="object" string="Inspection Done" class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_gate_out_rejected" type="object" string="Gate Out Rejected"
+                            invisible="state != 'done' or not has_rejection or gate_out_ids"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_grn" type="object" class="oe_stat_button" icon="fa-cubes" invisible="not grn_ids">
+                            <span>GRN</span>
+                        </button>
+                    </div>
+                    <div class="oe_title"><h1><field name="name" readonly="1"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="gate_pass_id" readonly="1"/>
+                            <field name="partner_id"/>
+                            <field name="purchase_id"/>
+                        </group>
+                        <group>
+                            <field name="date" readonly="state != 'draft'"/>
+                            <field name="inspector_id" readonly="state != 'draft'"/>
+                            <field name="rejection_action" readonly="state != 'draft'"/>
+                            <field name="has_rejection" invisible="1"/>
+                            <field name="grn_ids" invisible="1"/>
+                            <field name="gate_out_ids" invisible="1"/>
+                        </group>
+                    </group>
+                    <field name="line_ids" readonly="state != 'draft'">
+                        <list editable="bottom" create="0" delete="0">
+                            <field name="product_id"/>
+                            <field name="qty_received"/>
+                            <field name="qty_accepted"/>
+                            <field name="qty_rejected" decoration-danger="qty_rejected &gt; 0"/>
+                            <field name="uom_id"/>
+                            <field name="reason"/>
+                        </list>
+                    </field>
+                    <field name="note" placeholder="Inspection notes"/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="action_inspection" model="ir.actions.act_window">
+        <field name="name">Inspections</field>
+        <field name="res_model">combine.inspection</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'create': 0}</field>
+    </record>
+
+    <!-- ================================================= GRN -->
+    <record id="view_grn_list" model="ir.ui.view">
+        <field name="name">combine.grn.list</field>
+        <field name="model">combine.grn</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="state == 'cancel'">
+                <field name="name"/>
+                <field name="date"/>
+                <field name="partner_id"/>
+                <field name="purchase_id"/>
+                <field name="gate_pass_id"/>
+                <field name="user_id"/>
+                <field name="state" widget="badge" decoration-success="state == 'done'"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_grn_form" model="ir.ui.view">
+        <field name="name">combine.grn.form</field>
+        <field name="model">combine.grn</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_validate" type="object" string="Receive into Store" class="btn-primary" invisible="state != 'draft'"
+                            confirm="Receive the accepted quantities into stock?"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_receipts" type="object" class="oe_stat_button" icon="fa-truck" invisible="not picking_ids">
+                            <span>Receipt</span>
+                        </button>
+                    </div>
+                    <div class="oe_title"><h1><field name="name" readonly="1"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="gate_pass_id" readonly="1"/>
+                            <field name="inspection_id" readonly="1"/>
+                            <field name="partner_id"/>
+                            <field name="purchase_id"/>
+                        </group>
+                        <group>
+                            <field name="date" readonly="state != 'draft'"/>
+                            <field name="user_id" readonly="state != 'draft'"/>
+                            <field name="picking_ids" invisible="1"/>
+                        </group>
+                    </group>
+                    <field name="line_ids" readonly="1">
+                        <list>
+                            <field name="product_id"/>
+                            <field name="qty"/>
+                            <field name="uom_id"/>
+                            <field name="net_weight"/>
+                            <field name="note"/>
+                        </list>
+                    </field>
+                    <field name="note" placeholder="Notes"/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="action_grn" model="ir.actions.act_window">
+        <field name="name">Goods Receipt Notes</field>
+        <field name="res_model">combine.grn</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'create': 0}</field>
+    </record>
+
+    <!-- ================================================= GATE PASS OUTWARD -->
+    <record id="view_gate_pass_out_list" model="ir.ui.view">
+        <field name="name">combine.gate.pass.out.list</field>
+        <field name="model">combine.gate.pass.out</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="state == 'cancel'">
+                <field name="name"/>
+                <field name="date"/>
+                <field name="pass_type"/>
+                <field name="partner_id"/>
+                <field name="picking_id"/>
+                <field name="invoice_ref"/>
+                <field name="vehicle_no" optional="show"/>
+                <field name="state" widget="badge" decoration-success="state == 'out'"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_gate_pass_out_form" model="ir.ui.view">
+        <field name="name">combine.gate.pass.out.form</field>
+        <field name="model">combine.gate.pass.out</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_gate_out" type="object" string="Gate Out" class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_cancel" type="object" string="Cancel" invisible="state == 'cancel'"/>
+                    <button name="action_draft" type="object" string="Reset to Draft" invisible="state != 'cancel'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,out"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name" readonly="1"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="pass_type" readonly="state != 'draft'"/>
+                            <field name="partner_id" readonly="state != 'draft'"/>
+                            <field name="picking_id" readonly="state != 'draft'" invisible="pass_type != 'sale'"/>
+                            <field name="sale_id" invisible="not sale_id"/>
+                            <field name="invoice_ref" readonly="state != 'draft'"/>
+                            <field name="inspection_id" readonly="1" invisible="not inspection_id"/>
+                        </group>
+                        <group>
+                            <field name="date" readonly="state != 'draft'"/>
+                            <field name="vehicle_no" readonly="state != 'draft'"/>
+                            <field name="driver" readonly="state != 'draft'"/>
+                            <field name="reference" readonly="state != 'draft'"/>
+                            <field name="company_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <field name="line_ids" readonly="state != 'draft'">
+                        <list editable="bottom">
+                            <field name="product_id"/>
+                            <field name="qty"/>
+                            <field name="uom_id"/>
+                            <field name="packages"/>
+                            <field name="gross_weight"/>
+                            <field name="tare_weight"/>
+                            <field name="net_weight"/>
+                            <field name="note" optional="show"/>
+                        </list>
+                    </field>
+                    <field name="note" placeholder="Notes"/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="action_gate_pass_out" model="ir.actions.act_window">
+        <field name="name">Gate Pass Outward</field>
+        <field name="res_model">combine.gate.pass.out</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- ================================================= PO / delivery buttons -->
+    <record id="purchase_order_form_stores" model="ir.ui.view">
+        <field name="name">purchase.order.form.stores</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_gate_in" type="object" string="Gate Pass Inward" invisible="state not in ('purchase', 'done')"/>
+            </xpath>
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_gate_in" type="object" class="oe_stat_button" icon="fa-sign-in" invisible="not x_gate_pass_in_count">
+                    <field name="x_gate_pass_in_count" widget="statinfo" string="Gate Inward"/>
+                </button>
+                <button name="action_view_demand_notes" type="object" class="oe_stat_button" icon="fa-list-alt" invisible="not x_demand_note_count">
+                    <field name="x_demand_note_count" widget="statinfo" string="Demand Notes"/>
+                </button>
+            </xpath>
+        </field>
+    </record>
+    <record id="view_picking_form_stores" model="ir.ui.view">
+        <field name="name">stock.picking.form.stores</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_gate_out" type="object" string="Gate Pass Outward"
+                        invisible="picking_type_code != 'outgoing' or state != 'done' or x_gate_pass_out_count"/>
+            </xpath>
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_gate_out" type="object" class="oe_stat_button" icon="fa-sign-out" invisible="not x_gate_pass_out_count">
+                    <field name="x_gate_pass_out_count" widget="statinfo" string="Gate Outward"/>
+                </button>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ================================================= MENUS -->
+    <menuitem id="menu_stores_root" name="Stores" sequence="47" web_icon="stock,static/description/icon.png"
+              groups="stock.group_stock_user,purchase.group_purchase_user"/>
+    <menuitem id="menu_stores_demand" name="Demand Notes" parent="menu_stores_root" action="action_demand_note" sequence="10"/>
+    <menuitem id="menu_stores_demand_to_order" name="Demand Notes to Order" parent="menu_stores_root" action="action_demand_note_to_order"
+              sequence="15" groups="purchase.group_purchase_user"/>
+    <menuitem id="menu_stores_gate_in" name="Gate Pass Inward" parent="menu_stores_root" action="action_gate_pass_in" sequence="20"/>
+    <menuitem id="menu_stores_inspection" name="Inspections" parent="menu_stores_root" action="action_inspection" sequence="30"/>
+    <menuitem id="menu_stores_grn" name="Goods Receipt Notes" parent="menu_stores_root" action="action_grn" sequence="40"/>
+    <menuitem id="menu_stores_gate_out" name="Gate Pass Outward" parent="menu_stores_root" action="action_gate_pass_out" sequence="50"/>
+    <menuitem id="menu_stores_reporting" name="Reporting" parent="menu_stores_root" sequence="90"/>
+    <menuitem id="menu_stores_demand_status" name="Demand Status by Item" parent="menu_stores_reporting" action="action_demand_lines" sequence="10"/>
+</odoo>

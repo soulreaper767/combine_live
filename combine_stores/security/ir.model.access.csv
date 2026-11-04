@@ -1,0 +1,28 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_dn_stock,demand note stock,model_combine_demand_note,stock.group_stock_user,1,1,1,0
+access_dn_line_stock,demand line stock,model_combine_demand_note_line,stock.group_stock_user,1,1,1,1
+access_dn_purchase,demand note purchase,model_combine_demand_note,purchase.group_purchase_user,1,1,0,0
+access_dn_line_purchase,demand line purchase,model_combine_demand_note_line,purchase.group_purchase_user,1,1,0,0
+access_dn_manager,demand note manager,model_combine_demand_note,stock.group_stock_manager,1,1,1,1
+access_dn_wiz,demand po wizard,model_combine_demand_po_wizard,purchase.group_purchase_user,1,1,1,1
+access_dn_wiz_line,demand po wizard line,model_combine_demand_po_wizard_line,purchase.group_purchase_user,1,1,1,1
+access_igp_stock,igp stock,model_combine_gate_pass_in,stock.group_stock_user,1,1,1,0
+access_igp_line_stock,igp line stock,model_combine_gate_pass_in_line,stock.group_stock_user,1,1,1,1
+access_igp_purchase,igp purchase,model_combine_gate_pass_in,purchase.group_purchase_user,1,1,1,0
+access_igp_line_purchase,igp line purchase,model_combine_gate_pass_in_line,purchase.group_purchase_user,1,1,1,0
+access_igp_manager,igp manager,model_combine_gate_pass_in,stock.group_stock_manager,1,1,1,1
+access_ins_stock,inspection stock,model_combine_inspection,stock.group_stock_user,1,1,1,0
+access_ins_line_stock,inspection line stock,model_combine_inspection_line,stock.group_stock_user,1,1,1,1
+access_ins_purchase,inspection purchase,model_combine_inspection,purchase.group_purchase_user,1,0,0,0
+access_ins_line_purchase,inspection line purchase,model_combine_inspection_line,purchase.group_purchase_user,1,0,0,0
+access_ins_manager,inspection manager,model_combine_inspection,stock.group_stock_manager,1,1,1,1
+access_grn_stock,grn stock,model_combine_grn,stock.group_stock_user,1,1,1,0
+access_grn_line_stock,grn line stock,model_combine_grn_line,stock.group_stock_user,1,1,1,1
+access_grn_purchase,grn purchase,model_combine_grn,purchase.group_purchase_user,1,0,0,0
+access_grn_line_purchase,grn line purchase,model_combine_grn_line,purchase.group_purchase_user,1,0,0,0
+access_grn_manager,grn manager,model_combine_grn,stock.group_stock_manager,1,1,1,1
+access_ogp_stock,ogp stock,model_combine_gate_pass_out,stock.group_stock_user,1,1,1,0
+access_ogp_line_stock,ogp line stock,model_combine_gate_pass_out_line,stock.group_stock_user,1,1,1,1
+access_ogp_sale,ogp sales,model_combine_gate_pass_out,sales_team.group_sale_salesman,1,0,0,0
+access_ogp_line_sale,ogp line sales,model_combine_gate_pass_out_line,sales_team.group_sale_salesman,1,0,0,0
+access_ogp_manager,ogp manager,model_combine_gate_pass_out,stock.group_stock_manager,1,1,1,1

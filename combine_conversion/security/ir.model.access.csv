@@ -1,0 +1,12 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_conv_category_user,conversion category user,model_combine_conversion_category,stock.group_stock_user,1,0,0,0
+access_conv_category_manager,conversion category manager,model_combine_conversion_category,stock.group_stock_manager,1,1,1,1
+access_conv_process_user,conversion process user,model_combine_conversion_process,stock.group_stock_user,1,0,0,0
+access_conv_process_manager,conversion process manager,model_combine_conversion_process,stock.group_stock_manager,1,1,1,1
+access_conv_process_charge_user,conversion process charge user,model_combine_conversion_process_charge,stock.group_stock_user,1,0,0,0
+access_conv_process_charge_manager,conversion process charge manager,model_combine_conversion_process_charge,stock.group_stock_manager,1,1,1,1
+access_conv_order_user,conversion order user,model_combine_conversion_order,stock.group_stock_user,1,1,1,1
+access_conv_input_user,conversion input user,model_combine_conversion_input,stock.group_stock_user,1,1,1,1
+access_conv_charge_user,conversion charge user,model_combine_conversion_charge,stock.group_stock_user,1,1,1,1
+access_conv_receipt_user,conversion receipt user,model_combine_conversion_receipt,stock.group_stock_user,1,1,1,0
+access_conv_receive_user,conversion receive wizard user,model_combine_conversion_receive,stock.group_stock_user,1,1,1,1

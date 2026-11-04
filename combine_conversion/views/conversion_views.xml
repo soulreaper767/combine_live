@@ -1,0 +1,399 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ================================================ categories -->
+    <record id="view_conversion_category_list" model="ir.ui.view">
+        <field name="name">combine.conversion.category.list</field>
+        <field name="model">combine.conversion.category</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="charge_account_id" optional="show"/>
+                <field name="recovery_account_id" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_conversion_category_form" model="ir.ui.view">
+        <field name="name">combine.conversion.category.form</field>
+        <field name="model">combine.conversion.category</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="code"/>
+                            <field name="active" invisible="1"/>
+                        </group>
+                        <group>
+                            <field name="charge_account_id"/>
+                            <field name="recovery_account_id"/>
+                        </group>
+                    </group>
+                    <field name="description" placeholder="What kind of conversions belong here..."/>
+                    <field name="process_ids" readonly="1">
+                        <list>
+                            <field name="name"/>
+                            <field name="vendor_id"/>
+                            <field name="standard_yield"/>
+                            <field name="wastage_tolerance"/>
+                        </list>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_conversion_category" model="ir.actions.act_window">
+        <field name="name">Process Categories</field>
+        <field name="res_model">combine.conversion.category</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- ================================================ processes -->
+    <record id="view_conversion_process_list" model="ir.ui.view">
+        <field name="name">combine.conversion.process.list</field>
+        <field name="model">combine.conversion.process</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle"/>
+                <field name="category_id"/>
+                <field name="name"/>
+                <field name="vendor_id"/>
+                <field name="output_product_id"/>
+                <field name="standard_yield"/>
+                <field name="wastage_tolerance"/>
+                <field name="recovery_basis" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_conversion_process_form" model="ir.ui.view">
+        <field name="name">combine.conversion.process.form</field>
+        <field name="model">combine.conversion.process</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="e.g. Doubling 2-ply"/></h1>
+                    </div>
+                    <group>
+                        <group string="Process">
+                            <field name="category_id"/>
+                            <field name="vendor_id"/>
+                            <field name="output_product_id"/>
+                            <field name="active" invisible="1"/>
+                        </group>
+                        <group string="Yield &amp; Wastage">
+                            <field name="standard_yield"/>
+                            <field name="wastage_tolerance"/>
+                            <field name="recovery_basis"/>
+                            <field name="recovery_rate" invisible="recovery_basis != 'fixed'"/>
+                            <field name="waste_product_id"/>
+                            <field name="waste_rate" invisible="not waste_product_id"/>
+                        </group>
+                    </group>
+                    <separator string="Charges per Unit of Measure"/>
+                    <field name="charge_line_ids">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="name"/>
+                            <field name="basis"/>
+                            <field name="rate"/>
+                        </list>
+                    </field>
+                    <field name="note" placeholder="Notes"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_conversion_process" model="ir.actions.act_window">
+        <field name="name">Processes</field>
+        <field name="res_model">combine.conversion.process</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_group_category': 1}</field>
+    </record>
+
+    <record id="view_conversion_process_search" model="ir.ui.view">
+        <field name="name">combine.conversion.process.search</field>
+        <field name="model">combine.conversion.process</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="category_id"/>
+                <field name="vendor_id"/>
+                <filter string="Archived" name="inactive" domain="[('active', '=', False)]"/>
+                <group>
+                    <filter string="Category" name="group_category" context="{'group_by': 'category_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ================================================ orders -->
+    <record id="view_conversion_order_list" model="ir.ui.view">
+        <field name="name">combine.conversion.order.list</field>
+        <field name="model">combine.conversion.order</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="state == 'cancel'" decoration-info="state == 'sent'">
+                <field name="name"/>
+                <field name="date"/>
+                <field name="partner_id"/>
+                <field name="category_id" optional="hide"/>
+                <field name="process_id"/>
+                <field name="output_product_id"/>
+                <field name="input_qty" sum="Total"/>
+                <field name="received_qty" sum="Total"/>
+                <field name="standard_yield" optional="show"/>
+                <field name="actual_yield" optional="show"/>
+                <field name="excess_wastage_qty" optional="hide" sum="Total"/>
+                <field name="total_cost" optional="show" sum="Total"/>
+                <field name="unit_cost" optional="show"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="state" widget="badge" decoration-info="state == 'sent'" decoration-success="state == 'done'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_conversion_order_search" model="ir.ui.view">
+        <field name="name">combine.conversion.order.search</field>
+        <field name="model">combine.conversion.order</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="process_id"/>
+                <field name="category_id"/>
+                <field name="output_product_id"/>
+                <filter string="Draft" name="draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="At Vendor" name="sent" domain="[('state', '=', 'sent')]"/>
+                <filter string="Closed" name="done" domain="[('state', '=', 'done')]"/>
+                <separator/>
+                <filter string="Excess Wastage" name="excess" domain="[('excess_wastage_qty', '&gt;', 0)]"/>
+                <filter name="filter_date" date="date"/>
+                <group>
+                    <filter string="Vendor" name="group_partner" context="{'group_by': 'partner_id'}"/>
+                    <filter string="Process Category" name="group_category" context="{'group_by': 'category_id'}"/>
+                    <filter string="Process" name="group_process" context="{'group_by': 'process_id'}"/>
+                    <filter string="Output Item" name="group_output" context="{'group_by': 'output_product_id'}"/>
+                    <filter string="Status" name="group_state" context="{'group_by': 'state'}"/>
+                    <filter string="Month" name="group_month" context="{'group_by': 'date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_conversion_order_pivot" model="ir.ui.view">
+        <field name="name">combine.conversion.order.pivot</field>
+        <field name="model">combine.conversion.order</field>
+        <field name="arch" type="xml">
+            <pivot string="Conversion Analysis" sample="1">
+                <field name="process_id" type="row"/>
+                <field name="partner_id" type="col"/>
+                <field name="input_qty" type="measure"/>
+                <field name="received_qty" type="measure"/>
+                <field name="excess_wastage_qty" type="measure"/>
+                <field name="total_cost" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_conversion_order_graph" model="ir.ui.view">
+        <field name="name">combine.conversion.order.graph</field>
+        <field name="model">combine.conversion.order</field>
+        <field name="arch" type="xml">
+            <graph string="Conversion Analysis" type="bar" sample="1">
+                <field name="partner_id"/>
+                <field name="actual_yield" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_conversion_order_form" model="ir.ui.view">
+        <field name="name">combine.conversion.order.form</field>
+        <field name="model">combine.conversion.order</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_send" type="object" string="Send to Vendor" class="btn-primary"
+                            invisible="state != 'draft'"
+                            confirm="Move the material sent out of stock to the vendor?"/>
+                    <button name="action_open_receive" type="object" string="Receive" class="btn-primary"
+                            invisible="state != 'sent'"/>
+                    <button name="action_close" type="object" string="Close &amp; Cost" invisible="state != 'sent'"
+                            confirm="Close this order? The material sent is consumed, the final cost is applied to the item received and draft vendor documents are created."/>
+                    <button name="action_next_process" type="object" string="Next Process" invisible="state != 'done'"/>
+                    <button name="action_cancel" type="object" string="Cancel" invisible="state != 'draft'"/>
+                    <button name="action_draft" type="object" string="Reset to Draft" invisible="state != 'cancel'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,sent,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_dispatch" type="object" class="oe_stat_button" icon="fa-truck"
+                                invisible="not dispatch_picking_id">
+                            <span>Dispatch</span>
+                        </button>
+                        <button name="action_view_bills" type="object" class="oe_stat_button" icon="fa-pencil-square-o"
+                                invisible="not bill_id and not debit_note_id">
+                            <span>Vendor Bills</span>
+                        </button>
+                        <button name="action_view_next" type="object" class="oe_stat_button" icon="fa-arrow-right"
+                                invisible="not next_order_ids">
+                            <span>Next Process</span>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="process_id" readonly="state != 'draft'"/>
+                            <field name="category_id"/>
+                            <field name="partner_id" readonly="state != 'draft'"/>
+                            <field name="output_product_id" readonly="state != 'draft'"/>
+                            <field name="previous_order_id" invisible="not previous_order_id" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="date" readonly="state != 'draft'"/>
+                            <field name="date_closed" invisible="not date_closed"/>
+                            <field name="warehouse_id" readonly="state != 'draft'" groups="stock.group_stock_multi_warehouses"/>
+                            <field name="company_id" invisible="1"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Material Sent" name="input">
+                            <field name="input_line_ids" readonly="state != 'draft'">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="product_id"/>
+                                    <field name="size" optional="show"/>
+                                    <field name="packaging" optional="show"/>
+                                    <field name="packages" optional="show"/>
+                                    <field name="weight_per_package" optional="show"/>
+                                    <field name="net_weight" optional="hide"/>
+                                    <field name="qty"/>
+                                    <field name="uom_id"/>
+                                    <field name="source_order_id" optional="hide"/>
+                                    <field name="unit_cost"/>
+                                    <field name="value" sum="Total"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Yield &amp; Charges" name="terms">
+                            <group>
+                                <group string="Yield">
+                                    <field name="standard_yield" readonly="state != 'draft'"/>
+                                    <field name="wastage_tolerance" readonly="state != 'draft'"/>
+                                    <field name="recovery_basis" readonly="state != 'draft'"/>
+                                    <field name="recovery_rate" invisible="recovery_basis != 'fixed'" readonly="state != 'draft'"/>
+                                </group>
+                                <group string="Waste">
+                                    <field name="waste_product_id" readonly="state != 'draft'"/>
+                                    <field name="waste_rate" invisible="not waste_product_id" readonly="state == 'done'"/>
+                                </group>
+                            </group>
+                            <field name="charge_line_ids" readonly="state == 'done'">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name"/>
+                                    <field name="basis"/>
+                                    <field name="rate"/>
+                                    <field name="amount" sum="Total"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Receipts" name="receipts" invisible="state == 'draft'">
+                            <field name="receipt_line_ids" readonly="1">
+                                <list>
+                                    <field name="date"/>
+                                    <field name="packages"/>
+                                    <field name="weight_per_package" optional="hide"/>
+                                    <field name="qty" sum="Total"/>
+                                    <field name="waste_qty" sum="Total"/>
+                                    <field name="note"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Yield &amp; Costing" name="costing">
+                            <group>
+                                <group string="Quantities">
+                                    <field name="output_uom_id" string="Unit"/>
+                                    <field name="input_qty"/>
+                                    <field name="expected_qty"/>
+                                    <field name="standard_wastage_qty"/>
+                                    <field name="received_qty"/>
+                                    <field name="actual_wastage_qty"/>
+                                    <field name="actual_yield"/>
+                                    <field name="yield_variance"/>
+                                    <field name="allowed_min_qty"/>
+                                    <field name="excess_wastage_qty" decoration-danger="excess_wastage_qty &gt; 0"/>
+                                    <field name="waste_qty" invisible="not waste_product_id"/>
+                                </group>
+                                <group string="Cost">
+                                    <field name="input_value"/>
+                                    <field name="charges_amount"/>
+                                    <field name="recovery_amount" decoration-success="recovery_amount &gt; 0"/>
+                                    <field name="waste_value" invisible="not waste_product_id"/>
+                                    <field name="total_cost" class="fw-bold"/>
+                                    <field name="standard_unit_cost"/>
+                                    <field name="unit_cost" class="fw-bold"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Accounting" name="accounting" invisible="state != 'done'">
+                            <group>
+                                <field name="bill_id"/>
+                                <field name="debit_note_id"/>
+                            </group>
+                        </page>
+                        <page string="Notes" name="notes">
+                            <field name="note"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_conversion_order" model="ir.actions.act_window">
+        <field name="name">Conversion Orders</field>
+        <field name="res_model">combine.conversion.order</field>
+        <field name="view_mode">list,form,pivot,graph</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Send material to a vendor for conversion</p>
+            <p>Record what is sent, receive the converted goods, and close the order to work out the
+               actual yield, any recovery for excess wastage and the item's full cost.</p>
+        </field>
+    </record>
+
+    <record id="action_conversion_analysis" model="ir.actions.act_window">
+        <field name="name">Yield &amp; Cost Analysis</field>
+        <field name="res_model">combine.conversion.order</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="context">{'search_default_done': 1}</field>
+    </record>
+
+    <menuitem id="menu_conversion_root" name="Job Work" sequence="46"
+              web_icon="stock,static/description/icon.png" groups="stock.group_stock_user"/>
+    <menuitem id="menu_conversion_orders" name="Conversion Orders" parent="menu_conversion_root"
+              action="action_conversion_order" sequence="10"/>
+    <menuitem id="menu_conversion_reporting" name="Reporting" parent="menu_conversion_root" sequence="20"/>
+    <menuitem id="menu_conversion_analysis" name="Yield &amp; Cost Analysis" parent="menu_conversion_reporting"
+              action="action_conversion_analysis" sequence="10"/>
+    <menuitem id="menu_conversion_config" name="Configuration" parent="menu_conversion_root" sequence="90"
+              groups="stock.group_stock_manager"/>
+    <menuitem id="menu_conversion_categories" name="Process Categories" parent="menu_conversion_config"
+              action="action_conversion_category" sequence="10"/>
+    <menuitem id="menu_conversion_processes" name="Processes" parent="menu_conversion_config"
+              action="action_conversion_process" sequence="20"/>
+</odoo>

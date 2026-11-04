@@ -1,6 +1,6 @@
 {
     'name': 'Custom Reports (Partner Ledger)',
-    'version': '19.0.7.1.0',
+    'version': '19.0.7.2.0',
     'category': 'Accounting/Accounting',
     'summary': "House for this company's custom reports - starts with the Partner Ledger "
                "Qty column and the itemized Partner Statement PDF",
@@ -103,6 +103,10 @@ Invoice (FBR)" carrying every particular of section 23(1) of the Sales
 Tax Act 1990 - supplier and buyer name, address, NTN and STRN; serial
 number; date of issue; description, HS code and quantity; value
 excluding tax; sales tax rate and amount; value including tax.
+Contracts and sales orders: "Contract / Sales Order" in the same layout
+(titled Contract until confirmed, Sales Order after) - seller and buyer
+with NTN / STRN, HS code, quantities, rates and values with and without
+sales tax, amount in words, terms and signatures.
 Odoo's own "Invoices" print used to fail with "Only invoices could be
 printed." on any selection containing a plain journal entry; such
 selections now print as vouchers instead.
@@ -118,7 +122,7 @@ a decorative one.
 """,
     'author': 'Sibyl Technologies',
     'license': 'LGPL-3',
-    'depends': ['account_reports'],
+    'depends': ['account_reports', 'sale'],
     'data': [
         'security/ir.model.access.csv',
         'data/qty_column.xml',
@@ -130,6 +134,7 @@ a decorative one.
         'wizard/party_outstanding_wizard_views.xml',
         'report/party_outstanding_report.xml',
         'report/voucher_report.xml',
+        'report/sale_order_report.xml',
     ],
     'installable': True,
     'application': False,

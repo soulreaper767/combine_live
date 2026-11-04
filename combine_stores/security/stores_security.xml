@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="group_store_user" model="res.groups">
+        <field name="name">Store / Gate User</field>
+        <field name="implied_ids" eval="[(4, ref('stock.group_stock_user'))]"/>
+        <field name="comment">Raises demand notes, gate passes, inspections and GRNs.</field>
+    </record>
+</odoo>

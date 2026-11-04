@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_order_form_contract_revision" model="ir.ui.view">
+        <field name="name">sale.order.form.contract.revision</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_revise_contract" type="object" string="Revise Contract"
+                        invisible="state != 'sale'" groups="sales_team.group_sale_manager"
+                        confirm="Revise this contract? Its invoices will be cancelled (numbers are kept), every delivery returned to stock, and the contract set back to draft so it can be corrected and confirmed again."/>
+            </xpath>
+            <field name="partner_id" position="after">
+                <field name="x_revision_count" invisible="not x_revision_count"/>
+            </field>
+        </field>
+    </record>
+</odoo>
