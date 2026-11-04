@@ -48,7 +48,7 @@
         <field name="report_name">partner_ledger_qty.report_fbr_invoice</field>
         <field name="report_file">partner_ledger_qty.report_fbr_invoice</field>
         <field name="print_report_name">'Sales Tax Invoice - %s' % (object.name or 'Draft').replace('/', '-')</field>
-        <field name="paperformat_id" ref="paperformat_voucher"/>
+        <field name="paperformat_id" ref="paperformat_partner_statement"/>
         <field name="binding_model_id" ref="account.model_account_move"/>
         <field name="binding_type">report</field>
     </record>
@@ -238,57 +238,8 @@
                     </td>
                 </tr>
             </table>
-            <table class="cr-tbl">
-                <colgroup>
-                    <col style="width: 4%"/>
-                    <col t-att-style="'width: 23%' if f['has_hs'] else 'width: 30%'"/>
-                    <col t-if="f['has_hs']" style="width: 7%"/>
-                    <col style="width: 8%"/>
-                    <col style="width: 5%"/>
-                    <col style="width: 9%"/>
-                    <col style="width: 11%"/>
-                    <col style="width: 6%"/>
-                    <col style="width: 11%"/>
-                    <col style="width: 12%"/>
-                </colgroup>
-                <thead>
-                    <tr>
-                        <th>Sr.</th>
-                        <th>Description of Goods</th>
-                        <th t-if="f['has_hs']">HS Code</th>
-                        <th>Quantity</th>
-                        <th>UoM</th>
-                        <th>Rate (Excl. ST)</th>
-                        <th>Value Excl. Sales Tax</th>
-                        <th>ST Rate</th>
-                        <th>Sales Tax</th>
-                        <th>Value Incl. Sales Tax</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr t-foreach="f['rows']" t-as="r">
-                        <td class="c" t-out="r['sr']"/>
-                        <td><t t-out="r['desc']"/><div t-if="r['note']" class="sm" style="color: #6b7280; font-size: 10px;" t-out="r['note']"/></td>
-                        <td t-if="f['has_hs']" class="c" t-out="r['hs'] or '-'"/>
-                        <td class="n" t-out="r['qty']"/>
-                        <td class="c" t-out="r['uom']"/>
-                        <td class="n" t-out="r['rate']"/>
-                        <td class="n" t-out="r['ex']"/>
-                        <td class="c" t-out="r['tax_rate']"/>
-                        <td class="n" t-out="r['tax']"/>
-                        <td class="n" t-out="r['inc']"/>
-                    </tr>
-                    <tr class="tot">
-                        <td t-att-colspan="3 if f['has_hs'] else 2" class="c">TOTAL</td>
-                        <td class="n" t-out="f['qty_total']"/>
-                        <td colspan="2"/>
-                        <td class="n" t-out="f['ex_total']"/>
-                        <td/>
-                        <td class="n" t-out="f['tax_total']"/>
-                        <td class="n" t-out="f['inc_total']"/>
-                    </tr>
-                </tbody>
-            </table>
+            <t t-set="o" t-value="f"/>
+            <t t-call="partner_ledger_qty.sales_lines_table"/>
             <div class="cr-words">
                 <span class="lbl">Amount in words:</span> <strong t-out="f['words']"/>
             </div>

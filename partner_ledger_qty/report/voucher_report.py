@@ -92,6 +92,33 @@ class VoucherReportMixin(models.AbstractModel):
         return ', '.join(p for p in parts if p)
 
     @api.model
+    def _discount_values(self, line, qty, currency, partner):
+        """Rate before discount, discount %, discounted rate, gross / discount / net
+        value - all excluding sales tax (correct for tax-included prices too)."""
+        # gross = the whole line before discount, excl. tax, computed and rounded
+        # exactly like Odoo computes the line's own (discounted) net amount
+        if line.tax_ids:
+            gross = line.tax_ids.compute_all(line.price_unit, currency=currency, quantity=qty,
+                                             product=line.product_id, partner=partner)['total_excluded']
+        else:
+            gross = currency.round(line.price_unit * qty)
+        gross_unit = gross / qty if qty else line.price_unit
+        net = line.price_subtotal
+        return {
+            'g_rate': _num(gross_unit, 4 if abs(gross_unit * 100 - round(gross_unit * 100)) > 1e-6 else 2),
+            'disc_pct': f'{line.discount:g}%' if line.discount else '-',
+            'd_rate': _num(net / qty if qty else 0.0, 2),
+            'gross': _num(gross),
+            'disc': _num(gross - net),
+            '_gross': gross,
+            '_disc': gross - net,
+        }
+
+    @api.model
+    def _discount_totals(self, rows):
+        return {'gross_total': _num(sum(r['_gross'] for r in rows)), 'disc_total': _num(sum(r['_disc'] for r in rows))}
+
+    @api.model
     def _fbr_data(self, move):
         lines = move.invoice_line_ids.filtered(lambda l: l.display_type == 'product')
         rows = []
@@ -110,11 +137,13 @@ class VoucherReportMixin(models.AbstractModel):
                 'tax_rate': ' + '.join(f"{t.amount:g}%" for t in rates) or '-',
                 'tax': _num(line.price_total - line.price_subtotal),
                 'inc': _num(line.price_total),
+                **self._discount_values(line, line.quantity, move.currency_id, move.partner_id),
             })
         company_partner = move.company_id.partner_id
         return {
             'title': 'Sales Tax Credit Note' if move.move_type == 'out_refund' else 'Sales Tax Invoice',
             'rows': rows,
+            **self._discount_totals(rows),
             # column shown whenever products carry an HS Code field at all
             'has_hs': 'hs_code' in self.env['product.product']._fields,
             'qty_total': _num(sum(lines.mapped('quantity')), 2),
@@ -137,7 +166,7 @@ class VoucherReportMixin(models.AbstractModel):
                 'ids': self._tax_ids_text(partner), 'extra': extra or []}
 
     @api.model
-    def _order_rows(self, lines, qty_field):
+    def _order_rows(self, lines, qty_field, currency=None, partner=None):
         rows = []
         for i, line in enumerate(lines, 1):
             rates = line.tax_ids.filtered(lambda t: t.amount_type == 'percent')
@@ -154,6 +183,7 @@ class VoucherReportMixin(models.AbstractModel):
                 'tax_rate': ' + '.join(f"{t.amount:g}%" for t in rates) or '-',
                 'tax': _num(line.price_total - line.price_subtotal),
                 'inc': _num(line.price_total),
+                **(self._discount_values(line, qty, currency, partner) if currency else {}),
             })
         return rows
 
@@ -245,8 +275,10 @@ class VoucherReportMixin(models.AbstractModel):
             'title': 'Sales Order' if confirmed else 'Contract',
             'info': info,
             'boxes': [self._party_box('Seller', order.company_id.partner_id), self._party_box('Buyer', order.partner_id, extra)],
-            'rows': self._order_rows(lines, 'product_uom_qty'),
+            'rows': self._order_rows(lines, 'product_uom_qty', order.currency_id, order.partner_id),
+            'discount_layout': True,
             **self._order_totals(order, sum(lines.mapped('product_uom_qty'))),
+            **self._discount_totals(self._order_rows(lines, 'product_uom_qty', order.currency_id, order.partner_id)),
             'terms_label': 'Terms & Conditions',
             'terms': order.note,
             'signatures': [('Prepared by', order.user_id.name or order.create_uid.name), ('Approved by', ''),

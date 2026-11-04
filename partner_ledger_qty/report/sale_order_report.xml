@@ -7,7 +7,7 @@
         <field name="report_name">partner_ledger_qty.report_sale_order</field>
         <field name="report_file">partner_ledger_qty.report_sale_order</field>
         <field name="print_report_name">('Sales Order - %s' if object.state == 'sale' else 'Contract - %s') % (object.name or '').replace('/', '-')</field>
-        <field name="paperformat_id" ref="paperformat_voucher"/>
+        <field name="paperformat_id" ref="paperformat_partner_statement"/>
         <field name="binding_model_id" ref="sale.model_sale_order"/>
         <field name="binding_type">report</field>
     </record>
@@ -36,6 +36,59 @@
         <field name="binding_type">report</field>
     </record>
 
+    <!-- Sales line table with discount: Contract / Sales Order and Sales Tax Invoice -->
+    <template id="sales_lines_table">
+        <table class="cr-tbl" style="font-size: 10.5px;">
+            <thead>
+                <tr>
+                    <th style="width: 3%">Sr.</th>
+                    <th t-att-style="'width: 17%' if o['has_hs'] else 'width: 22%'">Description of Goods</th>
+                    <th t-if="o['has_hs']" style="width: 6%">HS Code</th>
+                    <th style="width: 6%">Quantity</th>
+                    <th style="width: 4%">UoM</th>
+                    <th style="width: 6%">Rate</th>
+                    <th style="width: 4%">Disc. %</th>
+                    <th style="width: 6%">Discounted Rate</th>
+                    <th style="width: 8%">Gross Value</th>
+                    <th style="width: 7%">Discount</th>
+                    <th style="width: 8%">Net Value (Excl. ST)</th>
+                    <th style="width: 4%">ST Rate</th>
+                    <th style="width: 7%">Sales Tax</th>
+                    <th style="width: 9%">Value Incl. Sales Tax</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr t-foreach="o['rows']" t-as="r">
+                    <td class="c" t-out="r['sr']"/>
+                    <td><t t-out="r['desc']"/><div t-if="r['note']" style="color: #6b7280; font-size: 9.5px;" t-out="r['note']"/></td>
+                    <td t-if="o['has_hs']" class="c" t-out="r['hs'] or '-'"/>
+                    <td class="n" t-out="r['qty']"/>
+                    <td class="c" t-out="r['uom']"/>
+                    <td class="n" t-out="r['g_rate']"/>
+                    <td class="c" t-out="r['disc_pct']"/>
+                    <td class="n" t-out="r['d_rate']"/>
+                    <td class="n" t-out="r['gross']"/>
+                    <td class="n" t-out="r['disc']"/>
+                    <td class="n" t-out="r['ex']"/>
+                    <td class="c" t-out="r['tax_rate']"/>
+                    <td class="n" t-out="r['tax']"/>
+                    <td class="n" t-out="r['inc']"/>
+                </tr>
+                <tr class="tot">
+                    <td t-att-colspan="3 if o['has_hs'] else 2" class="c">TOTAL</td>
+                    <td class="n" t-out="o['qty_total']"/>
+                    <td colspan="4"/>
+                    <td class="n" t-out="o['gross_total']"/>
+                    <td class="n" t-out="o['disc_total']"/>
+                    <td class="n" t-out="o['ex_total']"/>
+                    <td/>
+                    <td class="n" t-out="o['tax_total']"/>
+                    <td class="n" t-out="o['inc_total']"/>
+                </tr>
+            </tbody>
+        </table>
+    </template>
+
     <!-- Shared order layout: Contract / Sales Order and RFQ / Purchase Order -->
     <template id="order_body">
         <div class="page cr" t-att-style="'page-break-before: always;' if cr_break else None">
@@ -46,6 +99,8 @@
                 <t t-set="cr_company" t-value="doc.company_id"/>
             </t>
             <t t-call="partner_ledger_qty.doc_info_boxes"/>
+            <t t-if="o.get('discount_layout')"><t t-call="partner_ledger_qty.sales_lines_table"/></t>
+            <t t-else="">
             <table class="cr-tbl">
                 <colgroup>
                     <col style="width: 4%"/>
@@ -97,6 +152,7 @@
                     </tr>
                 </tbody>
             </table>
+            </t>
             <div class="cr-words">
                 <span class="lbl">Amount in words:</span> <strong t-out="o['words']"/>
             </div>
