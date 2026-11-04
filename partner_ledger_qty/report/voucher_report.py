@@ -132,8 +132,50 @@ class VoucherReportMixin(models.AbstractModel):
         }
 
     @api.model
+    def _order_data(self, order):
+        """Contract (before confirmation) / Sales Order (after), same columns as the sales tax invoice."""
+        lines = order.order_line.filtered(lambda l: not l.display_type and not l.is_downpayment)
+        rows = []
+        for i, line in enumerate(lines, 1):
+            rates = line.tax_ids.filtered(lambda t: t.amount_type == 'percent')
+            qty = line.product_uom_qty
+            rows.append({
+                'sr': i,
+                'desc': line.product_id.display_name or line.name or '',
+                'note': line.name if line.name and line.product_id and line.name != line.product_id.display_name else '',
+                'hs': _field(line.product_id, 'hs_code') or '',
+                'qty': _num(qty, 2),
+                'uom': line.product_uom_id.name or '',
+                'rate': _num(line.price_subtotal / qty if qty else 0.0, 2),
+                'ex': _num(line.price_subtotal),
+                'tax_rate': ' + '.join(f"{t.amount:g}%" for t in rates) or '-',
+                'tax': _num(line.price_total - line.price_subtotal),
+                'inc': _num(line.price_total),
+            })
+        company_partner = order.company_id.partner_id
+        confirmed = order.state == 'sale'
+        return {
+            'title': 'Sales Order' if confirmed else 'Contract',
+            'number_label': 'Order No.' if confirmed else 'Contract No.',
+            'rows': rows,
+            'has_hs': 'hs_code' in self.env['product.product']._fields,
+            'qty_total': _num(sum(lines.mapped('product_uom_qty')), 2),
+            'ex_total': _num(order.amount_untaxed),
+            'tax_total': _num(order.amount_tax),
+            'inc_total': _num(order.amount_total),
+            'words': order.currency_id.amount_to_text(order.amount_total),
+            'supplier': company_partner,
+            'supplier_address': self._address(company_partner),
+            'supplier_ids': self._tax_ids_text(company_partner),
+            'buyer': order.partner_id.commercial_partner_id,
+            'buyer_address': self._address(order.partner_id),
+            'buyer_ids': self._tax_ids_text(order.partner_id),
+            'delivery_address': self._address(order.partner_shipping_id) if order.partner_shipping_id != order.partner_id else '',
+        }
+
+    @api.model
     def _helpers(self):
-        return {'voucher_data': self._voucher_data, 'fbr_data': self._fbr_data}
+        return {'voucher_data': self._voucher_data, 'fbr_data': self._fbr_data, 'order_data': self._order_data}
 
 
 class ReportVoucher(models.AbstractModel):
@@ -163,4 +205,14 @@ class ReportFbrInvoice(models.AbstractModel):
     @api.model
     def _get_report_values(self, docids, data=None):
         return {'docs': self.env['account.move'].browse(docids),
+                **self.env['partner_ledger_qty.voucher.mixin']._helpers()}
+
+
+class ReportSaleOrder(models.AbstractModel):
+    _name = 'report.partner_ledger_qty.report_sale_order'
+    _description = 'Custom Reports - Contract / Sales Order'
+
+    @api.model
+    def _get_report_values(self, docids, data=None):
+        return {'docs': self.env['sale.order'].browse(docids),
                 **self.env['partner_ledger_qty.voucher.mixin']._helpers()}

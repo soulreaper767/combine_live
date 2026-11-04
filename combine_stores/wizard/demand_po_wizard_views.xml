@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_demand_po_wizard_form" model="ir.ui.view">
+        <field name="name">combine.demand.po.wizard.form</field>
+        <field name="model">combine.demand.po.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Create Purchase Orders">
+                <p class="text-muted">Adjust quantities and rates and choose the vendor of each item.
+                    One purchase order (RFQ) is created per vendor.</p>
+                <field name="line_ids">
+                    <list editable="bottom" create="0">
+                        <field name="demand_id"/>
+                        <field name="product_id"/>
+                        <field name="demand_qty"/>
+                        <field name="qty"/>
+                        <field name="uom_id"/>
+                        <field name="vendor_id"/>
+                        <field name="price_unit"/>
+                    </list>
+                </field>
+                <footer>
+                    <button name="action_create" type="object" string="Create Purchase Orders" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

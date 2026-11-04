@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- One print for every stores document, in the Custom Reports house style -->
+    <template id="report_stores_doc">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <div class="page cr" t-att-style="'page-break-before: always;' if not doc_first else None">
+                    <t t-call="partner_ledger_qty.cr_style"/>
+                    <t t-call="partner_ledger_qty.doc_style"/>
+                    <t t-call="partner_ledger_qty.cr_header">
+                        <t t-set="cr_title" t-value="doc._print_title()"/>
+                        <t t-set="cr_company" t-value="doc.company_id if 'company_id' in doc._fields else env.company"/>
+                    </t>
+                    <t t-set="info" t-value="doc._print_info()"/>
+                    <table class="cr-info">
+                        <t t-foreach="range(0, len(info), 3)" t-as="i">
+                            <tr>
+                                <t t-foreach="info[i:i + 3]" t-as="pair">
+                                    <td class="lbl" t-out="pair[0]"/>
+                                    <td><strong t-if="pair_first and i == 0" t-out="pair[1]"/><t t-else="" t-out="pair[1]"/></td>
+                                </t>
+                            </tr>
+                        </t>
+                    </table>
+                    <t t-set="party" t-value="doc._print_party()"/>
+                    <table class="cr-boxes" t-if="party">
+                        <tr>
+                            <td>
+                                <div class="cr-box-t">Party</div>
+                                <div class="cr-box-n" t-out="party.commercial_partner_id.name"/>
+                                <div class="cr-box-l" t-out="', '.join(p for p in [party.street, party.street2, party.city, party.country_id.name] if p)"/>
+                            </td>
+                            <td>
+                                <div class="cr-box-t">Contact</div>
+                                <div class="cr-box-l" t-out="party.phone or party.email or '-'"/>
+                            </td>
+                        </tr>
+                    </table>
+                    <t t-set="columns" t-value="doc._print_columns()"/>
+                    <t t-set="totals" t-value="doc._print_totals()"/>
+                    <table class="cr-tbl">
+                        <thead>
+                            <tr><th t-foreach="columns" t-as="col" t-out="col[0]"/></tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="doc._print_rows()" t-as="row">
+                                <td t-foreach="row" t-as="cell" t-att-class="columns[cell_index][1]" t-out="cell"/>
+                            </tr>
+                            <tr class="tot" t-if="totals">
+                                <t t-foreach="columns" t-as="col">
+                                    <td t-if="col_index == 0" class="c">TOTAL</td>
+                                    <td t-elif="col_index in totals" class="n" t-out="totals[col_index]"/>
+                                    <td t-else=""/>
+                                </t>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="cr-note" t-if="doc._print_note()">
+                        <span style="color: #6b7280;">Notes:</span> <t t-out="doc._print_note()"/>
+                    </div>
+                    <table class="cr-sign">
+                        <tr><td t-foreach="doc._print_signatures()" t-as="who"><t t-out="who"/><span/></td></tr>
+                    </table>
+                </div>
+            </t>
+        </t>
+    </template>
+
+    <record id="action_report_demand_note" model="ir.actions.report">
+        <field name="name">Demand Note</field>
+        <field name="model">combine.demand.note</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">combine_stores.report_stores_doc</field>
+        <field name="print_report_name">'Demand Note - %s' % object.name.replace('/', '-')</field>
+        <field name="paperformat_id" ref="partner_ledger_qty.paperformat_voucher"/>
+        <field name="binding_model_id" ref="model_combine_demand_note"/>
+        <field name="binding_type">report</field>
+    </record>
+    <record id="action_report_gate_pass_in" model="ir.actions.report">
+        <field name="name">Gate Pass Inward</field>
+        <field name="model">combine.gate.pass.in</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">combine_stores.report_stores_doc</field>
+        <field name="print_report_name">'Gate Pass Inward - %s' % object.name.replace('/', '-')</field>
+        <field name="paperformat_id" ref="partner_ledger_qty.paperformat_voucher"/>
+        <field name="binding_model_id" ref="model_combine_gate_pass_in"/>
+        <field name="binding_type">report</field>
+    </record>
+    <record id="action_report_inspection" model="ir.actions.report">
+        <field name="name">Inspection Report</field>
+        <field name="model">combine.inspection</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">combine_stores.report_stores_doc</field>
+        <field name="print_report_name">'Inspection - %s' % object.name.replace('/', '-')</field>
+        <field name="paperformat_id" ref="partner_ledger_qty.paperformat_voucher"/>
+        <field name="binding_model_id" ref="model_combine_inspection"/>
+        <field name="binding_type">report</field>
+    </record>
+    <record id="action_report_grn" model="ir.actions.report">
+        <field name="name">Goods Receipt Note</field>
+        <field name="model">combine.grn</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">combine_stores.report_stores_doc</field>
+        <field name="print_report_name">'GRN - %s' % object.name.replace('/', '-')</field>
+        <field name="paperformat_id" ref="partner_ledger_qty.paperformat_voucher"/>
+        <field name="binding_model_id" ref="model_combine_grn"/>
+        <field name="binding_type">report</field>
+    </record>
+    <record id="action_report_gate_pass_out" model="ir.actions.report">
+        <field name="name">Gate Pass Outward</field>
+        <field name="model">combine.gate.pass.out</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">combine_stores.report_stores_doc</field>
+        <field name="print_report_name">'Gate Pass Outward - %s' % object.name.replace('/', '-')</field>
+        <field name="paperformat_id" ref="partner_ledger_qty.paperformat_voucher"/>
+        <field name="binding_model_id" ref="model_combine_gate_pass_out"/>
+        <field name="binding_type">report</field>
+    </record>
+</odoo>
