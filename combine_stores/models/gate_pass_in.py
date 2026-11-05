@@ -101,7 +101,7 @@ class GatePassIn(models.Model):
         return 'Gate Pass Inward'
 
     def _print_info(self):
-        return [('IGP No.', self.name), ('Gate In', fields.Datetime.to_string(fields.Datetime.context_timestamp(self, self.date))[:16]),
+        return [('IGP No.', self.name), ('Gate In', fields.Datetime.context_timestamp(self, self.date).strftime('%d-%b-%y %H:%M')),
                 ('Purchase Order', self.purchase_id.name or '-'), ('Party Inv / DC', self.party_ref or '-'),
                 ('Vehicle No.', self.vehicle_no or '-'), ('Driver', self.driver or '-')]
 
