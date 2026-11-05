@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ======================================== Bank & Cash Voucher Register -->
+    <record id="view_voucher_register_wizard_form" model="ir.ui.view">
+        <field name="name">combine.voucher.register.wizard.form</field>
+        <field name="model">combine.voucher.register.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Bank &amp; Cash Voucher Register">
+                <group>
+                    <group>
+                        <field name="voucher_type"/>
+                        <field name="date_from"/>
+                        <field name="date_to"/>
+                        <field name="detail" widget="radio"/>
+                        <field name="posted_only"/>
+                    </group>
+                    <group>
+                        <field name="journal_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All bank and cash books"/>
+                        <field name="partner_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All parties"/>
+                        <field name="party_type_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All party types"/>
+                    </group>
+                </group>
+                <footer>
+                    <button name="action_print" type="object" string="Generate Report" class="btn-primary"/>
+                    <button name="action_print_xlsx" type="object" string="Generate Excel" class="btn-secondary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+    <record id="action_voucher_register" model="ir.actions.act_window">
+        <field name="name">Bank &amp; Cash Voucher Register</field>
+        <field name="res_model">combine.voucher.register.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+    <record id="action_report_voucher_register" model="ir.actions.report">
+        <field name="name">Bank &amp; Cash Voucher Register</field>
+        <field name="model">combine.voucher.register.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">partner_ledger_qty.report_voucher_register</field>
+        <field name="report_file">partner_ledger_qty.report_voucher_register</field>
+        <field name="print_report_name">'Voucher Register %s to %s' % (object.date_from, object.date_to)</field>
+        <field name="paperformat_id" ref="paperformat_partner_statement"/>
+        <field name="binding_model_id" eval="False"/>
+    </record>
+    <template id="report_voucher_register">
+        <t t-call="web.html_container"><t t-foreach="docs" t-as="doc"><t t-call="partner_ledger_qty.register_doc"/></t></t>
+    </template>
+
+    <!-- ======================================== Daily Documents Register -->
+    <record id="view_daily_documents_wizard_form" model="ir.ui.view">
+        <field name="name">combine.daily.documents.wizard.form</field>
+        <field name="model">combine.daily.documents.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Daily Documents Register">
+                <group>
+                    <group>
+                        <field name="date_from"/>
+                        <field name="date_to"/>
+                        <field name="scope"/>
+                        <field name="posted_only"/>
+                    </group>
+                    <group>
+                        <field name="partner_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All parties"/>
+                        <field name="party_type_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All party types"/>
+                    </group>
+                </group>
+                <footer>
+                    <button name="action_print" type="object" string="Generate Report" class="btn-primary"/>
+                    <button name="action_print_xlsx" type="object" string="Generate Excel" class="btn-secondary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+    <record id="action_daily_documents" model="ir.actions.act_window">
+        <field name="name">Daily Documents Register</field>
+        <field name="res_model">combine.daily.documents.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+    <record id="action_report_daily_documents" model="ir.actions.report">
+        <field name="name">Daily Documents Register</field>
+        <field name="model">combine.daily.documents.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">partner_ledger_qty.report_daily_documents</field>
+        <field name="report_file">partner_ledger_qty.report_daily_documents</field>
+        <field name="print_report_name">'Daily Documents %s to %s' % (object.date_from, object.date_to)</field>
+        <field name="paperformat_id" ref="paperformat_partner_statement"/>
+        <field name="binding_model_id" eval="False"/>
+    </record>
+    <template id="report_daily_documents">
+        <t t-call="web.html_container"><t t-foreach="docs" t-as="doc"><t t-call="partner_ledger_qty.register_doc"/></t></t>
+    </template>
+
+    <menuitem id="menu_voucher_register" name="Bank &amp; Cash Voucher Register" parent="account.account_reports_partners_reports_menu"
+              action="action_voucher_register" sequence="22"/>
+    <menuitem id="menu_daily_documents" name="Daily Documents Register" parent="account.account_reports_partners_reports_menu"
+              action="action_daily_documents" sequence="5"/>
+    <menuitem id="menu_daily_documents_sale" name="Daily Documents Register" parent="sale.menu_sale_report"
+              action="action_daily_documents" sequence="49"/>
+    <menuitem id="menu_daily_documents_purchase" name="Daily Documents Register" parent="purchase.purchase_report_main"
+              action="action_daily_documents" sequence="49"/>
+</odoo>
