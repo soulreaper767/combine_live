@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ======================================== Sales / Purchase Register -->
+    <record id="view_trade_register_wizard_form" model="ir.ui.view">
+        <field name="name">combine.trade.register.wizard.form</field>
+        <field name="model">combine.trade.register.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Register">
+                <group>
+                    <group>
+                        <field name="kind" widget="radio" options="{'horizontal': true}"/>
+                        <field name="group_by" widget="radio" options="{'horizontal': true}"/>
+                        <field name="detail" widget="radio"/>
+                        <field name="date_from"/>
+                        <field name="date_to"/>
+                    </group>
+                    <group>
+                        <field name="partner_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All parties"/>
+                        <field name="party_type_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All party types"/>
+                        <field name="categ_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All categories (e.g. Raw Material, Stores)"/>
+                        <field name="product_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All items"/>
+                    </group>
+                </group>
+                <footer>
+                    <button name="action_print" type="object" string="Generate Report" class="btn-primary"/>
+                    <button name="action_print_xlsx" type="object" string="Generate Excel" class="btn-secondary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+    <record id="action_sales_register" model="ir.actions.act_window">
+        <field name="name">Sales Register</field>
+        <field name="res_model">combine.trade.register.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="context">{'default_kind': 'sale'}</field>
+    </record>
+    <record id="action_purchase_register" model="ir.actions.act_window">
+        <field name="name">Purchase Register</field>
+        <field name="res_model">combine.trade.register.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="context">{'default_kind': 'purchase'}</field>
+    </record>
+
+    <!-- ======================================== Contract / PO Status -->
+    <record id="view_order_status_wizard_form" model="ir.ui.view">
+        <field name="name">combine.order.status.wizard.form</field>
+        <field name="model">combine.order.status.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Order Status">
+                <group>
+                    <group>
+                        <field name="kind" widget="radio"/>
+                        <field name="date_from" string="Order Date From"/>
+                        <field name="date_to" string="Order Date To"/>
+                        <field name="open_only"/>
+                    </group>
+                    <group>
+                        <field name="partner_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All parties"/>
+                        <field name="party_type_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All party types"/>
+                        <field name="categ_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All categories"/>
+                        <field name="product_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All items"/>
+                    </group>
+                </group>
+                <footer>
+                    <button name="action_print" type="object" string="Generate Report" class="btn-primary"/>
+                    <button name="action_print_xlsx" type="object" string="Generate Excel" class="btn-secondary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+    <record id="action_contract_status" model="ir.actions.act_window">
+        <field name="name">Contract / Sales Order Status</field>
+        <field name="res_model">combine.order.status.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="context">{'default_kind': 'sale'}</field>
+    </record>
+    <record id="action_po_status" model="ir.actions.act_window">
+        <field name="name">Purchase Order Status</field>
+        <field name="res_model">combine.order.status.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="context">{'default_kind': 'purchase'}</field>
+    </record>
+
+    <!-- ======================================== PDF -->
+    <record id="action_report_trade_register" model="ir.actions.report">
+        <field name="name">Sales / Purchase Register</field>
+        <field name="model">combine.trade.register.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">partner_ledger_qty.report_trade_register</field>
+        <field name="report_file">partner_ledger_qty.report_trade_register</field>
+        <field name="print_report_name">'%s Register %s to %s' % ('Sales' if object.kind == 'sale' else 'Purchase', object.date_from, object.date_to)</field>
+        <field name="paperformat_id" ref="paperformat_partner_statement"/>
+        <field name="binding_model_id" eval="False"/>
+    </record>
+    <template id="report_trade_register">
+        <t t-call="web.html_container"><t t-foreach="docs" t-as="doc"><t t-call="partner_ledger_qty.register_doc"/></t></t>
+    </template>
+    <record id="action_report_order_status" model="ir.actions.report">
+        <field name="name">Contract / PO Status</field>
+        <field name="model">combine.order.status.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">partner_ledger_qty.report_order_status</field>
+        <field name="report_file">partner_ledger_qty.report_order_status</field>
+        <field name="print_report_name">'%s Status %s to %s' % ('Contract' if object.kind == 'sale' else 'PO', object.date_from, object.date_to)</field>
+        <field name="paperformat_id" ref="paperformat_partner_statement"/>
+        <field name="binding_model_id" eval="False"/>
+    </record>
+    <template id="report_order_status">
+        <t t-call="web.html_container"><t t-foreach="docs" t-as="doc"><t t-call="partner_ledger_qty.register_doc"/></t></t>
+    </template>
+
+    <!-- ======================================== menus -->
+    <menuitem id="menu_sales_register" name="Sales Register" parent="sale.menu_sale_report" action="action_sales_register" sequence="50"/>
+    <menuitem id="menu_contract_status" name="Contract / Sales Order Status" parent="sale.menu_sale_report" action="action_contract_status" sequence="51"/>
+    <menuitem id="menu_purchase_register" name="Purchase Register" parent="purchase.purchase_report_main" action="action_purchase_register" sequence="50"/>
+    <menuitem id="menu_po_status" name="Purchase Order Status" parent="purchase.purchase_report_main" action="action_po_status" sequence="51"/>
+    <menuitem id="menu_sales_register_acc" name="Sales Register" parent="account.account_reports_partners_reports_menu" action="action_sales_register" sequence="20"/>
+    <menuitem id="menu_purchase_register_acc" name="Purchase Register" parent="account.account_reports_partners_reports_menu" action="action_purchase_register" sequence="21"/>
+</odoo>

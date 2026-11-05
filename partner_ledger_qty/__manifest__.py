@@ -1,6 +1,6 @@
 {
     'name': 'Custom Reports (Partner Ledger)',
-    'version': '19.0.7.5.0',
+    'version': '19.0.7.7.0',
     'category': 'Accounting/Accounting',
     'summary': "House for this company's custom reports - starts with the Partner Ledger "
                "Qty column and the itemized Partner Statement PDF",
@@ -91,6 +91,18 @@ Closing = Opening + Net - Receipts/Payments + Others always holds.
 Vendor amounts are shown as positive amounts owed. Delivery dates are
 read only when the Inventory app is installed (no new dependency).
 
+Registers
+---------
+Sales > Reporting / Purchase > Reporting (and Accounting > Reporting):
+Sales Register and Purchase Register - every invoice / bill line,
+party-wise or item-wise (or a one-line-per-party/item summary), with
+rate, discount %, gross, discount, net, sales tax and value incl. tax;
+filters for parties, party types, items and item categories (raw
+material, stores, ...). Contract / Sales Order Status and Purchase
+Order Status - document by document: ordered, delivered (received),
+balance, invoiced (billed), still to invoice, and the values. All in
+the house style, PDF and Excel, through one shared register engine.
+
 Party Types
 -----------
 Accounting > Configuration > Party Types: your own list (Local Customer,
@@ -137,6 +149,7 @@ a decorative one.
     'data': [
         'security/ir.model.access.csv',
         'views/party_type_views.xml',
+        'views/document_date_views.xml',
         'data/qty_column.xml',
         'wizard/partner_statement_wizard_views.xml',
         'report/report_base_templates.xml',
@@ -147,6 +160,8 @@ a decorative one.
         'report/party_outstanding_report.xml',
         'report/voucher_report.xml',
         'report/sale_order_report.xml',
+        'report/register_report.xml',
+        'wizard/trade_registers_views.xml',
     ],
     'installable': True,
     'application': False,
