@@ -28,6 +28,8 @@ class PartyOutstandingWizard(models.TransientModel):
     category_ids = fields.Many2many('res.partner.category', string='Categories',
                                     help='Only parties tagged with any of these categories. Leave empty for all.')
     hide_zero = fields.Boolean(string='Hide parties with nothing to show', default=True)
+    party_type_ids = fields.Many2many('combine.party.type', string='Party Types',
+                                      help='Only parties of these types. Leave empty for all parties.')
 
     def action_print(self):
         self.ensure_one()
@@ -96,6 +98,10 @@ class PartyOutstandingWizard(models.TransientModel):
         ws.merge_range(row + 1, 6, row + 1, 9, 'Amounts in %s' % company.currency_id.name, f_sub)
         ws.write(row + 2, 0, 'to', f_lbl)
         ws.write_datetime(row + 2, 1, fields.Datetime.to_datetime(data['date_to']), f_date_hdr)
+        if data['party_types']:
+            ws.write(row + 3, 0, 'Party Types:', f_lbl)
+            ws.write(row + 3, 1, data['party_types'], f_val)
+            row += 1
         if data['categories']:
             ws.write(row + 3, 0, 'Categories:', f_lbl)
             ws.write(row + 3, 1, data['categories'], f_val)

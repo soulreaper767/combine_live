@@ -86,6 +86,8 @@ class PartyOutstandingReport(models.AbstractModel):
         partners = self.env['res.partner'].browse(list(sums))
         if wizard.category_ids:
             partners = partners.filtered(lambda p: p.category_id & wizard.category_ids)
+        if wizard.party_type_ids:
+            partners = partners.filtered(lambda p: p.commercial_partner_id.x_party_type_id in wizard.party_type_ids)
 
         last_inv = self._last_dates(SQL(
             """
@@ -138,6 +140,7 @@ class PartyOutstandingReport(models.AbstractModel):
             'date_to': date_to,
             'title': 'Party Outstanding - %s' % ('Customers' if is_customer else 'Vendors'),
             'categories': ', '.join(wizard.category_ids.mapped('name')),
+            'party_types': ', '.join(wizard.party_type_ids.mapped('name')),
             'labels': {
                 'dlv': 'Last Dlv Date' if is_customer else 'Last Rcpt Date',
                 'gross': 'Gross Sales' if is_customer else 'Gross Purchases',

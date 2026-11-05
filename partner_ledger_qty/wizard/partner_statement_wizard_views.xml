@@ -6,7 +6,8 @@
         <field name="arch" type="xml">
             <form string="Partner Ledger Print">
                 <group>
-                    <field name="partner_id"/>
+                    <field name="party_type_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All party types"/>
+                    <field name="partner_id" domain="party_type_ids and [('commercial_partner_id.x_party_type_id', 'in', party_type_ids)] or []"/>
                     <field name="date_from"/>
                     <field name="date_to"/>
                 </group>

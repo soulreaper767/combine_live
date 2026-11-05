@@ -8,6 +8,7 @@
                 <group>
                     <field name="date_from"/>
                     <field name="date_to"/>
+                    <field name="party_type_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All party types"/>
                     <field name="hide_zero"/>
                 </group>
                 <footer>

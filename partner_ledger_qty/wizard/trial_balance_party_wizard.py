@@ -23,6 +23,8 @@ class TrialBalancePartyWizard(models.TransientModel):
                              default=lambda self: fields.Date.context_today(self).replace(month=1, day=1))
     date_to = fields.Date(string='To', required=True, default=fields.Date.context_today)
     hide_zero = fields.Boolean(string='Hide zero lines', default=True)
+    party_type_ids = fields.Many2many('combine.party.type', string='Party Types',
+                                      help='Only parties of these types. Leave empty for all parties.')
 
     def action_print(self):
         self.ensure_one()
@@ -99,6 +101,10 @@ class TrialBalancePartyWizard(models.TransientModel):
         ws.merge_range(row + 1, 6, row + 1, 9, 'Amounts in %s' % company.currency_id.name, f_sub)
         ws.write(row + 2, 0, 'to', f_lbl)
         ws.write_datetime(row + 2, 1, fields.Datetime.to_datetime(data['date_to']), f_date_hdr)
+        if data['party_types']:
+            ws.write(row + 3, 0, 'Party Types:', f_lbl)
+            ws.write(row + 3, 1, data['party_types'], wb.add_format({**base, 'bold': True}))
+            row += 1
 
         row += 4
         ws.merge_range(row, 0, row + 1, 0, 'Code', f_head_both)
