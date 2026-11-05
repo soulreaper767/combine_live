@@ -1,0 +1,369 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ======================================== departments: type, waste item -->
+    <record id="view_production_department_list_flow" model="ir.ui.view">
+        <field name="name">combine.production.department.list.flow</field>
+        <field name="model">combine.production.department</field>
+        <field name="inherit_id" ref="combine_stores.view_production_department_list"/>
+        <field name="arch" type="xml">
+            <field name="code" position="after">
+                <field name="dept_type"/>
+                <field name="waste_product_id" optional="show"/>
+            </field>
+        </field>
+    </record>
+
+    <!-- ======================================== process routes -->
+    <record id="view_process_route_list" model="ir.ui.view">
+        <field name="name">combine.process.route.list</field>
+        <field name="model">combine.process.route</field>
+        <field name="arch" type="xml">
+            <list>
+                <header>
+                    <button name="action_load_standard_flows" type="object" string="Load Standard Spinning Flows" display="always"
+                            confirm="Create the mill departments (Blow Room ... Packing) and the Carded, Combed and Open-End routes? Only missing ones are created; nothing existing is changed."/>
+                </header>
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="yarn_type"/>
+                <field name="flow_text"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_process_route_form" model="ir.ui.view">
+        <field name="name">combine.process.route.form</field>
+        <field name="model">combine.process.route</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="yarn_type"/>
+                        </group>
+                        <group>
+                            <field name="flow_text"/>
+                        </group>
+                    </group>
+                    <field name="step_ids">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="department_id"/>
+                            <field name="dept_type"/>
+                            <field name="output_note"/>
+                        </list>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_process_route" model="ir.actions.act_window">
+        <field name="name">Process Routes</field>
+        <field name="res_model">combine.process.route</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Set up the mill's process flows</p>
+            <p>Click "Load Standard Spinning Flows" to create the departments and the Carded, Combed and Open-End routes.</p>
+        </field>
+    </record>
+
+    <!-- ======================================== batch: route, machine, QC -->
+    <record id="view_production_batch_form_flow" model="ir.ui.view">
+        <field name="name">combine.production.batch.form.flow</field>
+        <field name="model">combine.production.batch</field>
+        <field name="inherit_id" ref="combine_costing.view_production_batch_form"/>
+        <field name="arch" type="xml">
+            <field name="department_id" position="before">
+                <field name="route_id" readonly="state != 'draft'" options="{'no_create': True}"/>
+            </field>
+            <field name="shift" position="after">
+                <field name="machine_no" readonly="state != 'draft'"/>
+                <field name="qc_required" invisible="1"/>
+                <field name="qc_test_id" invisible="not qc_required and not qc_test_id" required="qc_required and state == 'draft'"
+                       readonly="state != 'draft'" options="{'no_create': True}"/>
+            </field>
+            <field name="qty_waste" position="after">
+                <field name="input_qty" invisible="state != 'done'"/>
+                <field name="waste_pct" invisible="state != 'done'"/>
+            </field>
+        </field>
+    </record>
+    <record id="view_production_batch_list_flow" model="ir.ui.view">
+        <field name="name">combine.production.batch.list.flow</field>
+        <field name="model">combine.production.batch</field>
+        <field name="inherit_id" ref="combine_costing.view_production_batch_list"/>
+        <field name="arch" type="xml">
+            <field name="department_id" position="before">
+                <field name="route_id" optional="show"/>
+            </field>
+            <field name="qty_waste" position="after">
+                <field name="waste_pct" optional="show"/>
+            </field>
+        </field>
+    </record>
+
+    <!-- ======================================== quality tests -->
+    <record id="view_quality_test_list" model="ir.ui.view">
+        <field name="name">combine.quality.test.list</field>
+        <field name="model">combine.quality.test</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="result == 'fail'" decoration-warning="result == 'hold'">
+                <field name="name"/>
+                <field name="date"/>
+                <field name="stage"/>
+                <field name="product_id"/>
+                <field name="lot_no"/>
+                <field name="department_id" optional="show"/>
+                <field name="result" widget="badge" decoration-success="result == 'pass'" decoration-danger="result == 'fail'"/>
+                <field name="state" optional="hide"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_quality_test_form" model="ir.ui.view">
+        <field name="name">combine.quality.test.form</field>
+        <field name="model">combine.quality.test</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_done" type="object" string="Confirm Result" class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_draft" type="object" string="Reset to Draft" invisible="state != 'done'" groups="stock.group_stock_manager"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name" readonly="1"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="stage" readonly="state != 'draft'"/>
+                            <field name="date" readonly="state != 'draft'"/>
+                            <field name="batch_id" readonly="state != 'draft'" invisible="stage == 'raw_cotton'"/>
+                            <field name="lot_no" readonly="state != 'draft'"/>
+                            <field name="product_id" readonly="state != 'draft'"/>
+                        </group>
+                        <group>
+                            <field name="department_id" readonly="state != 'draft'" invisible="stage == 'raw_cotton'"/>
+                            <field name="partner_id" readonly="state != 'draft'" invisible="stage != 'raw_cotton'"/>
+                            <field name="grn_id" readonly="state != 'draft'" invisible="stage != 'raw_cotton'"/>
+                            <field name="result" readonly="state != 'draft'"/>
+                            <field name="tested_by_id" readonly="state != 'draft'"/>
+                            <field name="approved_by_id"/>
+                        </group>
+                    </group>
+                    <field name="line_ids" readonly="state != 'draft'">
+                        <list editable="bottom">
+                            <field name="parameter"/>
+                            <field name="unit"/>
+                            <field name="standard"/>
+                            <field name="value"/>
+                            <field name="ok"/>
+                            <field name="note"/>
+                        </list>
+                    </field>
+                    <field name="note" placeholder="Notes"/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="view_quality_test_search" model="ir.ui.view">
+        <field name="name">combine.quality.test.search</field>
+        <field name="model">combine.quality.test</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="lot_no"/>
+                <field name="product_id"/>
+                <filter string="Final Approvals" name="final" domain="[('stage', '=', 'final')]"/>
+                <filter string="Rejected / On Hold" name="bad" domain="[('result', 'in', ('fail', 'hold'))]"/>
+                <group>
+                    <filter string="Stage" name="g_stage" context="{'group_by': 'stage'}"/>
+                    <filter string="Result" name="g_result" context="{'group_by': 'result'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_quality_test" model="ir.actions.act_window">
+        <field name="name">Quality Tests</field>
+        <field name="res_model">combine.quality.test</field>
+        <field name="view_mode">list,form</field>
+    </record>
+    <record id="action_report_quality_test" model="ir.actions.report">
+        <field name="name">Quality Test Report</field>
+        <field name="model">combine.quality.test</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">combine_stores.report_stores_doc</field>
+        <field name="print_report_name">'Quality Test - %s' % object.name.replace('/', '-')</field>
+        <field name="paperformat_id" ref="partner_ledger_qty.paperformat_voucher"/>
+        <field name="binding_model_id" ref="model_combine_quality_test"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- ======================================== waste collection -->
+    <record id="view_waste_collection_list" model="ir.ui.view">
+        <field name="name">combine.waste.collection.list</field>
+        <field name="model">combine.waste.collection</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="date"/>
+                <field name="location_id"/>
+                <field name="total_value" sum="Total"/>
+                <field name="state" widget="badge" decoration-success="state == 'done'"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_waste_collection_form" model="ir.ui.view">
+        <field name="name">combine.waste.collection.form</field>
+        <field name="model">combine.waste.collection</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_receive" type="object" string="Receive into Waste Store" class="btn-primary" invisible="state != 'draft'"
+                            confirm="Receive the weighed waste into the waste store at its standard value?"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name" readonly="1"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="date" readonly="state != 'draft'"/>
+                            <field name="location_id" readonly="state != 'draft'"/>
+                        </group>
+                        <group>
+                            <field name="total_value"/>
+                        </group>
+                    </group>
+                    <field name="line_ids" readonly="state != 'draft'">
+                        <list editable="bottom">
+                            <field name="department_id"/>
+                            <field name="product_id"/>
+                            <field name="classification"/>
+                            <field name="bags" sum="Total"/>
+                            <field name="gross_weight"/>
+                            <field name="tare_weight"/>
+                            <field name="net_weight" sum="Total"/>
+                            <field name="value" sum="Total"/>
+                        </list>
+                    </field>
+                    <field name="note" placeholder="Notes"/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="action_waste_collection" model="ir.actions.act_window">
+        <field name="name">Waste Collection</field>
+        <field name="res_model">combine.waste.collection</field>
+        <field name="view_mode">list,form</field>
+    </record>
+    <record id="action_report_waste_collection" model="ir.actions.report">
+        <field name="name">Waste Collection Note</field>
+        <field name="model">combine.waste.collection</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">combine_stores.report_stores_doc</field>
+        <field name="print_report_name">'Waste Collection - %s' % object.name.replace('/', '-')</field>
+        <field name="paperformat_id" ref="partner_ledger_qty.paperformat_voucher"/>
+        <field name="binding_model_id" ref="model_combine_waste_collection"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- ======================================== production budget -->
+    <record id="view_production_budget_list" model="ir.ui.view">
+        <field name="name">combine.production.budget.list</field>
+        <field name="model">combine.production.budget</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="date_from"/>
+                <field name="date_to"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_production_budget_form" model="ir.ui.view">
+        <field name="name">combine.production.budget.form</field>
+        <field name="model">combine.production.budget</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="date_from"/>
+                            <field name="date_to"/>
+                        </group>
+                    </group>
+                    <field name="line_ids">
+                        <list editable="bottom">
+                            <field name="department_id"/>
+                            <field name="product_id"/>
+                            <field name="budget_qty"/>
+                            <field name="budget_waste_pct"/>
+                            <field name="budget_cost"/>
+                        </list>
+                    </field>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="action_production_budget" model="ir.actions.act_window">
+        <field name="name">Production Budgets</field>
+        <field name="res_model">combine.production.budget</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- ======================================== production reports -->
+    <record id="view_production_report_wizard_form" model="ir.ui.view">
+        <field name="name">combine.production.report.wizard.form</field>
+        <field name="model">combine.production.report.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Production Reports">
+                <group>
+                    <group>
+                        <field name="report" widget="radio"/>
+                    </group>
+                    <group>
+                        <field name="date_from" string="From" invisible="report == 'wip'"/>
+                        <field name="date_to" string="To / As on"/>
+                        <field name="department_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All departments"/>
+                        <field name="route_id" invisible="report != 'process'" options="{'no_create': true}"/>
+                        <field name="budget_id" invisible="report != 'budget'" options="{'no_create': true}" placeholder="Budget of the period"/>
+                        <field name="categ_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All categories"/>
+                        <field name="product_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All items"/>
+                    </group>
+                </group>
+                <footer>
+                    <button name="action_print" type="object" string="Generate Report" class="btn-primary"/>
+                    <button name="action_print_xlsx" type="object" string="Generate Excel" class="btn-secondary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+    <record id="action_production_reports" model="ir.actions.act_window">
+        <field name="name">Production Reports</field>
+        <field name="res_model">combine.production.report.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+    <record id="action_report_production" model="ir.actions.report">
+        <field name="name">Production Report</field>
+        <field name="model">combine.production.report.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">combine_costing.report_production</field>
+        <field name="report_file">combine_costing.report_production</field>
+        <field name="print_report_name">'Production Report %s to %s' % (object.date_from, object.date_to)</field>
+        <field name="paperformat_id" ref="partner_ledger_qty.paperformat_partner_statement"/>
+        <field name="binding_model_id" eval="False"/>
+    </record>
+    <template id="report_production">
+        <t t-call="web.html_container"><t t-foreach="docs" t-as="doc"><t t-call="partner_ledger_qty.register_doc"/></t></t>
+    </template>
+
+    <!-- ======================================== menus -->
+    <menuitem id="menu_process_route" name="Process Routes" parent="combine_stores.menu_stores_config" action="action_process_route" sequence="15"/>
+    <menuitem id="menu_quality_test" name="Quality Tests" parent="menu_production_root" action="action_quality_test" sequence="15"/>
+    <menuitem id="menu_waste_collection" name="Waste Collection" parent="menu_production_root" action="action_waste_collection" sequence="17"/>
+    <menuitem id="menu_production_budget" name="Production Budgets" parent="menu_production_root" action="action_production_budget" sequence="25"/>
+    <menuitem id="menu_production_reports" name="Production Reports" parent="combine_stores.menu_stores_reporting" action="action_production_reports" sequence="0"/>
+</odoo>

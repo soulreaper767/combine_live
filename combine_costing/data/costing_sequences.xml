@@ -14,4 +14,18 @@
         <field name="padding">4</field>
         <field name="company_id" eval="False"/>
     </record>
+    <record id="seq_quality_test" model="ir.sequence">
+        <field name="name">Quality Test</field>
+        <field name="code">combine.quality.test</field>
+        <field name="prefix">QT/%(year)s/</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False"/>
+    </record>
+    <record id="seq_waste_collection" model="ir.sequence">
+        <field name="name">Waste Collection Note</field>
+        <field name="code">combine.waste.collection</field>
+        <field name="prefix">WCN/%(year)s/</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
 </odoo>

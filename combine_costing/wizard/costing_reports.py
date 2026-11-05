@@ -137,7 +137,7 @@ class DeptStockWizard(models.TransientModel):
                                       string='Departments', help='Leave empty for all.')
     measure = fields.Selection([('qty', 'Quantity'), ('value', 'Value')], required=True, default='qty')
 
-    COLS = ('opening', 'issue', 'transfer_in', 'consume', 'produce', 'transfer_out', 'to_store', 'waste', 'adjust', 'closing')
+    COLS = ('opening', 'issue', 'transfer_in', 'consume', 'produce', 'transfer_out', 'to_store', 'waste', 'waste_out', 'adjust', 'closing')
 
     def _register_data(self):
         self.ensure_one()
@@ -157,12 +157,12 @@ class DeptStockWizard(models.TransientModel):
                 d[row.kind] += abs(v) if row.kind not in ('adjust',) else v
         for (dept, product), d in data.items():
             d['closing'] = d['opening'] + d['issue'] + d['transfer_in'] - d['consume'] + d['produce'] - d['transfer_out'] \
-                - d['to_store'] + d['waste'] + d['adjust']
+                - d['to_store'] + d['waste'] - d['waste_out'] + d['adjust']
         unit = self.measure == 'qty'
         kind = 'q' if unit else 'n'
         columns = [(_('Item'), 't')] + ([(_('UoM'), 'c')] if unit else []) + [
             (_('Opening'), kind), (_('Issued from Store'), kind), (_('From Department'), kind), (_('Consumed'), kind),
-            (_('Produced'), kind), (_('To Next Dept.'), kind), (_('To Store'), kind), (_('Waste'), kind),
+            (_('Produced'), kind), (_('To Next Dept.'), kind), (_('To Store'), kind), (_('Waste'), kind), (_('Waste Collected'), kind),
             (_('Count Adj.'), kind), (_('Closing (WIP)'), kind)]
         first = len(columns) - len(self.COLS)
         by_dept = defaultdict(list)
@@ -234,7 +234,7 @@ class CostVarianceWizard(models.TransientModel):
             for b in batches:
                 by_dept[b.department_id].append(b)
             for dept, bs in by_dept.items():
-                rows = [row('%s  %s  %s' % (b.name, fields.Date.to_string(b.date), b.product_id.display_name), b.uom_id.name,
+                rows = [row('%s  %s  %s' % (b.name, b.date.strftime('%d-%b-%y'), b.product_id.display_name), b.uom_id.name,
                             self._split(b)) for b in bs]
                 groups.append({'title': dept.name, 'sub': _('Batches: %s', len(rows)), 'rows': rows,
                                'totals': {i: sum(r[i] for r in rows) for i in (3, 4, 5, 6, 7, 8)}})
