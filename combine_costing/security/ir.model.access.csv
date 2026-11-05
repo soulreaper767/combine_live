@@ -18,3 +18,19 @@ access_cost_close_line_user,cost close line user,model_combine_cost_close_line,s
 access_stock_movement_wiz,stock movement wizard,model_combine_stock_movement_wizard,stock.group_stock_user,1,1,1,1
 access_dept_stock_wiz,dept stock wizard,model_combine_dept_stock_wizard,stock.group_stock_user,1,1,1,1
 access_cost_variance_wiz,cost variance wizard,model_combine_cost_variance_wizard,stock.group_stock_user,1,1,1,1
+access_route_user,process route user,model_combine_process_route,stock.group_stock_user,1,0,0,0
+access_route_mgr,process route manager,model_combine_process_route,stock.group_stock_manager,1,1,1,1
+access_route_step_user,route step user,model_combine_process_route_step,stock.group_stock_user,1,0,0,0
+access_route_step_mgr,route step manager,model_combine_process_route_step,stock.group_stock_manager,1,1,1,1
+access_qc_user,quality test user,model_combine_quality_test,stock.group_stock_user,1,1,1,0
+access_qc_line_user,quality test line user,model_combine_quality_test_line,stock.group_stock_user,1,1,1,1
+access_qc_mgr,quality test manager,model_combine_quality_test,stock.group_stock_manager,1,1,1,1
+access_waste_user,waste collection user,model_combine_waste_collection,stock.group_stock_user,1,1,1,0
+access_waste_line_user,waste collection line user,model_combine_waste_collection_line,stock.group_stock_user,1,1,1,1
+access_budget_user,budget user,model_combine_production_budget,stock.group_stock_user,1,0,0,0
+access_budget_line_user,budget line user,model_combine_production_budget_line,stock.group_stock_user,1,0,0,0
+access_budget_mgr,budget manager,model_combine_production_budget,stock.group_stock_manager,1,1,1,1
+access_budget_line_mgr,budget line manager,model_combine_production_budget_line,stock.group_stock_manager,1,1,1,1
+access_budget_acc,budget accountant,model_combine_production_budget,account.group_account_manager,1,1,1,1
+access_budget_line_acc,budget line accountant,model_combine_production_budget_line,account.group_account_manager,1,1,1,1
+access_prod_report_wiz,production report wizard,model_combine_production_report_wizard,stock.group_stock_user,1,1,1,1

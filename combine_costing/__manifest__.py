@@ -1,13 +1,36 @@
 {
     'name': 'Combine - Production Costing',
-    'version': '19.0.1.0.0',
+    'version': '19.0.1.1.0',
     'category': 'Inventory/Inventory',
-    'summary': 'Department process flow, WIP, standard cost cards, actual cost and variance analysis; stock movement reports',
+    'summary': 'Spinning process routes, production batches, QC, waste, WIP, standard / actual / budget cost and variance; production and stock movement reports',
     'description': """
 Combine - Production Costing
 ============================
 Follows the material through the mill, department by department, and
 costs it two ways - standard and actual - with the variance between them.
+
+Process routes (Stores > Configuration > Process Routes)
+-------------------------------------------------------
+"Load Standard Spinning Flows" creates the departments and three routes:
+- Carded: Blow Room > Carding > Breaker Drawing > Finisher Drawing >
+  Speed Frame > Ring Spinning > Winding > Yarn Testing & QC > Packing
+- Combed: ... Breaker Drawing > Sliver Lap Preparation > Comber
+  Preparation > Combing > Finisher Drawing > Speed Frame > Ring ...
+- Open-End: ... Finisher Drawing > Open-End / Rotor Spinning > Winding ...
+Raw cotton receiving, bale inspection and the raw cotton warehouse are the
+Stores flow (IGP > Inspection > GRN); the finished goods warehouse and
+dispatch are Odoo's stock and the delivery challan. A batch on a route
+sends its output to the next department by itself; Packing needs the
+lot's approved final quality test (packing authorization).
+
+Quality control: Quality Tests for raw cotton, sliver, roving, yarn and
+the final approval, with the usual parameters filled in (staple, mic,
+strength, trash; hank, U%, neps; count, CSP, IPI, hairiness ...).
+Waste: Waste Collection Notes - department, waste item, classification
+(reusable / recyclable / saleable / hard), bags, gross / tare / net -
+received into the waste store at standard value, then reissued or sold.
+Maintenance: use Odoo's Maintenance app (equipment, preventive
+schedules, work orders, repair, release).
 
 Flow
 ----
@@ -43,7 +66,13 @@ Reports (Stores > Reporting, PDF and Excel, house style)
   closing (material + work in process).
 - Cost & Variance Analysis: batch-wise, item-wise, department-wise or
   month-wise.
-- Prints: Production Batch Report, WIP Count Sheet.
+- Production Reports: Daily Production (finished goods first, then each
+  department, then waste), Department Production (batch by batch), FG
+  Production (item by day), WIP Summary, Process Cost Build-up (cost
+  brought in and added in each process, per unit, against standard),
+  Actual vs Budget (Production Budgets: quantity, cost / unit, waste %).
+- Prints: Production Batch Report, WIP Count Sheet, Quality Test Report,
+  Waste Collection Note.
 
 Odoo's own stock valuation method is not changed. New models only;
 installing it changes no existing data.
@@ -55,6 +84,7 @@ installing it changes no existing data.
         'security/ir.model.access.csv',
         'data/costing_sequences.xml',
         'views/costing_views.xml',
+        'views/production_flow_views.xml',
     ],
     'installable': True,
     'application': False,
