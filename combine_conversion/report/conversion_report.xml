@@ -26,7 +26,7 @@
                         <tr>
                             <td class="lbl">Order No.</td><td><strong t-out="doc.name"/>
                                 <span t-if="doc.state == 'cancel'" class="cr-stamp">CANCELLED</span></td>
-                            <td class="lbl">Date Sent</td><td><span t-out="doc.date" t-options="{'widget': 'date'}"/></td>
+                            <td class="lbl">Date Sent</td><td><span t-out="doc.date" t-options="{'widget': 'date', 'format': 'dd-MMM-yy'}"/></td>
                             <td class="lbl">Status</td><td t-out="dict(doc._fields['state'].selection)[doc.state]"/>
                         </tr>
                         <tr>
@@ -36,7 +36,7 @@
                         </tr>
                         <tr t-if="doc.previous_order_id or doc.date_closed">
                             <td class="lbl">Previous Process</td><td t-out="doc.previous_order_id.name or '-'"/>
-                            <td class="lbl">Closed</td><td><span t-if="doc.date_closed" t-out="doc.date_closed" t-options="{'widget': 'date'}"/></td>
+                            <td class="lbl">Closed</td><td><span t-if="doc.date_closed" t-out="doc.date_closed" t-options="{'widget': 'date', 'format': 'dd-MMM-yy'}"/></td>
                             <td/><td/>
                         </tr>
                     </table>
@@ -79,7 +79,7 @@
                             <thead><tr><th>Sr.</th><th>Date</th><th>Packages</th><th>Wt / Pkg</th><th>Qty Received</th><th>Waste Returned</th><th>Remarks</th></tr></thead>
                             <tbody>
                                 <tr t-foreach="doc.receipt_line_ids" t-as="r">
-                                    <td class="c" t-out="r_index + 1"/><td class="c"><span t-out="r.date" t-options="{'widget': 'date'}"/></td>
+                                    <td class="c" t-out="r_index + 1"/><td class="c"><span t-out="r.date" t-options="{'widget': 'date', 'format': 'dd-MMM-yy'}"/></td>
                                     <td class="n" t-out="r.packages or '-'"/><td class="n" t-out="doc._cv_fmt(r.weight_per_package)"/>
                                     <td class="n" t-out="doc._cv_fmt(r.qty)"/><td class="n" t-out="doc._cv_fmt(r.waste_qty)"/><td t-out="r.note or ''"/>
                                 </tr>
