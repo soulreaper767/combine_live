@@ -3,7 +3,7 @@ import logging
 from odoo import _, models
 from odoo.exceptions import UserError
 
-from odoo.addons.master_child_sync.models.sync_mixin import _plain_domain
+from odoo.addons.odoo_master_child.models.sync_mixin import _plain_domain
 
 _logger = logging.getLogger(__name__)
 

@@ -2,7 +2,7 @@ import logging
 
 from odoo import _, models
 
-from odoo.addons.master_child_sync.models.rpc_client import ChildUnreachable
+from odoo.addons.odoo_master_child.models.rpc_client import ChildUnreachable
 
 _logger = logging.getLogger(__name__)
 

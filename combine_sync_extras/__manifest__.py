@@ -1,13 +1,14 @@
 {
     'name': 'Combine - Sync Extras',
-    'version': '19.0.1.0.0',
+    'version': '19.0.1.0.1',
     'category': 'Accounting',
     'summary': 'Master-side additions to Master-Child Sync: create missing taxes / journals / states in the Child, '
                'never clash on account codes, show the real reason when a sync fails',
     'description': """
 Combine - Sync Extras
 =====================
-Install on the Master (combine) only. Extends Master-Child Sync without
+Install on the Master (combine) only - where Master-Child Sync is installed as
+`odoo_master_child` (the combine_live submodule). Extends it without
 changing it:
 
 - Taxes, journals and states missing in the Child are created there
@@ -31,7 +32,7 @@ Installing or upgrading it changes no existing data.
 """,
     'author': 'Sibyl Technologies',
     'license': 'LGPL-3',
-    'depends': ['master_child_sync'],
+    'depends': ['odoo_master_child'],
     'data': [],
     'installable': True,
     'application': False,
