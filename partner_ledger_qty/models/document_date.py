@@ -23,7 +23,10 @@ class DocumentDateMixin(models.AbstractModel):
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
-            vals.setdefault('x_document_date', fields.Date.context_today(self))
+            if not vals.get('x_document_date'):
+                # an order created with its own date (e.g. synced from the Master) keeps that day
+                when = vals.get('date_order')
+                vals['x_document_date'] = fields.Date.context_today(self, fields.Datetime.to_datetime(when)) if when                     else fields.Date.context_today(self)
         return super().create(vals_list)
 
     def _document_date(self):
