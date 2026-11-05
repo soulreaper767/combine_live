@@ -1,6 +1,6 @@
 {
     'name': 'Custom Reports (Partner Ledger)',
-    'version': '19.0.7.7.0',
+    'version': '19.0.7.8.0',
     'category': 'Accounting/Accounting',
     'summary': "House for this company's custom reports - starts with the Partner Ledger "
                "Qty column and the itemized Partner Statement PDF",
@@ -91,6 +91,17 @@ Closing = Opening + Net - Receipts/Payments + Others always holds.
 Vendor amounts are shown as positive amounts owed. Delivery dates are
 read only when the Inventory app is installed (no new dependency).
 
+Daily Documents Register (Accounting / Sales / Purchase > Reporting):
+every document of the selected days - contracts, invoices, credit
+notes, deliveries, purchase orders, bills, receipts, stores documents
+(demand notes, IGP, inspections, GRN, OGP, material issues, conversion
+orders, where installed) and bank / cash / journal vouchers - one block
+per document type with count and totals; drafts included or not.
+
+Bank & Cash Voucher Register: bank receipts, bank payments, cash
+receipts, cash payments, journal vouchers - one line per voucher per
+book (receipts / payments columns) or every account line per voucher.
+
 Registers
 ---------
 Sales > Reporting / Purchase > Reporting (and Accounting > Reporting):
@@ -162,6 +173,7 @@ a decorative one.
         'report/sale_order_report.xml',
         'report/register_report.xml',
         'wizard/trade_registers_views.xml',
+        'wizard/daily_registers_views.xml',
     ],
     'installable': True,
     'application': False,
