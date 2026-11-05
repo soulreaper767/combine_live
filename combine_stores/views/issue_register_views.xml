@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="seq_material_issue" model="ir.sequence">
+        <field name="name">Material Issue Note</field>
+        <field name="code">combine.material.issue</field>
+        <field name="prefix">MIN/%(year)s/</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+
+    <!-- ================================================= departments -->
+    <record id="view_production_department_list" model="ir.ui.view">
+        <field name="name">combine.production.department.list</field>
+        <field name="model">combine.production.department</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="manager_id"/>
+                <field name="location_id" readonly="1"/>
+                <field name="company_id" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_production_department" model="ir.actions.act_window">
+        <field name="name">Production Departments</field>
+        <field name="res_model">combine.production.department</field>
+        <field name="view_mode">list</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Add your production departments</p>
+            <p>e.g. Blow Room, Carding, Drawing, Simplex, Ring Spinning, Winding, Packing.</p>
+        </field>
+    </record>
+
+    <!-- ================================================= material issue -->
+    <record id="view_material_issue_list" model="ir.ui.view">
+        <field name="name">combine.material.issue.list</field>
+        <field name="model">combine.material.issue</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="state == 'cancel'">
+                <field name="name"/>
+                <field name="date"/>
+                <field name="department_id"/>
+                <field name="location_id" optional="show"/>
+                <field name="requested_by" optional="show"/>
+                <field name="total_value" sum="Total"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="state" widget="badge" decoration-success="state == 'done'"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_material_issue_form" model="ir.ui.view">
+        <field name="name">combine.material.issue.form</field>
+        <field name="model">combine.material.issue</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_issue" type="object" string="Issue" class="btn-primary" invisible="state != 'draft'"
+                            confirm="Issue these items from the store to the department? Stock leaves the warehouse at its cost."/>
+                    <button name="action_cancel" type="object" string="Cancel" invisible="state != 'draft'"/>
+                    <button name="action_draft" type="object" string="Reset to Draft" invisible="state != 'cancel'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name" readonly="1"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="department_id" readonly="state != 'draft'" options="{'no_create': True}"/>
+                            <field name="requested_by" readonly="state != 'draft'"/>
+                            <field name="issued_by_id" readonly="state != 'draft'"/>
+                        </group>
+                        <group>
+                            <field name="date" readonly="state != 'draft'"/>
+                            <field name="warehouse_id" readonly="state != 'draft'" groups="stock.group_stock_multi_warehouses"/>
+                            <field name="location_id" readonly="state != 'draft'"/>
+                            <field name="total_value" invisible="state != 'done'"/>
+                            <field name="company_id" invisible="1"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <field name="line_ids" readonly="state != 'draft'">
+                        <list editable="bottom">
+                            <field name="product_id"/>
+                            <field name="available_qty"/>
+                            <field name="qty"/>
+                            <field name="uom_id"/>
+                            <field name="unit_cost" column_invisible="parent.state != 'done'"/>
+                            <field name="value" column_invisible="parent.state != 'done'" sum="Total"/>
+                            <field name="note"/>
+                            <field name="currency_id" column_invisible="1"/>
+                        </list>
+                    </field>
+                    <field name="note" placeholder="Notes"/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="view_material_issue_search" model="ir.ui.view">
+        <field name="name">combine.material.issue.search</field>
+        <field name="model">combine.material.issue</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="department_id"/>
+                <field name="line_ids" string="Item" filter_domain="[('line_ids.product_id', 'ilike', self)]"/>
+                <filter string="Draft" name="draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="Issued" name="done" domain="[('state', '=', 'done')]"/>
+                <filter name="filter_date" date="date"/>
+                <group>
+                    <filter string="Department" name="group_department" context="{'group_by': 'department_id'}"/>
+                    <filter string="Month" name="group_month" context="{'group_by': 'date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_material_issue" model="ir.actions.act_window">
+        <field name="name">Issue to Production</field>
+        <field name="res_model">combine.material.issue</field>
+        <field name="view_mode">list,form</field>
+    </record>
+    <record id="action_report_material_issue" model="ir.actions.report">
+        <field name="name">Material Issue Note</field>
+        <field name="model">combine.material.issue</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">combine_stores.report_stores_doc</field>
+        <field name="print_report_name">'Material Issue - %s' % object.name.replace('/', '-')</field>
+        <field name="paperformat_id" ref="partner_ledger_qty.paperformat_voucher"/>
+        <field name="binding_model_id" ref="model_combine_material_issue"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- ================================================= stores registers -->
+    <record id="view_stores_register_wizard_form" model="ir.ui.view">
+        <field name="name">combine.stores.register.wizard.form</field>
+        <field name="model">combine.stores.register.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Stores Register">
+                <group>
+                    <group>
+                        <field name="doc_type"/>
+                        <field name="date_from"/>
+                        <field name="date_to"/>
+                        <field name="status" widget="radio"/>
+                    </group>
+                    <group>
+                        <field name="partner_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All parties"
+                               invisible="doc_type == 'issue'"/>
+                        <field name="party_type_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All party types"
+                               invisible="doc_type == 'issue'"/>
+                        <field name="department_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All departments"
+                               invisible="doc_type != 'issue'"/>
+                        <field name="categ_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All categories"/>
+                        <field name="product_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All items"/>
+                    </group>
+                </group>
+                <footer>
+                    <button name="action_print" type="object" string="Generate Report" class="btn-primary"/>
+                    <button name="action_print_xlsx" type="object" string="Generate Excel" class="btn-secondary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+    <record id="action_stores_register" model="ir.actions.act_window">
+        <field name="name">Stores Registers</field>
+        <field name="res_model">combine.stores.register.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+    <record id="action_report_stores_register" model="ir.actions.report">
+        <field name="name">Stores Register</field>
+        <field name="model">combine.stores.register.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">combine_stores.report_stores_register</field>
+        <field name="report_file">combine_stores.report_stores_register</field>
+        <field name="print_report_name">'%s Register %s to %s' % (object.doc_type.upper(), object.date_from, object.date_to)</field>
+        <field name="paperformat_id" ref="partner_ledger_qty.paperformat_partner_statement"/>
+        <field name="binding_model_id" eval="False"/>
+    </record>
+    <template id="report_stores_register">
+        <t t-call="web.html_container"><t t-foreach="docs" t-as="doc"><t t-call="partner_ledger_qty.register_doc"/></t></t>
+    </template>
+
+    <menuitem id="menu_stores_issue" name="Issue to Production" parent="menu_stores_root" action="action_material_issue" sequence="45"/>
+    <menuitem id="menu_stores_registers" name="Stores Registers" parent="menu_stores_reporting" action="action_stores_register" sequence="5"/>
+    <menuitem id="menu_stores_config" name="Configuration" parent="menu_stores_root" sequence="95" groups="stock.group_stock_manager"/>
+    <menuitem id="menu_stores_departments" name="Production Departments" parent="menu_stores_config" action="action_production_department" sequence="10"/>
+</odoo>

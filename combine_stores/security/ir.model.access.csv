@@ -26,3 +26,10 @@ access_ogp_line_stock,ogp line stock,model_combine_gate_pass_out_line,stock.grou
 access_ogp_sale,ogp sales,model_combine_gate_pass_out,sales_team.group_sale_salesman,1,0,0,0
 access_ogp_line_sale,ogp line sales,model_combine_gate_pass_out_line,sales_team.group_sale_salesman,1,0,0,0
 access_ogp_manager,ogp manager,model_combine_gate_pass_out,stock.group_stock_manager,1,1,1,1
+access_dept_user,production department user,model_combine_production_department,stock.group_stock_user,1,0,0,0
+access_dept_manager,production department manager,model_combine_production_department,stock.group_stock_manager,1,1,1,1
+access_issue_stock,material issue stock,model_combine_material_issue,stock.group_stock_user,1,1,1,0
+access_issue_line_stock,material issue line stock,model_combine_material_issue_line,stock.group_stock_user,1,1,1,1
+access_issue_manager,material issue manager,model_combine_material_issue,stock.group_stock_manager,1,1,1,1
+access_stores_register,stores register wizard,model_combine_stores_register_wizard,stock.group_stock_user,1,1,1,1
+access_stores_register_purchase,stores register wizard purchase,model_combine_stores_register_wizard,purchase.group_purchase_user,1,1,1,1
