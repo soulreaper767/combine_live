@@ -170,7 +170,7 @@ class OrderStatusWizard(models.TransientModel):
                 _('Partly %s', moved_lbl.lower()) if any(r[3] for r in rows) else _('Pending'))
             ref = order.client_order_ref if sale else order.partner_ref
             sub = ' | '.join(p for p in (order.partner_id.commercial_partner_id.name,
-                                         fields.Date.to_string(order._document_date()),
+                                         order._document_date().strftime('%d-%b-%y'),
                                          ref and _('Ref: %s', ref), status) if p)
             groups.append({'title': order.name, 'sub': sub, 'rows': rows, 'totals': totals})
         filters = self._register_filter_lines()

@@ -55,7 +55,7 @@ class TrialBalancePartyWizard(models.TransientModel):
         f_co = wb.add_format({**base, 'bold': True, 'font_size': 11})
         f_lbl = wb.add_format({**base, 'font_color': '#6B7280'})
         f_txt = wb.add_format(base)
-        f_date_hdr = wb.add_format({**base, 'num_format': 'd-mmm-yy', 'align': 'left'})
+        f_date_hdr = wb.add_format({**base, 'num_format': 'dd-mmm-yy', 'align': 'left'})
         f_title = wb.add_format({**base, 'bold': True, 'font_size': 14, 'align': 'right'})
         f_sub = wb.add_format({**base, 'font_size': 8, 'font_color': '#6B7280', 'align': 'right'})
         head = {**base, 'bold': True, 'align': 'center', 'text_wrap': True, 'bg_color': HEAD_FILL,

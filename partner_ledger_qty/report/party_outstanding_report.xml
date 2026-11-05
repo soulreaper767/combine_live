@@ -63,8 +63,8 @@
                             <tr t-foreach="data['rows']" t-as="row">
                                 <td class="c"><span t-out="row['sr']"/></td>
                                 <td><span t-out="row['partner']"/></td>
-                                <td class="c"><span t-if="row['last_dlv']" t-out="row['last_dlv']" t-options="{'widget': 'date'}"/></td>
-                                <td class="c"><span t-if="row['last_inv']" t-out="row['last_inv']" t-options="{'widget': 'date'}"/></td>
+                                <td class="c"><span t-if="row['last_dlv']" t-out="row['last_dlv']" t-options="{'widget': 'date', 'format': 'dd-MMM-yy'}"/></td>
+                                <td class="c"><span t-if="row['last_inv']" t-out="row['last_inv']" t-options="{'widget': 'date', 'format': 'dd-MMM-yy'}"/></td>
                                 <td class="n"><span t-out="fmt_amount(row['opening'])"/></td>
                                 <td class="n"><span t-out="fmt_amount(row['gross'])"/></td>
                                 <td class="n"><span t-out="fmt_amount(row['net'])"/></td>
