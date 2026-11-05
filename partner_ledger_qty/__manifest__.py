@@ -1,6 +1,6 @@
 {
     'name': 'Custom Reports (Partner Ledger)',
-    'version': '19.0.7.6.0',
+    'version': '19.0.7.7.0',
     'category': 'Accounting/Accounting',
     'summary': "House for this company's custom reports - starts with the Partner Ledger "
                "Qty column and the itemized Partner Statement PDF",
@@ -149,6 +149,7 @@ a decorative one.
     'data': [
         'security/ir.model.access.csv',
         'views/party_type_views.xml',
+        'views/document_date_views.xml',
         'data/qty_column.xml',
         'wizard/partner_statement_wizard_views.xml',
         'report/report_base_templates.xml',

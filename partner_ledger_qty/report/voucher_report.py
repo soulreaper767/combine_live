@@ -208,7 +208,7 @@ class VoucherReportMixin(models.AbstractModel):
         return {
             'title': 'Purchase Order' if confirmed else 'Request for Quotation',
             'info': [('PO No.' if confirmed else 'RFQ No.', order.name),
-                     ('Order Date', format_date(self.env, order.date_order)),
+                     ('Order Date', format_date(self.env, order._document_date())),
                      ('Expected', format_date(self.env, order.date_planned) if order.date_planned else '-'),
                      ('Payment Terms', order.payment_term_id.name or '-'),
                      ('Buyer', order.user_id.name or '-'),
@@ -266,7 +266,7 @@ class VoucherReportMixin(models.AbstractModel):
         confirmed = order.state == 'sale'
         extra = [('Deliver', self._address(order.partner_shipping_id))] if order.partner_shipping_id != order.partner_id else []
         info = [('Order No.' if confirmed else 'Contract No.', order.name),
-                ('Date', format_date(self.env, order.date_order))]
+                ('Date', format_date(self.env, order._document_date()))]
         if order.validity_date and not confirmed:
             info.append(('Valid Until', format_date(self.env, order.validity_date)))
         info += [('Payment Terms', order.payment_term_id.name or '-'), ('Salesperson', order.user_id.name or '-'),

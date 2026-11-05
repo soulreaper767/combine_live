@@ -130,9 +130,11 @@ class OrderStatusWizard(models.TransientModel):
         Order = self.env['sale.order' if sale else 'purchase.order']
         states = ('sale',) if sale else ('purchase', 'done')
         orders = Order.search([('company_id', '=', self.env.company.id), ('state', 'in', states),
+                               '|', '&', ('x_document_date', '>=', self.date_from), ('x_document_date', '<=', self.date_to),
+                               '&', '&', ('x_document_date', '=', False),
                                ('date_order', '>=', fields.Datetime.to_datetime(self.date_from)),
-                               ('date_order', '<', fields.Datetime.add(fields.Datetime.to_datetime(self.date_to), days=1))],
-                              order='date_order, id')
+                               ('date_order', '<', fields.Datetime.add(fields.Datetime.to_datetime(self.date_to), days=1))])
+        orders = orders.sorted(lambda o: (o._document_date(), o.id))
         moved_lbl = _('Delivered') if sale else _('Received')
         inv_lbl = _('Invoiced') if sale else _('Billed')
         columns = [(_('Item'), 't'), (_('UoM'), 'c'), (_('Ordered'), 'q'), (moved_lbl, 'q'), (_('Balance'), 'q'),
@@ -168,7 +170,7 @@ class OrderStatusWizard(models.TransientModel):
                 _('Partly %s', moved_lbl.lower()) if any(r[3] for r in rows) else _('Pending'))
             ref = order.client_order_ref if sale else order.partner_ref
             sub = ' | '.join(p for p in (order.partner_id.commercial_partner_id.name,
-                                         fields.Date.to_string(order.date_order.date()),
+                                         fields.Date.to_string(order._document_date()),
                                          ref and _('Ref: %s', ref), status) if p)
             groups.append({'title': order.name, 'sub': sub, 'rows': rows, 'totals': totals})
         filters = self._register_filter_lines()
