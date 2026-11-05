@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Shared register layout; each register has its own thin template that
+         loops over its wizard records and calls this (own report_name per
+         register, so the download link always finds the right model). -->
+    <template id="register_doc">
+        <t t-set="d" t-value="doc._register_data()"/>
+        <t t-set="cols" t-value="d['columns']"/>
+        <div class="page cr" t-att-style="'page-break-before: always;' if not doc_first else None">
+            <t t-call="partner_ledger_qty.cr_style"/>
+            <t t-call="partner_ledger_qty.doc_style"/>
+            <t t-call="partner_ledger_qty.cr_header">
+                <t t-set="cr_title" t-value="d['title']"/>
+                <t t-set="cr_company" t-value="env.company"/>
+                <t t-set="cr_date_from" t-value="doc.date_from"/>
+                <t t-set="cr_date_to" t-value="doc.date_to"/>
+            </t>
+            <div t-foreach="d.get('filters', [])" t-as="flt" class="cr-meta" style="margin: -4px 0 2px 0;">
+                <span class="lbl" style="color: #6b7280;"><t t-out="flt[0]"/>:</span>
+                <strong t-out="flt[1]"/>
+            </div>
+            <table class="cr-tbl" style="font-size: 10px; margin-top: 6px;">
+                <thead>
+                    <tr><th t-foreach="cols" t-as="col" t-out="col[0]"/></tr>
+                </thead>
+                <tbody>
+                    <t t-foreach="d['groups']" t-as="g">
+                        <tr class="ctl">
+                            <td t-att-colspan="len(cols)">
+                                <t t-out="g['title']"/>
+                                <span t-if="g.get('sub')" style="font-weight: normal; color: #4b5563;"> - <t t-out="g['sub']"/></span>
+                            </td>
+                        </tr>
+                        <tr t-foreach="g['rows']" t-as="r">
+                            <td t-foreach="r" t-as="v" t-att-class="doc._register_class(cols[v_index][1])"
+                                t-out="doc._register_cell(v, cols[v_index][1])"/>
+                        </tr>
+                        <tr t-if="g.get('totals')" style="font-weight: 700;">
+                            <t t-foreach="cols" t-as="col">
+                                <td t-if="col_index == 0" style="border-top: 1px solid #cbd5e1;">Subtotal</td>
+                                <td t-else="" t-att-class="doc._register_class(col[1])" style="border-top: 1px solid #cbd5e1;"
+                                    t-out="doc._register_cell(g['totals'].get(col_index), col[1])"/>
+                            </t>
+                        </tr>
+                    </t>
+                    <tr t-if="not d['groups']">
+                        <td t-att-colspan="len(cols)" class="c" style="color: #6b7280;">Nothing to show for the selected options.</td>
+                    </tr>
+                    <tr t-if="d.get('totals')" class="tot">
+                        <t t-foreach="cols" t-as="col">
+                            <td t-if="col_index == 0">GRAND TOTAL</td>
+                            <td t-else="" t-att-class="doc._register_class(col[1])"
+                                t-out="doc._register_cell(d['totals'].get(col_index), col[1])"/>
+                        </t>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </template>
+</odoo>
