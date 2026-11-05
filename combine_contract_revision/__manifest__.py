@@ -1,26 +1,31 @@
 {
     'name': 'Combine - Contract Revision',
-    'version': '19.0.1.0.0',
+    'version': '19.0.1.1.0',
     'category': 'Sales/Sales',
-    'summary': 'Reopen a confirmed contract for changes, reversing its deliveries and invoices first',
+    'summary': 'Reopen a confirmed contract with its deliveries and invoices in draft - same documents, no stock or ledger effect',
     'description': """
 Combine - Contract Revision
 ===========================
 A confirmed contract that has already been delivered and invoiced cannot
-normally be changed. "Revise Contract" (Sales Managers) reverses every
-impact and puts the contract back to draft so it can be corrected and
-confirmed again:
+normally be changed. "Revise Contract" (Sales Managers) puts the contract,
+its deliveries and its invoices back to draft - the same documents with
+the same numbers - with every stock and ledger effect removed:
 
-1. Invoices of the contract are reset to draft and cancelled - they keep
-   their numbers, so no series gets a gap. Commission lines raised by
-   those invoices (not yet paid) are removed and GST Saving entries
-   cancelled, when those features are installed.
-2. Every validated delivery is returned in full (Odoo's own return,
-   counting anything already returned), so stock comes back.
-3. Open deliveries are cancelled and the contract goes back to draft.
+1. Invoices go back to draft (number kept); commission lines raised by
+   them (not yet paid) are removed and GST Saving entries cancelled,
+   when those features are installed.
+2. Validated deliveries go back to draft through Odoo's own correction
+   of done quantities: stock returns to the warehouse, the delivery's
+   value goes to zero, a stock journal entry (if any) is cancelled. No
+   return document, nothing new in the ledger.
+3. The contract goes back to draft for changes.
+4. On confirming again, the reopened delivery takes the new quantities
+   (new items join it, removed items drop out) and is ready to validate;
+   the draft invoices take the new rates, discounts and taxes.
 
-Refused while any invoice of the contract has a payment registered -
-reverse or unreconcile the payment first. Everything done is written to
+Refused while any invoice of the contract has a payment registered
+(reverse or unreconcile it first), a credit note is posted, or goods
+were returned against it. Everything done is written to
 the contract's chatter. Standalone: depends only on Odoo's Sales,
 Inventory and Accounting; installing it changes no data.
 """,
