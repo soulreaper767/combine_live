@@ -1,0 +1,20 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_cost_card_user,cost card user,model_combine_cost_card,stock.group_stock_user,1,0,0,0
+access_cost_card_mgr,cost card manager,model_combine_cost_card,account.group_account_manager,1,1,1,1
+access_cost_card_line_user,cost card line user,model_combine_cost_card_line,stock.group_stock_user,1,0,0,0
+access_cost_card_line_mgr,cost card line manager,model_combine_cost_card_line,account.group_account_manager,1,1,1,1
+access_cost_card_stock_mgr,cost card stock manager,model_combine_cost_card,stock.group_stock_manager,1,1,1,1
+access_cost_card_line_stock_mgr,cost card line stock manager,model_combine_cost_card_line,stock.group_stock_manager,1,1,1,1
+access_dept_ledger_user,dept ledger user,model_combine_dept_ledger,stock.group_stock_user,1,0,0,0
+access_batch_user,batch user,model_combine_production_batch,stock.group_stock_user,1,1,1,0
+access_batch_mgr,batch manager,model_combine_production_batch,stock.group_stock_manager,1,1,1,1
+access_batch_input_user,batch input user,model_combine_production_batch_input,stock.group_stock_user,1,1,1,1
+access_wip_count_user,wip count user,model_combine_wip_count,stock.group_stock_user,1,1,1,0
+access_wip_count_line_user,wip count line user,model_combine_wip_count_line,stock.group_stock_user,1,1,1,1
+access_cost_close_acc,cost close accountant,model_combine_cost_close,account.group_account_manager,1,1,1,1
+access_cost_close_line_acc,cost close line accountant,model_combine_cost_close_line,account.group_account_manager,1,1,1,1
+access_cost_close_user,cost close user,model_combine_cost_close,stock.group_stock_user,1,0,0,0
+access_cost_close_line_user,cost close line user,model_combine_cost_close_line,stock.group_stock_user,1,0,0,0
+access_stock_movement_wiz,stock movement wizard,model_combine_stock_movement_wizard,stock.group_stock_user,1,1,1,1
+access_dept_stock_wiz,dept stock wizard,model_combine_dept_stock_wizard,stock.group_stock_user,1,1,1,1
+access_cost_variance_wiz,cost variance wizard,model_combine_cost_variance_wizard,stock.group_stock_user,1,1,1,1
