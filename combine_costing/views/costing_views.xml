@@ -1,0 +1,495 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ======================================== departments: cost centre, next department -->
+    <record id="view_production_department_list_costing" model="ir.ui.view">
+        <field name="name">combine.production.department.list.costing</field>
+        <field name="model">combine.production.department</field>
+        <field name="inherit_id" ref="combine_stores.view_production_department_list"/>
+        <field name="arch" type="xml">
+            <field name="manager_id" position="after">
+                <field name="next_department_id"/>
+                <field name="analytic_account_id"/>
+            </field>
+        </field>
+    </record>
+
+    <!-- ======================================== standard cost cards -->
+    <record id="view_cost_card_list" model="ir.ui.view">
+        <field name="name">combine.cost.card.list</field>
+        <field name="model">combine.cost.card</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="product_id"/>
+                <field name="date_from"/>
+                <field name="kind"/>
+                <field name="department_id" optional="show"/>
+                <field name="material_cost"/>
+                <field name="conversion_cost"/>
+                <field name="std_cost"/>
+                <field name="uom_id"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_cost_card_form" model="ir.ui.view">
+        <field name="name">combine.cost.card.form</field>
+        <field name="model">combine.cost.card</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title"><h1><field name="product_id" placeholder="Item"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="kind" widget="radio"/>
+                            <field name="date_from"/>
+                            <field name="department_id" invisible="kind != 'produced'"/>
+                        </group>
+                        <group>
+                            <field name="std_price" invisible="kind != 'purchased'"/>
+                            <field name="conversion_cost" invisible="kind != 'produced'"/>
+                            <field name="std_waste_pct" invisible="kind != 'produced'"/>
+                            <field name="material_cost" invisible="kind != 'produced'"/>
+                            <field name="std_cost" class="fw-bold"/>
+                            <field name="uom_id"/>
+                        </group>
+                    </group>
+                    <field name="line_ids" invisible="kind != 'produced'">
+                        <list editable="bottom">
+                            <field name="product_id"/>
+                            <field name="qty"/>
+                            <field name="uom_id"/>
+                            <field name="std_price"/>
+                            <field name="std_value" sum="Total"/>
+                        </list>
+                    </field>
+                    <field name="note" placeholder="Notes"/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="view_cost_card_search" model="ir.ui.view">
+        <field name="name">combine.cost.card.search</field>
+        <field name="model">combine.cost.card</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="product_id"/>
+                <field name="department_id"/>
+                <filter string="Purchased" name="purchased" domain="[('kind', '=', 'purchased')]"/>
+                <filter string="Produced" name="produced" domain="[('kind', '=', 'produced')]"/>
+                <group>
+                    <filter string="Department" name="g_dept" context="{'group_by': 'department_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_cost_card" model="ir.actions.act_window">
+        <field name="name">Standard Cost Cards</field>
+        <field name="res_model">combine.cost.card</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Set the standard cost of each item</p>
+            <p>Raw materials and stores: a standard price. Lap, sliver, roving, yarn: the inputs per kg and the
+               department's standard conversion cost per kg. A new card from a later date replaces the old one from then on.</p>
+        </field>
+    </record>
+
+    <!-- ======================================== production batches -->
+    <record id="view_production_batch_list" model="ir.ui.view">
+        <field name="name">combine.production.batch.list</field>
+        <field name="model">combine.production.batch</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="state == 'cancel'">
+                <field name="name"/>
+                <field name="date"/>
+                <field name="department_id"/>
+                <field name="lot_no" optional="show"/>
+                <field name="product_id"/>
+                <field name="qty_produced" sum="Total"/>
+                <field name="qty_waste" optional="show" sum="Total"/>
+                <field name="uom_id" optional="show"/>
+                <field name="destination" optional="show"/>
+                <field name="actual_cost" sum="Total" optional="show"/>
+                <field name="std_cost" sum="Total" optional="show"/>
+                <field name="variance" sum="Total" optional="show" decoration-danger="variance &gt; 0" decoration-success="variance &lt; 0"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="state" widget="badge" decoration-success="state == 'done'"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_production_batch_form" model="ir.ui.view">
+        <field name="name">combine.production.batch.form</field>
+        <field name="model">combine.production.batch</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_complete" type="object" string="Complete Batch" class="btn-primary" invisible="state != 'draft'"
+                            confirm="Complete this batch? The inputs are consumed from the department and the output goes where chosen."/>
+                    <button name="action_cancel" type="object" string="Cancel" invisible="state != 'draft'"/>
+                    <button name="action_draft" type="object" string="Reset to Draft" invisible="state != 'cancel'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name" readonly="1"/></h1></div>
+                    <group>
+                        <group string="Batch">
+                            <field name="department_id" readonly="state != 'draft'" options="{'no_create': True}"/>
+                            <field name="date" readonly="state != 'draft'"/>
+                            <field name="lot_no" readonly="state != 'draft'"/>
+                            <field name="shift" readonly="state != 'draft'"/>
+                        </group>
+                        <group string="Output">
+                            <field name="product_id" readonly="state != 'draft'"/>
+                            <label for="qty_produced"/>
+                            <div class="o_row"><field name="qty_produced" readonly="state != 'draft'"/><field name="uom_id"/></div>
+                            <field name="qty_waste" readonly="state != 'draft'"/>
+                            <field name="waste_product_id" readonly="state != 'draft'"/>
+                            <field name="destination" readonly="state != 'draft'" widget="radio"/>
+                            <field name="next_department_id" invisible="destination != 'next'" required="destination == 'next'" readonly="state != 'draft'"/>
+                            <field name="store_location_id" invisible="destination != 'store'" required="destination == 'store'" readonly="state != 'draft'"/>
+                            <field name="stock_move_id" invisible="not stock_move_id"/>
+                            <field name="company_id" invisible="1"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Inputs Consumed" name="inputs">
+                            <field name="input_ids" readonly="state != 'draft'">
+                                <list editable="bottom">
+                                    <field name="product_id"/>
+                                    <field name="available_qty" column_invisible="parent.state != 'draft'"/>
+                                    <field name="qty"/>
+                                    <field name="uom_id"/>
+                                    <field name="std_qty" column_invisible="parent.state != 'done'"/>
+                                    <field name="actual_price" column_invisible="parent.state != 'done'"/>
+                                    <field name="std_price" column_invisible="parent.state != 'done'"/>
+                                    <field name="value" column_invisible="parent.state != 'done'" sum="Total"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Cost" name="cost" invisible="state != 'done'">
+                            <group>
+                                <group string="Actual">
+                                    <field name="material_cost"/>
+                                    <field name="conversion_actual"/>
+                                    <field name="actual_cost" class="fw-bold"/>
+                                    <field name="actual_unit_cost"/>
+                                    <field name="transfer_value"/>
+                                </group>
+                                <group string="Standard">
+                                    <field name="std_material"/>
+                                    <field name="conversion_std"/>
+                                    <field name="std_cost" class="fw-bold"/>
+                                    <field name="std_unit_cost"/>
+                                    <field name="variance" decoration-danger="variance &gt; 0" decoration-success="variance &lt; 0"/>
+                                    <field name="card_id"/>
+                                    <field name="closed_period_id"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                    <field name="note" placeholder="Notes"/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="view_production_batch_search" model="ir.ui.view">
+        <field name="name">combine.production.batch.search</field>
+        <field name="model">combine.production.batch</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="lot_no"/>
+                <field name="product_id"/>
+                <field name="department_id"/>
+                <filter string="Draft" name="draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="Completed" name="done" domain="[('state', '=', 'done')]"/>
+                <filter name="filter_date" date="date"/>
+                <group>
+                    <filter string="Department" name="g_dept" context="{'group_by': 'department_id'}"/>
+                    <filter string="Output Item" name="g_item" context="{'group_by': 'product_id'}"/>
+                    <filter string="Month" name="g_month" context="{'group_by': 'date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_production_batch" model="ir.actions.act_window">
+        <field name="name">Production Batches</field>
+        <field name="res_model">combine.production.batch</field>
+        <field name="view_mode">list,form</field>
+    </record>
+    <record id="action_report_production_batch" model="ir.actions.report">
+        <field name="name">Production Batch Report</field>
+        <field name="model">combine.production.batch</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">combine_stores.report_stores_doc</field>
+        <field name="print_report_name">'Batch - %s' % object.name.replace('/', '-')</field>
+        <field name="paperformat_id" ref="partner_ledger_qty.paperformat_partner_statement"/>
+        <field name="binding_model_id" ref="model_combine_production_batch"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- ======================================== WIP count -->
+    <record id="view_wip_count_list" model="ir.ui.view">
+        <field name="name">combine.wip.count.list</field>
+        <field name="model">combine.wip.count</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="date"/>
+                <field name="department_id"/>
+                <field name="state" widget="badge" decoration-success="state == 'done'"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_wip_count_form" model="ir.ui.view">
+        <field name="name">combine.wip.count.form</field>
+        <field name="model">combine.wip.count</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_load_book" type="object" string="Load Book Stock" invisible="state != 'draft'"/>
+                    <button name="action_post" type="object" string="Post Count" class="btn-primary" invisible="state != 'draft'"
+                            confirm="Post the count? Differences to the book are adjusted in the department ledger."/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name" readonly="1"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="department_id" readonly="state != 'draft'" options="{'no_create': True}"/>
+                            <field name="date" readonly="state != 'draft'"/>
+                        </group>
+                    </group>
+                    <field name="line_ids" readonly="state != 'draft'">
+                        <list editable="bottom">
+                            <field name="product_id"/>
+                            <field name="book_qty"/>
+                            <field name="counted_qty"/>
+                        </list>
+                    </field>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="action_wip_count" model="ir.actions.act_window">
+        <field name="name">Department Stock / WIP Counts</field>
+        <field name="res_model">combine.wip.count</field>
+        <field name="view_mode">list,form</field>
+    </record>
+    <record id="action_report_wip_count" model="ir.actions.report">
+        <field name="name">WIP Count Sheet</field>
+        <field name="model">combine.wip.count</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">combine_stores.report_stores_doc</field>
+        <field name="print_report_name">'WIP Count - %s' % object.name.replace('/', '-')</field>
+        <field name="paperformat_id" ref="partner_ledger_qty.paperformat_voucher"/>
+        <field name="binding_model_id" ref="model_combine_wip_count"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- ======================================== month-end cost close -->
+    <record id="view_cost_close_list" model="ir.ui.view">
+        <field name="name">combine.cost.close.list</field>
+        <field name="model">combine.cost.close</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="state" widget="badge" decoration-success="state == 'done'"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_cost_close_form" model="ir.ui.view">
+        <field name="name">combine.cost.close.form</field>
+        <field name="model">combine.cost.close</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_load" type="object" string="Load Actual Costs" invisible="state != 'draft'"/>
+                    <button name="action_close" type="object" string="Close Month" class="btn-primary" invisible="state != 'draft'"
+                            confirm="Spread each department's actual conversion cost over its batches of the period?"/>
+                    <button name="action_reopen" type="object" string="Reopen" invisible="state != 'done'"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="date_from" readonly="state != 'draft'"/>
+                            <field name="date_to" readonly="state != 'draft'"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <field name="line_ids" readonly="state != 'draft'">
+                        <list editable="bottom">
+                            <field name="department_id"/>
+                            <field name="actual_books"/>
+                            <field name="actual_manual"/>
+                            <field name="actual_total" sum="Total"/>
+                            <field name="output_qty"/>
+                            <field name="actual_rate"/>
+                            <field name="std_conversion" sum="Total"/>
+                            <field name="variance" sum="Total" decoration-danger="variance &gt; 0" decoration-success="variance &lt; 0"/>
+                            <field name="currency_id" column_invisible="1"/>
+                        </list>
+                    </field>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="action_cost_close" model="ir.actions.act_window">
+        <field name="name">Month-end Cost Close</field>
+        <field name="res_model">combine.cost.close</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- ======================================== reports -->
+    <record id="view_stock_movement_wizard_form" model="ir.ui.view">
+        <field name="name">combine.stock.movement.wizard.form</field>
+        <field name="model">combine.stock.movement.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Stock Movement Report">
+                <group>
+                    <group>
+                        <field name="date_from"/>
+                        <field name="date_to"/>
+                        <field name="measure" widget="radio" options="{'horizontal': true}"/>
+                        <field name="group_by" widget="radio"/>
+                        <field name="hide_zero"/>
+                    </group>
+                    <group>
+                        <field name="warehouse_id" groups="stock.group_stock_multi_warehouses" placeholder="All warehouses"/>
+                        <field name="categ_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All categories"/>
+                        <field name="product_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All items"/>
+                    </group>
+                </group>
+                <footer>
+                    <button name="action_print" type="object" string="Generate Report" class="btn-primary"/>
+                    <button name="action_print_xlsx" type="object" string="Generate Excel" class="btn-secondary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+    <record id="action_stock_movement" model="ir.actions.act_window">
+        <field name="name">Stock Movement Report</field>
+        <field name="res_model">combine.stock.movement.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+    <record id="view_dept_stock_wizard_form" model="ir.ui.view">
+        <field name="name">combine.dept.stock.wizard.form</field>
+        <field name="model">combine.dept.stock.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Department Stock &amp; WIP">
+                <group>
+                    <group>
+                        <field name="date_from"/>
+                        <field name="date_to"/>
+                        <field name="measure" widget="radio" options="{'horizontal': true}"/>
+                    </group>
+                    <group>
+                        <field name="department_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All departments"/>
+                        <field name="categ_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All categories"/>
+                        <field name="product_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All items"/>
+                    </group>
+                </group>
+                <footer>
+                    <button name="action_print" type="object" string="Generate Report" class="btn-primary"/>
+                    <button name="action_print_xlsx" type="object" string="Generate Excel" class="btn-secondary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+    <record id="action_dept_stock" model="ir.actions.act_window">
+        <field name="name">Department Stock &amp; WIP</field>
+        <field name="res_model">combine.dept.stock.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+    <record id="view_cost_variance_wizard_form" model="ir.ui.view">
+        <field name="name">combine.cost.variance.wizard.form</field>
+        <field name="model">combine.cost.variance.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Cost &amp; Variance Analysis">
+                <group>
+                    <group>
+                        <field name="date_from"/>
+                        <field name="date_to"/>
+                        <field name="group_by" widget="radio"/>
+                    </group>
+                    <group>
+                        <field name="department_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All departments"/>
+                        <field name="categ_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All categories"/>
+                        <field name="product_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All output items"/>
+                    </group>
+                </group>
+                <footer>
+                    <button name="action_print" type="object" string="Generate Report" class="btn-primary"/>
+                    <button name="action_print_xlsx" type="object" string="Generate Excel" class="btn-secondary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+    <record id="action_cost_variance" model="ir.actions.act_window">
+        <field name="name">Cost &amp; Variance Analysis</field>
+        <field name="res_model">combine.cost.variance.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <record id="action_report_stock_movement" model="ir.actions.report">
+        <field name="name">Stock Movement Report</field>
+        <field name="model">combine.stock.movement.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">combine_costing.report_stock_movement</field>
+        <field name="report_file">combine_costing.report_stock_movement</field>
+        <field name="print_report_name">'Stock Movement %s to %s' % (object.date_from, object.date_to)</field>
+        <field name="paperformat_id" ref="partner_ledger_qty.paperformat_partner_statement"/>
+        <field name="binding_model_id" eval="False"/>
+    </record>
+    <template id="report_stock_movement">
+        <t t-call="web.html_container"><t t-foreach="docs" t-as="doc"><t t-call="partner_ledger_qty.register_doc"/></t></t>
+    </template>
+    <record id="action_report_dept_stock" model="ir.actions.report">
+        <field name="name">Department Stock &amp; WIP</field>
+        <field name="model">combine.dept.stock.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">combine_costing.report_dept_stock</field>
+        <field name="report_file">combine_costing.report_dept_stock</field>
+        <field name="print_report_name">'Department Stock %s to %s' % (object.date_from, object.date_to)</field>
+        <field name="paperformat_id" ref="partner_ledger_qty.paperformat_partner_statement"/>
+        <field name="binding_model_id" eval="False"/>
+    </record>
+    <template id="report_dept_stock">
+        <t t-call="web.html_container"><t t-foreach="docs" t-as="doc"><t t-call="partner_ledger_qty.register_doc"/></t></t>
+    </template>
+    <record id="action_report_cost_variance" model="ir.actions.report">
+        <field name="name">Cost &amp; Variance Analysis</field>
+        <field name="model">combine.cost.variance.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">combine_costing.report_cost_variance</field>
+        <field name="report_file">combine_costing.report_cost_variance</field>
+        <field name="print_report_name">'Cost Variance %s to %s' % (object.date_from, object.date_to)</field>
+        <field name="paperformat_id" ref="partner_ledger_qty.paperformat_partner_statement"/>
+        <field name="binding_model_id" eval="False"/>
+    </record>
+    <template id="report_cost_variance">
+        <t t-call="web.html_container"><t t-foreach="docs" t-as="doc"><t t-call="partner_ledger_qty.register_doc"/></t></t>
+    </template>
+
+    <!-- ======================================== menus (inside Stores) -->
+    <menuitem id="menu_production_root" name="Production" parent="combine_stores.menu_stores_root" sequence="60"/>
+    <menuitem id="menu_production_batch" name="Production Batches" parent="menu_production_root" action="action_production_batch" sequence="10"/>
+    <menuitem id="menu_wip_count" name="Department Stock / WIP Counts" parent="menu_production_root" action="action_wip_count" sequence="20"/>
+    <menuitem id="menu_cost_close" name="Month-end Cost Close" parent="menu_production_root" action="action_cost_close" sequence="30"
+              groups="account.group_account_manager,stock.group_stock_manager"/>
+    <menuitem id="menu_stock_movement" name="Stock Movement Report" parent="combine_stores.menu_stores_reporting" action="action_stock_movement" sequence="1"/>
+    <menuitem id="menu_dept_stock" name="Department Stock &amp; WIP" parent="combine_stores.menu_stores_reporting" action="action_dept_stock" sequence="2"/>
+    <menuitem id="menu_cost_variance" name="Cost &amp; Variance Analysis" parent="combine_stores.menu_stores_reporting" action="action_cost_variance" sequence="3"/>
+    <menuitem id="menu_cost_card" name="Standard Cost Cards" parent="combine_stores.menu_stores_config" action="action_cost_card" sequence="20"/>
+</odoo>
