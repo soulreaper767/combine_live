@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_party_type_list" model="ir.ui.view">
+        <field name="name">combine.party.type.list</field>
+        <field name="model">combine.party.type</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="description" optional="show"/>
+                <field name="partner_count"/>
+                <button name="action_view_partners" type="object" string="Parties" icon="fa-users"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_party_type_search" model="ir.ui.view">
+        <field name="name">combine.party.type.search</field>
+        <field name="model">combine.party.type</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="code"/>
+                <filter string="Archived" name="inactive" domain="[('active', '=', False)]"/>
+            </search>
+        </field>
+    </record>
+    <record id="action_party_type" model="ir.actions.act_window">
+        <field name="name">Party Types</field>
+        <field name="res_model">combine.party.type</field>
+        <field name="view_mode">list</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Create your party types</p>
+            <p>e.g. Local Customer, Export Customer, Raw Material Supplier, Stores Supplier, Broker.
+               Set one on each party, then choose types in the party-wise reports.</p>
+        </field>
+    </record>
+    <menuitem id="menu_party_type_accounting" name="Party Types" parent="account.menu_finance_configuration"
+              action="action_party_type" sequence="12" groups="account.group_account_manager,base.group_partner_manager"/>
+
+    <!-- the field on the party form, list and search -->
+    <record id="view_partner_form_party_type" model="ir.ui.view">
+        <field name="name">res.partner.form.party_type</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <field name="category_id" position="before">
+                <field name="x_party_type_id" options="{'no_create': True}" invisible="not is_company and parent_id"/>
+            </field>
+        </field>
+    </record>
+    <record id="view_partner_tree_party_type" model="ir.ui.view">
+        <field name="name">res.partner.list.party_type</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_tree"/>
+        <field name="arch" type="xml">
+            <field name="category_id" position="before">
+                <field name="x_party_type_id" optional="show"/>
+            </field>
+        </field>
+    </record>
+    <record id="view_res_partner_filter_party_type" model="ir.ui.view">
+        <field name="name">res.partner.search.party_type</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_res_partner_filter"/>
+        <field name="arch" type="xml">
+            <field name="category_id" position="after">
+                <field name="x_party_type_id"/>
+            </field>
+            <xpath expr="//search" position="inside">
+                <filter string="Party Type" name="group_party_type" context="{'group_by': 'x_party_type_id'}"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

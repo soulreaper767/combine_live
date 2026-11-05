@@ -32,6 +32,8 @@ class PartnerStatementWizard(models.TransientModel):
     _name = 'partner.ledger.statement.wizard'
     _description = 'Partner Statement - print options'
 
+    party_type_ids = fields.Many2many('combine.party.type', string='Party Types',
+                                      help='Only parties of these types. Leave empty for all parties.')
     partner_id = fields.Many2one('res.partner', string='Partner', required=True)
     date_from = fields.Date(string='From', required=True,
                              default=lambda self: fields.Date.context_today(self).replace(month=1, day=1))

@@ -1,6 +1,6 @@
 {
     'name': 'Custom Reports (Partner Ledger)',
-    'version': '19.0.7.4.0',
+    'version': '19.0.7.5.0',
     'category': 'Accounting/Accounting',
     'summary': "House for this company's custom reports - starts with the Partner Ledger "
                "Qty column and the itemized Partner Statement PDF",
@@ -91,6 +91,14 @@ Closing = Opening + Net - Receipts/Payments + Others always holds.
 Vendor amounts are shown as positive amounts owed. Delivery dates are
 read only when the Inventory app is installed (no new dependency).
 
+Party Types
+-----------
+Accounting > Configuration > Party Types: your own list (Local Customer,
+Export Customer, Raw Material Supplier, ...). Each party carries one
+("Party Type", next to Tags). Partner Ledger Print, Trial Balance with
+Party and Party Outstanding Report each take a "Party Types" selection:
+empty = all parties, or only the chosen types.
+
 Voucher and Sales Tax Invoice prints
 ------------------------------------
 Print menu of journal entries / invoices / bills: "Voucher" - one
@@ -128,6 +136,7 @@ a decorative one.
     'depends': ['account_reports', 'sale', 'purchase_stock'],
     'data': [
         'security/ir.model.access.csv',
+        'views/party_type_views.xml',
         'data/qty_column.xml',
         'wizard/partner_statement_wizard_views.xml',
         'report/report_base_templates.xml',

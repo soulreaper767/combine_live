@@ -23,6 +23,10 @@
                         <t t-set="cr_date_from" t-value="data['date_from']"/>
                         <t t-set="cr_date_to" t-value="data['date_to']"/>
                     </t>
+                    <div t-if="data['party_types']" class="cr-meta" style="margin: -4px 0 8px 0;">
+                        <span class="lbl" style="color: #6b7280;">Party Types:</span>
+                        <strong t-out="data['party_types']"/>
+                    </div>
 
                     <table class="cr-tbl">
                         <colgroup>

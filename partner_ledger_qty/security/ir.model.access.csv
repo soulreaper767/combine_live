@@ -2,3 +2,6 @@ id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_partner_ledger_statement_wizard,partner.ledger.statement.wizard,model_partner_ledger_statement_wizard,account.group_account_readonly,1,1,1,1
 access_trial_balance_party_wizard,trial.balance.party.wizard,model_trial_balance_party_wizard,account.group_account_readonly,1,1,1,1
 access_party_outstanding_wizard,party.outstanding.wizard,model_party_outstanding_wizard,account.group_account_readonly,1,1,1,1
+access_party_type_user,combine.party.type user,model_combine_party_type,base.group_user,1,0,0,0
+access_party_type_manager,combine.party.type manager,model_combine_party_type,account.group_account_manager,1,1,1,1
+access_party_type_partner_manager,combine.party.type partner manager,model_combine_party_type,base.group_partner_manager,1,1,1,1

@@ -102,6 +102,7 @@ class TrialBalancePartyReport(models.AbstractModel):
             closing = vals['opening'] + vals['debit'] - vals['credit']
             return all(abs(v) < ZERO for v in (vals['opening'], vals['debit'], vals['credit'], closing))
 
+        types = wizard.party_type_ids
         rows = []
         for acc in sorted(accounts, key=lambda a: a.code or ''):
             vals = per_account[acc.id]
@@ -111,12 +112,19 @@ class TrialBalancePartyReport(models.AbstractModel):
             rows.append(make_row('control' if is_control else 'account', acc.code, acc.name, vals))
             if is_control:
                 party_rows = []
+                others = {'opening': 0.0, 'debit': 0.0, 'credit': 0.0}
                 for pid, pvals in vals['parties'].items():
+                    if types and not (pid and partners[pid].commercial_partner_id.x_party_type_id in types):
+                        for k in others:
+                            others[k] += pvals[k]
+                        continue
                     if wizard.hide_zero and is_zero(pvals):
                         continue
                     name = partners[pid].name if pid else '(No party)'
                     party_rows.append(make_row('party', '', name, pvals))
                 rows.extend(sorted(party_rows, key=lambda r: (r['name'] or '').lower()))
+                if types and not is_zero(others):
+                    rows.append(make_row('party', '', '(Other party types)', others))
 
         if abs(undistributed) >= ZERO:
             rows.append(make_row('undistributed', '', 'Undistributed Profits/Losses',
@@ -130,4 +138,5 @@ class TrialBalancePartyReport(models.AbstractModel):
             'date_to': date_to,
             'rows': rows,
             'totals': totals,
+            'party_types': ', '.join(types.mapped('name')),
         }
