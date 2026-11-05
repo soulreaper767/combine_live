@@ -41,4 +41,4 @@ class StoresPrintMixin(models.AbstractModel):
         return self.note if 'note' in self._fields else False
 
     def _print_date(self, value):
-        return fields.Date.to_string(fields.Date.to_date(value)) if value else ''
+        return fields.Date.to_date(value).strftime('%d-%b-%y') if value else ''

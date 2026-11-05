@@ -89,7 +89,7 @@ class VoucherRegisterWizard(models.TransientModel):
                 move = v['move']
                 rows = [[l.account_id.code or '', l.account_id.name or '', l.partner_id.commercial_partner_id.name or '',
                          l.name or '', l.debit, l.credit] for l in v['lines'].sorted(lambda l: (-l.debit, l.id))]
-                sub = ' | '.join(p for p in (fields.Date.to_string(move.date), labels[v['type']].rstrip('s'),
+                sub = ' | '.join(p for p in (move.date.strftime('%d-%b-%y'), labels[v['type']].rstrip('s'),
                                              move.journal_id.name, v['narration'],
                                              dict(move._fields['state'].selection).get(move.state)) if p)
                 groups.append({'title': move.name, 'sub': sub, 'rows': rows,

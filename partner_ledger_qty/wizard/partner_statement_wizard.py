@@ -72,7 +72,7 @@ class PartnerStatementWizard(models.TransientModel):
         f_lbl = wb.add_format({**base, 'font_color': '#6B7280'})
         f_val = wb.add_format({**base, 'bold': True})
         f_txt = wb.add_format(base)
-        f_date_hdr = wb.add_format({**base, 'num_format': 'd-mmm-yy', 'align': 'left'})
+        f_date_hdr = wb.add_format({**base, 'num_format': 'dd-mmm-yy', 'align': 'left'})
         f_title = wb.add_format({**base, 'bold': True, 'font_size': 14, 'align': 'right'})
         f_sub = wb.add_format({**base, 'font_size': 8, 'font_color': '#6B7280', 'align': 'right'})
 
@@ -81,14 +81,14 @@ class PartnerStatementWizard(models.TransientModel):
                                 'bg_color': HEAD_FILL, 'top': 1, 'top_color': INK,
                                 'bottom': 2, 'bottom_color': INK, 'left': 1, 'right': 1,
                                 'left_color': RULE, 'right_color': RULE})
-        f_date = wb.add_format({**cell, 'num_format': 'd-mmm-yy', 'align': 'center'})
+        f_date = wb.add_format({**cell, 'num_format': 'dd-mmm-yy', 'align': 'center'})
         f_text = wb.add_format({**cell, 'text_wrap': True, 'valign': 'top'})
         f_center = wb.add_format({**cell, 'align': 'center'})
         f_num = wb.add_format({**cell, 'num_format': ACCOUNTING_FMT})
         f_pct = wb.add_format({**cell, 'num_format': '0%', 'align': 'center'})
         f_open = wb.add_format({**cell, 'italic': True, 'font_color': '#4B5563'})
         f_open_date = wb.add_format({**cell, 'italic': True, 'font_color': '#4B5563',
-                                     'num_format': 'd-mmm-yy', 'align': 'center'})
+                                     'num_format': 'dd-mmm-yy', 'align': 'center'})
         f_open_num = wb.add_format({**cell, 'italic': True, 'num_format': ACCOUNTING_FMT})
         tot = {**base, 'bold': True, 'bg_color': HEAD_FILL, 'top': 1, 'top_color': INK,
                'bottom': 6, 'bottom_color': INK}

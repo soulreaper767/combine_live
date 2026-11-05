@@ -88,7 +88,7 @@
                         </thead>
                         <tbody>
                             <tr class="open">
-                                <td class="c"><span t-out="data['date_from']" t-options="{'widget': 'date'}"/></td>
+                                <td class="c"><span t-out="data['date_from']" t-options="{'widget': 'date', 'format': 'dd-MMM-yy'}"/></td>
                                 <td colspan="12">Opening balance</td>
                                 <td class="gap"/>
                                 <td class="n"/>
@@ -96,7 +96,7 @@
                                 <td class="n"><span t-out="fmt_amount(data['opening_balance'])"/></td>
                             </tr>
                             <tr t-foreach="data['rows']" t-as="row">
-                                <td class="c"><span t-out="row['voucher_date']" t-options="{'widget': 'date'}"/></td>
+                                <td class="c"><span t-out="row['voucher_date']" t-options="{'widget': 'date', 'format': 'dd-MMM-yy'}"/></td>
                                 <td class="nw"><span t-out="row['voucher_no'] or ''"/></td>
                                 <td><span t-out="row['remarks'] or ''"/></td>
                                 <td><span t-out="row['item_name'] or ''"/></td>

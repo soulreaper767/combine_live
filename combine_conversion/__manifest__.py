@@ -1,6 +1,6 @@
 {
     'name': 'Combine - Job Work Conversion',
-    'version': '19.0.1.1.0',
+    'version': '19.0.1.1.1',
     'category': 'Inventory/Inventory',
     'summary': 'Send material to a vendor for conversion, track standard vs actual yield, '
                'charge excess wastage back to the vendor and carry the full cost into the item',

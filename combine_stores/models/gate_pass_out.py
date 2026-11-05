@@ -77,7 +77,7 @@ class GatePassOut(models.Model):
         return 'Gate Pass Outward'
 
     def _print_info(self):
-        return [('OGP No.', self.name), ('Gate Out', fields.Datetime.to_string(fields.Datetime.context_timestamp(self, self.date))[:16]),
+        return [('OGP No.', self.name), ('Gate Out', fields.Datetime.context_timestamp(self, self.date).strftime('%d-%b-%y %H:%M')),
                 ('Type', dict(self._fields['pass_type'].selection)[self.pass_type]),
                 ('Delivery', self.picking_id.name or '-'), ('Invoice Ref.', self.invoice_ref or '-'),
                 ('Vehicle No.', self.vehicle_no or '-'), ('Driver', self.driver or '-'), ('Other Ref.', self.reference or '-')]
@@ -131,7 +131,7 @@ class Combine001GatePass(models.Model):
     def _print_info(self):
         invoices = self.sale_order_id.invoice_ids.filtered(lambda m: m.state == 'posted' and m.move_type == 'out_invoice')
         return [('Gate Pass No.', self.name),
-                ('Date', fields.Datetime.to_string(fields.Datetime.context_timestamp(self, self.date))[:16] if self.date else ''),
+                ('Date', fields.Datetime.context_timestamp(self, self.date).strftime('%d-%b-%y %H:%M') if self.date else ''),
                 ('Delivery Challan', self.picking_id.name or '-'),
                 ('Contract', self.sale_order_id.name or '-'),
                 ('Invoice Ref.', ', '.join(invoices.mapped('name')) or '-'),

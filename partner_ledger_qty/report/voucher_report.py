@@ -208,8 +208,8 @@ class VoucherReportMixin(models.AbstractModel):
         return {
             'title': 'Purchase Order' if confirmed else 'Request for Quotation',
             'info': [('PO No.' if confirmed else 'RFQ No.', order.name),
-                     ('Order Date', format_date(self.env, order._document_date())),
-                     ('Expected', format_date(self.env, order.date_planned) if order.date_planned else '-'),
+                     ('Order Date', format_date(self.env, order._document_date(), date_format='dd-MMM-yy')),
+                     ('Expected', format_date(self.env, order.date_planned, date_format='dd-MMM-yy') if order.date_planned else '-'),
                      ('Payment Terms', order.payment_term_id.name or '-'),
                      ('Buyer', order.user_id.name or '-'),
                      ('Vendor Ref.', order.partner_ref or '-')],
@@ -244,7 +244,7 @@ class VoucherReportMixin(models.AbstractModel):
         return {
             'title': title,
             'info': [({'outgoing': 'Challan No.', 'incoming': 'Receipt No.'}.get(code, 'Transfer No.'), picking.name),
-                     ('Date', format_date(self.env, picking.date_done or picking.scheduled_date)),
+                     ('Date', format_date(self.env, picking.date_done or picking.scheduled_date, date_format='dd-MMM-yy')),
                      ('Contract / Source', origin or '-'),
                      ('Operation', picking.picking_type_id.name),
                      ('From', picking.location_id.display_name), ('To', picking.location_dest_id.display_name)],
@@ -266,9 +266,9 @@ class VoucherReportMixin(models.AbstractModel):
         confirmed = order.state == 'sale'
         extra = [('Deliver', self._address(order.partner_shipping_id))] if order.partner_shipping_id != order.partner_id else []
         info = [('Order No.' if confirmed else 'Contract No.', order.name),
-                ('Date', format_date(self.env, order._document_date()))]
+                ('Date', format_date(self.env, order._document_date(), date_format='dd-MMM-yy'))]
         if order.validity_date and not confirmed:
-            info.append(('Valid Until', format_date(self.env, order.validity_date)))
+            info.append(('Valid Until', format_date(self.env, order.validity_date, date_format='dd-MMM-yy')))
         info += [('Payment Terms', order.payment_term_id.name or '-'), ('Salesperson', order.user_id.name or '-'),
                  ('Buyer Ref.', order.client_order_ref or '-')]
         return {

@@ -99,7 +99,7 @@
                     <td><strong t-out="move.name or 'Draft'"/>
                         <span t-if="move.state != 'posted'" class="cr-stamp" t-out="v['state'].upper()"/></td>
                     <td class="lbl">Date</td>
-                    <td><span t-out="move.date" t-options="{'widget': 'date'}"/></td>
+                    <td><span t-out="move.date" t-options="{'widget': 'date', 'format': 'dd-MMM-yy'}"/></td>
                 </tr>
                 <tr>
                     <td class="lbl">Journal</td>
@@ -206,9 +206,9 @@
                     <td><strong t-out="move.name or 'Draft'"/>
                         <span t-if="move.state != 'posted'" class="cr-stamp">NOT POSTED</span></td>
                     <td class="lbl">Date of Issue</td>
-                    <td><span t-out="move.invoice_date or move.date" t-options="{'widget': 'date'}"/></td>
+                    <td><span t-out="move.invoice_date or move.date" t-options="{'widget': 'date', 'format': 'dd-MMM-yy'}"/></td>
                     <td class="lbl">Due Date</td>
-                    <td><span t-out="move.invoice_date_due" t-options="{'widget': 'date'}"/></td>
+                    <td><span t-out="move.invoice_date_due" t-options="{'widget': 'date', 'format': 'dd-MMM-yy'}"/></td>
                 </tr>
                 <tr>
                     <td class="lbl">Contract</td>

@@ -85,9 +85,9 @@
                     </div>
                     <div class="cr-meta" t-if="cr_date_from or cr_date_to">
                         <span class="lbl">Period:</span>
-                        <span t-out="cr_date_from" t-options="{'widget': 'date'}"/>
+                        <span t-out="cr_date_from" t-options="{'widget': 'date', 'format': 'dd-MMM-yy'}"/>
                         to
-                        <span t-out="cr_date_to" t-options="{'widget': 'date'}"/>
+                        <span t-out="cr_date_to" t-options="{'widget': 'date', 'format': 'dd-MMM-yy'}"/>
                     </div>
                 </td>
                 <td>

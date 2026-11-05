@@ -91,7 +91,7 @@ class RegisterMixin(models.AbstractModel):
                 return value
             return '-' if abs(value) < 0.005 else f'{value:,.2f}'
         if kind == 'd':
-            return format_date(self.env, value)
+            return format_date(self.env, value, date_format='dd-MMM-yy')
         return value
 
     @api.model
@@ -140,7 +140,7 @@ class RegisterMixin(models.AbstractModel):
         cell = {**base, 'border': 1, 'border_color': HAIR}
         fmt = {
             't': wb.add_format(cell), 'c': wb.add_format({**cell, 'align': 'center'}),
-            'd': wb.add_format({**cell, 'num_format': 'd-mmm-yy', 'align': 'center'}),
+            'd': wb.add_format({**cell, 'num_format': 'dd-mmm-yy', 'align': 'center'}),
             'q': wb.add_format({**cell, 'num_format': QTY_FMT}), 'n': wb.add_format({**cell, 'num_format': AMT_FMT}),
         }
         grp = {**base, 'bold': True, 'bg_color': '#FAFAFA', 'top': 1, 'top_color': RULE}
@@ -167,7 +167,7 @@ class RegisterMixin(models.AbstractModel):
         right = max(last - 3, 1)
         ws.merge_range(row, right, row, last, data['title'].upper(), f_title)
         ws.write(row + 1, 0, _('Period:'), f_lbl)
-        ws.write(row + 1, 1, '%s to %s' % (format_date(self.env, self.date_from), format_date(self.env, self.date_to)), f_val)
+        ws.write(row + 1, 1, '%s to %s' % (format_date(self.env, self.date_from, date_format='dd-MMM-yy'), format_date(self.env, self.date_to, date_format='dd-MMM-yy')), f_val)
         ws.merge_range(row + 1, right, row + 1, last, _('Amounts in %s') % company.currency_id.name, f_sub)
         row += 2
         for label, text in data.get('filters', []):

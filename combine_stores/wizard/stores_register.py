@@ -69,7 +69,7 @@ class StoresRegisterWizard(models.TransientModel):
                      l.gross_weight, l.tare_weight, l.net_weight, l.note or '']
                     for l in gp.line_ids if self._register_product_ok(l.product_id)]
             if rows:
-                groups.append(self._block(gp, [gp.partner_id.commercial_partner_id.name, fields.Datetime.to_string(gp.date)[:16],
+                groups.append(self._block(gp, [gp.partner_id.commercial_partner_id.name, fields.Datetime.context_timestamp(self, gp.date).strftime('%d-%b-%y %H:%M'),
                                                gp.purchase_id.name, gp.party_ref and _('Party ref: %s', gp.party_ref),
                                                gp.vehicle_no and _('Vehicle: %s', gp.vehicle_no), self._state_label(gp)],
                                           rows, (1, 2, 4, 5, 6, 7)))
@@ -88,7 +88,7 @@ class StoresRegisterWizard(models.TransientModel):
             rows = [[l.product_id.display_name, l.qty_received, l.qty_accepted, l.qty_rejected, l.uom_id.name, l.reason or '']
                     for l in ins.line_ids if self._register_product_ok(l.product_id)]
             if rows:
-                groups.append(self._block(ins, [ins.partner_id.commercial_partner_id.name, fields.Date.to_string(ins.date),
+                groups.append(self._block(ins, [ins.partner_id.commercial_partner_id.name, ins.date.strftime('%d-%b-%y'),
                                                 ins.gate_pass_id.name, ins.purchase_id.name, self._state_label(ins)],
                                           rows, (1, 2, 3)))
         return columns, groups, (1, 2, 3)
@@ -107,7 +107,7 @@ class StoresRegisterWizard(models.TransientModel):
                      l.purchase_line_id.order_id.name or '-', l.note or '']
                     for l in grn.line_ids if self._register_product_ok(l.product_id)]
             if rows:
-                groups.append(self._block(grn, [grn.partner_id.commercial_partner_id.name, fields.Date.to_string(grn.date),
+                groups.append(self._block(grn, [grn.partner_id.commercial_partner_id.name, grn.date.strftime('%d-%b-%y'),
                                                 grn.gate_pass_id.name, grn.gate_pass_id.party_ref and _('Party ref: %s', grn.gate_pass_id.party_ref),
                                                 ', '.join(grn.picking_ids.mapped('name')), self._state_label(grn)],
                                           rows, (1, 3)))
@@ -127,7 +127,7 @@ class StoresRegisterWizard(models.TransientModel):
             rows = [[l.product_id.display_name, l.qty, l.uom_id.name, float(l.packages), l.gross_weight, l.tare_weight,
                      l.net_weight, l.note or ''] for l in gp.line_ids if self._register_product_ok(l.product_id)]
             if rows:
-                groups.append(self._block(gp, [gp.partner_id.commercial_partner_id.name, fields.Datetime.to_string(gp.date)[:16],
+                groups.append(self._block(gp, [gp.partner_id.commercial_partner_id.name, fields.Datetime.context_timestamp(self, gp.date).strftime('%d-%b-%y %H:%M'),
                                                types.get(gp.pass_type), gp.picking_id.name, gp.invoice_ref and _('Invoice: %s', gp.invoice_ref),
                                                gp.vehicle_no and _('Vehicle: %s', gp.vehicle_no), self._state_label(gp)],
                                           rows, (1, 3, 4, 5, 6)))
@@ -155,7 +155,7 @@ class StoresRegisterWizard(models.TransientModel):
             if rows:
                 passes = pick.x_gate_pass_out_ids.mapped('name') if 'x_gate_pass_out_ids' in pick._fields else []
                 when = pick.date_done or pick.scheduled_date
-                groups.append(self._block(pick, [pick.partner_id.commercial_partner_id.name, fields.Datetime.to_string(when)[:10],
+                groups.append(self._block(pick, [pick.partner_id.commercial_partner_id.name, fields.Datetime.context_timestamp(self, when).strftime('%d-%b-%y'),
                                                  pick.sale_id.name if 'sale_id' in pick._fields else pick.origin,
                                                  passes and _('OGP: %s', ', '.join(passes)), self._state_label(pick)],
                                           rows, (1, 2, 4)))
@@ -173,7 +173,7 @@ class StoresRegisterWizard(models.TransientModel):
             rows = [[l.product_id.display_name, l.qty, l.uom_id.name, l.unit_cost, l.value, l.note or '']
                     for l in issue.line_ids if self._register_product_ok(l.product_id)]
             if rows:
-                groups.append(self._block(issue, [issue.department_id.name, fields.Date.to_string(issue.date),
+                groups.append(self._block(issue, [issue.department_id.name, issue.date.strftime('%d-%b-%y'),
                                                   issue.location_id.display_name, issue.requested_by and _('Requested by %s', issue.requested_by),
                                                   self._state_label(issue)], rows, (1, 4)))
         return columns, groups, (1, 4)
