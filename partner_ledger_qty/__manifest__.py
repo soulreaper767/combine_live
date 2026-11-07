@@ -1,6 +1,6 @@
 {
     'name': 'Custom Reports (Partner Ledger)',
-    'version': '19.0.7.9.0',
+    'version': '19.0.7.10.0',
     'category': 'Accounting/Accounting',
     'summary': "House for this company's custom reports - starts with the Partner Ledger "
                "Qty column and the itemized Partner Statement PDF",
@@ -102,6 +102,19 @@ Bank & Cash Voucher Register: bank receipts, bank payments, cash
 receipts, cash payments, journal vouchers - one line per voucher per
 book (receipts / payments columns) or every account line per voucher.
 
+Party control accounts
+----------------------
+Four accounts for all parties: 3.09.15 Trade Debtors - Control,
+2.07.15 Trade Creditors - Control, 2.07.16 Advances from Customers,
+3.09.16 Advances to Suppliers. Every customer / vendor points to the two
+controls (new parties by default). Old invoices / bills keep their old
+account and are paid on it as before; every other receivable / payable
+account is archived as soon as nothing is open on it (at upgrade, then
+daily). Posted entries are never edited.
+Advances: tick "Advance" on a payment to post it to the advance account;
+"Apply Advance" on the invoice / bill settles it from the party's open
+advances (transfer entry, reconciled both sides).
+
 Registers
 ---------
 Sales > Reporting / Purchase > Reporting (and Accounting > Reporting):
@@ -174,6 +187,8 @@ a decorative one.
         'report/register_report.xml',
         'wizard/trade_registers_views.xml',
         'wizard/daily_registers_views.xml',
+        'views/party_accounts_views.xml',
+        'views/purchase_bill_views.xml',
     ],
     'installable': True,
     'application': False,

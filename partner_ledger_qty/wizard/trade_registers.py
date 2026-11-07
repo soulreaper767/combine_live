@@ -20,6 +20,9 @@ class TradeRegisterWizard(models.TransientModel):
     group_by = fields.Selection([('party', 'Party-wise'), ('item', 'Item-wise')], required=True, default='party')
     detail = fields.Selection([('detail', 'Every line'), ('summary', 'Summary (one line per party / item)')],
                               required=True, default='detail')
+    tax_ids = fields.Many2many('account.tax', 'combine_treg_tax_rel', 'wizard_id', 'tax_id', string='Tax Rates',
+                               context={'active_test': False},
+                               help='Only lines carrying one of these taxes. Leave empty for all (lines without tax included).')
 
     def _register_lines(self):
         types = SALE_TYPES if self.kind == 'sale' else PURCHASE_TYPES
@@ -36,6 +39,8 @@ class TradeRegisterWizard(models.TransientModel):
         for line in lines:
             move = line.move_id
             if not self._register_partner_ok(move.partner_id) or not self._register_product_ok(line.product_id):
+                continue
+            if self.tax_ids and not (line.tax_ids & self.tax_ids):
                 continue
             sign = -1 if move.move_type in ('out_refund', 'in_refund') else 1
             disc = helper._discount_values(line, line.quantity, move.currency_id, move.partner_id)
@@ -94,7 +99,10 @@ class TradeRegisterWizard(models.TransientModel):
                 extra = k.x_party_type_id.name if by_party and 'x_party_type_id' in k._fields and k.x_party_type_id else ''
                 data_groups.append({'title': k.display_name, 'sub': extra, 'rows': rows, 'totals': sub})
             totals = {7 + i: sum(ln[m] for ln in lines) for i, m in enumerate(money)} if lines else {}
-        return {'title': title, 'filters': self._register_filter_lines(), 'columns': columns,
+        filters = self._register_filter_lines()
+        if self.tax_ids:
+            filters.append((_('Tax Rates'), ', '.join(self.tax_ids.mapped('name'))))
+        return {'title': title, 'filters': filters, 'columns': columns,
                 'groups': data_groups, 'totals': totals}
 
 

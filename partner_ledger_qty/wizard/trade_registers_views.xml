@@ -19,6 +19,8 @@
                         <field name="party_type_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All party types"/>
                         <field name="categ_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All categories (e.g. Raw Material, Stores)"/>
                         <field name="product_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All items"/>
+                        <field name="tax_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All tax rates"
+                               domain="[('type_tax_use', '=', kind)]" context="{'active_test': False}"/>
                     </group>
                 </group>
                 <footer>
