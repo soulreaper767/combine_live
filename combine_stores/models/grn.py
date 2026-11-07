@@ -37,7 +37,7 @@ class GoodsReceiptNote(models.Model):
             if grn.state != 'draft':
                 continue
             if not grn.line_ids.filtered(lambda l: l.qty > 0):
-                raise UserError(_('Nothing to receive on %s.', grn.name))
+                raise UserError(_('%s has nothing to receive: every line has zero quantity. Enter the accepted quantity on the lines (it comes from the inspection), then click Validate.', grn.name))
             cancel_rest = grn.inspection_id.rejection_action == 'cancel'
             pickings = grn._receive_purchase_lines(cancel_rest) | grn._receive_other_lines()
             grn.write({'state': 'done', 'picking_ids': [Command.set(pickings.ids)]})
@@ -66,7 +66,7 @@ class GoodsReceiptNote(models.Model):
         orders = lines.purchase_line_id.order_id
         pickings = orders.picking_ids.filtered(lambda p: p.picking_type_code == 'incoming' and p.state not in ('done', 'cancel'))
         if not pickings:
-            raise UserError(_('%s has no open receipt left to receive into.', ', '.join(orders.mapped('name'))))
+            raise UserError(_('%s is already fully received (no open receipt left). If more goods came than ordered, make a PO Amendment for the extra quantity first, or receive them on a new purchase order.', ', '.join(orders.mapped('name'))))
         for picking in pickings:
             for move in picking.move_ids.filtered(lambda m: m.state not in ('done', 'cancel')):
                 want = todo.get(move.purchase_line_id, 0.0)
@@ -78,7 +78,7 @@ class GoodsReceiptNote(models.Model):
                     todo[move.purchase_line_id] -= move.product_uom._compute_quantity(qty, move.purchase_line_id.product_uom_id)
         left = {pol: q for pol, q in todo.items() if q > 0.0001}
         if left:
-            raise UserError(_('Accepted quantity exceeds what is still due on the purchase order for: %s',
+            raise UserError(_('The accepted quantity is more than is still due on the purchase order for: %s. Receive only what is due; for the extra quantity make a PO Amendment (Purchase > PO Amendments) or a new purchase order.',
                               ', '.join(pol.product_id.display_name for pol in left)))
         done = self.env['stock.picking']
         for picking in pickings.filtered(lambda p: any(m.quantity for m in p.move_ids)):

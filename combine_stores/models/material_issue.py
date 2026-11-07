@@ -87,10 +87,14 @@ class MaterialIssue(models.Model):
             if issue.state != 'draft':
                 continue
             if not issue.line_ids.filtered(lambda l: l.qty > 0):
-                raise UserError(_('Add the items to issue.'))
+                raise UserError(_('This issue note has no items with a quantity. Add the items and quantities to issue, then click Issue.'))
             dest = issue.department_id.location_id
             if not dest:
-                raise UserError(_('Department %s has no consumption location.', issue.department_id.name))
+                # department made before locations existed: give it one now
+                issue.department_id.sudo().location_id = self.env['stock.location'].sudo().create({
+                    'name': issue.department_id.name, 'usage': 'production', 'company_id': issue.department_id.company_id.id,
+                    'location_id': (self.env.ref('stock.stock_location_locations_virtual', raise_if_not_found=False) or self.env['stock.location']).id})
+                dest = issue.department_id.location_id
             short = []
             for line in issue.line_ids.filtered(lambda l: l.qty > 0):
                 available = line.product_id.with_context(location=issue.location_id.id).qty_available
@@ -121,7 +125,7 @@ class MaterialIssue(models.Model):
 
     def action_cancel(self):
         if any(issue.state == 'done' for issue in self):
-            raise UserError(_('An issued note cannot be cancelled; return the material with a new note instead.'))
+            raise UserError(_('An issued note cannot be cancelled because the stock has already left the store. To take material back, make a stock transfer from the department location back to the store.'))
         self.write({'state': 'cancel'})
 
     def action_draft(self):

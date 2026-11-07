@@ -23,7 +23,7 @@ class PurchaseOrder(models.Model):
     def action_gate_in(self):
         self.ensure_one()
         if self.state not in ('purchase', 'done'):
-            raise UserError(_('Confirm the purchase order first.'))
+            raise UserError(_('This is still an RFQ. Confirm the purchase order first (it may need Purchase Manager approval), then make the Gate Pass Inward.'))
         GatePass = self.env['combine.gate.pass.in']
         gp = GatePass.create({'partner_id': self.partner_id.id, 'purchase_id': self.id,
                               'line_ids': [(0, 0, vals) for vals in GatePass._lines_from_purchase(self)]})
@@ -50,7 +50,7 @@ class StockPicking(models.Model):
     def action_gate_out(self):
         self.ensure_one()
         if self.picking_type_code != 'outgoing' or self.state != 'done':
-            raise UserError(_('A Gate Pass Outward is made from a validated delivery.'))
+            raise UserError(_('Validate the delivery first (enter the delivered quantities and click Validate), then make the Gate Pass Outward from it.'))
         GatePass = self.env['combine.gate.pass.out']
         gp = GatePass.create(GatePass._values_from_delivery(self))
         return {'type': 'ir.actions.act_window', 'res_model': gp._name, 'res_id': gp.id, 'view_mode': 'form'}

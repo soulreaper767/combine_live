@@ -49,9 +49,9 @@ class Inspection(models.Model):
                 rounding = line.uom_id.rounding or 0.01
                 if float_compare(line.qty_accepted, 0.0, precision_rounding=rounding) < 0 or \
                         float_compare(line.qty_accepted, line.qty_received, precision_rounding=rounding) > 0:
-                    raise UserError(_('%s: accepted quantity must be between 0 and the quantity received.', line.product_id.display_name))
+                    raise UserError(_('%s: the accepted quantity must be between 0 and the quantity received at the gate. Correct the accepted quantity on the line.', line.product_id.display_name))
                 if line.qty_rejected > 0 and not line.reason:
-                    raise UserError(_('%s: give the reason for the rejected quantity.', line.product_id.display_name))
+                    raise UserError(_('%s: part of the quantity is rejected - enter the reason on the line (e.g. damaged, wet, wrong count) before completing the inspection.', line.product_id.display_name))
             ins.state = 'done'
             ins.gate_pass_id.state = 'inspected'
             accepted = ins.line_ids.filtered(lambda l: l.qty_accepted > 0)
@@ -73,7 +73,7 @@ class Inspection(models.Model):
         self.ensure_one()
         rejected = self.line_ids.filtered(lambda l: l.qty_rejected > 0)
         if not rejected:
-            raise UserError(_('Nothing was rejected.'))
+            raise UserError(_('Nothing was rejected on this inspection, so there are no goods to send back to the vendor.'))
         gate_out = self.env['combine.gate.pass.out'].create({
             'pass_type': 'purchase_return',
             'partner_id': self.partner_id.id,

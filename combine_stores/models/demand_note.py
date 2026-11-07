@@ -58,12 +58,12 @@ class DemandNote(models.Model):
     def action_submit(self):
         for dn in self:
             if not dn.line_ids:
-                raise UserError(_('Add the items needed first.'))
+                raise UserError(_('This demand note has no items. Add the items needed (item and quantity) in the lines, then click Submit.'))
         self.write({'state': 'submitted'})
 
     def action_cancel(self):
         if any(dn.line_ids.filtered('purchase_line_ids') for dn in self):
-            raise UserError(_('Purchase orders were already made from this demand note; cancel those first.'))
+            raise UserError(_('Purchase orders were already made from this demand note, so it cannot be changed or cancelled. Cancel those purchase orders first (open them from the demand note), then try again.'))
         self.write({'state': 'cancel'})
 
     def action_draft(self):
@@ -72,7 +72,7 @@ class DemandNote(models.Model):
     def action_create_purchase(self):
         lines = self.line_ids.filtered(lambda l: l.demand_id.state == 'submitted' and l.pending_qty > 0)
         if not lines:
-            raise UserError(_('Nothing left to order on the selected demand notes.'))
+            raise UserError(_('Everything on the selected demand notes is already ordered. Check "Demand Status by Item" (Stores > Reporting) for what is pending.'))
         wizard = self.env['combine.demand.po.wizard'].create({
             'line_ids': [(0, 0, {
                 'demand_line_id': l.id,

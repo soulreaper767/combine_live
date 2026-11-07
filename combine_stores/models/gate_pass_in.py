@@ -68,7 +68,7 @@ class GatePassIn(models.Model):
     def action_gate_in(self):
         for gp in self:
             if not gp.line_ids:
-                raise UserError(_('Add the items that arrived.'))
+                raise UserError(_('This gate pass has no items. Add the items that arrived with the quantity per party document and the quantity counted at the gate, then click Gate In.'))
             gp.state = 'in'
             if not gp.inspection_ids:
                 self.env['combine.inspection'].create({
@@ -78,7 +78,7 @@ class GatePassIn(models.Model):
 
     def action_cancel(self):
         if self.grn_ids.filtered(lambda g: g.state == 'done'):
-            raise UserError(_('Goods of this gate pass are already received into stock.'))
+            raise UserError(_('The goods of this gate pass are already received into stock through its GRN, so it cannot be changed. For a correction, return the goods to the vendor from the receipt.'))
         self.inspection_ids.write({'state': 'cancel'})
         self.write({'state': 'cancel'})
 

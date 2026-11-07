@@ -14,10 +14,10 @@ class DemandPoWizard(models.TransientModel):
         self.ensure_one()
         lines = self.line_ids.filtered(lambda l: l.qty > 0)
         if not lines:
-            raise UserError(_('Enter the quantity to order.'))
+            raise UserError(_('Every line has zero quantity. Enter the quantity to order on the lines (or remove the lines not to order), then click Create.'))
         missing = lines.filtered(lambda l: not l.vendor_id)
         if missing:
-            raise UserError(_('Choose a vendor for: %s', ', '.join(missing.product_id.mapped('display_name'))))
+            raise UserError(_('Choose a vendor on each line - missing for: %s. One purchase order is made per vendor.', ', '.join(missing.product_id.mapped('display_name'))))
         by_vendor = defaultdict(lambda: self.env['combine.demand.po.wizard.line'])
         for line in lines:
             by_vendor[line.vendor_id] |= line
