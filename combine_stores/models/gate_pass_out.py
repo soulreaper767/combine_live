@@ -63,7 +63,7 @@ class GatePassOut(models.Model):
     def action_gate_out(self):
         for gp in self:
             if not gp.line_ids:
-                raise UserError(_('Add the items going out.'))
+                raise UserError(_('This gate pass has no items. Add the items going out with quantities and weights, then click Gate Out.'))
             gp.state = 'out'
 
     def action_cancel(self):

@@ -1,6 +1,6 @@
 {
     'name': 'Combine - Stores',
-    'version': '19.0.1.2.1',
+    'version': '19.0.1.3.0',
     'category': 'Inventory/Inventory',
     'summary': 'Demand Note -> Purchase Orders per supplier -> Gate Pass Inward -> Inspection -> GRN; Gate Pass Outward',
     'description': """
@@ -37,6 +37,16 @@ Purchasing and gate control for the stores:
    Delivery Challan and Material Issue registers - document by
    document with its items and totals; filters for period, parties,
    party types, items, item categories, status, departments.
+
+9. Automatic ledger entries (raw material and stores items, from the
+   upgrade on): GRN - Dr Stock / Cr GRN Clearing (2.07.14); vendor bill -
+   Dr GRN Clearing + GST / Cr Creditors; return to vendor - Dr GRN
+   Clearing / Cr Stock; issue to production - Dr Consumption (category) /
+   Cr Stock. Raw material and stores categories become perpetual with
+   average cost, keeping every item's current cost; Stores items get
+   3.08.04.0001 Stores, Spares & Loose Tools Stock and 5.03.01.0001 Store
+   Consumed. Receipts done before the upgrade made no entry; their bills
+   post to the stock account. Finished goods (yarn) are unchanged.
 
 Every document prints in the same layout as the Custom Reports, and so
 does combine001's own Gate Pass ("Gate Pass (house style)").
