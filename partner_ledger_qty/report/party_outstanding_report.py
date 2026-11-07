@@ -13,6 +13,10 @@ MODES = {
 }
 
 
+def _ids(records):
+    return tuple(records.ids) or (0,)
+
+
 class PartyOutstandingReport(models.AbstractModel):
     """Party Outstanding Report - one line per customer (or vendor):
     Opening, Gross Sales/Purchases, Net (after credit notes),
@@ -74,12 +78,12 @@ class PartyOutstandingReport(models.AbstractModel):
             JOIN res_partner p ON p.id = aml.partner_id
             WHERE aml.parent_state = 'posted'
               AND aml.company_id = %(company_id)s
-              AND acc.account_type = %(account_type)s
+              AND aml.account_id IN %(account_ids)s
               AND aml.date <= %(date_to)s
             GROUP BY p.commercial_partner_id
             """,
             date_from=date_from, date_to=date_to, company_id=company.id,
-            inv=mode['invoice'], ref=mode['refund'], account_type=mode['account_type'],
+            inv=mode['invoice'], ref=mode['refund'], account_ids=self._party_side_accounts(company, mode),
         ))
         sums = {r['partner_id']: r for r in self.env.cr.dictfetchall()}
 
@@ -154,3 +158,18 @@ class PartyOutstandingReport(models.AbstractModel):
     def _last_dates(self, query):
         self.env.cr.execute(query)
         return dict(self.env.cr.fetchall())
+
+    def _party_side_accounts(self, company, mode):
+        """Accounts making up the customer (vendor) side: debtor (creditor) type
+        accounts, with each side's advances on its own side - supplier advances
+        (3.09.16, a debtor-type account) count for vendors, customer advances
+        (2.07.16, creditor-type) for customers."""
+        Account = self.env['account.account'].with_context(active_test=False)
+        cust_adv = company.x_customer_advance_id if 'x_customer_advance_id' in company._fields else Account
+        vend_adv = company.x_vendor_advance_id if 'x_vendor_advance_id' in company._fields else Account
+        accounts = Account.search([('account_type', '=', mode['account_type']), ('company_ids', 'in', company.id)])
+        if mode['account_type'] == 'asset_receivable':
+            accounts = (accounts - vend_adv) | cust_adv
+        else:
+            accounts = (accounts - cust_adv) | vend_adv
+        return _ids(accounts)
