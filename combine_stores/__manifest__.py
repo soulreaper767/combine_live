@@ -1,6 +1,6 @@
 {
     'name': 'Combine - Stores',
-    'version': '19.0.1.3.0',
+    'version': '19.0.1.3.1',
     'category': 'Inventory/Inventory',
     'summary': 'Demand Note -> Purchase Orders per supplier -> Gate Pass Inward -> Inspection -> GRN; Gate Pass Outward',
     'description': """
