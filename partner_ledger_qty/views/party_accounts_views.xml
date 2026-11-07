@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Advance switch on payments -->
+    <record id="view_account_payment_form_advance" model="ir.ui.view">
+        <field name="name">account.payment.form.advance</field>
+        <field name="model">account.payment</field>
+        <field name="inherit_id" ref="account.view_account_payment_form"/>
+        <field name="arch" type="xml">
+            <field name="partner_id" position="after">
+                <field name="x_is_advance" readonly="state != 'draft'"/>
+                <field name="destination_account_id" string="Posted To" readonly="1" invisible="not x_is_advance"/>
+            </field>
+        </field>
+    </record>
+
+    <!-- Apply Advance on invoices / bills -->
+    <record id="view_move_form_apply_advance" model="ir.ui.view">
+        <field name="name">account.move.form.apply.advance</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <field name="x_advance_available" invisible="1"/>
+                <button name="action_apply_advance" type="object" string="Apply Advance" class="btn-secondary"
+                        invisible="not x_advance_available"
+                        confirm="Settle this document from the party's open advances?"/>
+            </xpath>
+            <xpath expr="//sheet" position="before">
+                <div class="alert alert-info mb-0" role="alert" invisible="not x_advance_available">
+                    This party has an open advance of <field name="x_advance_available" class="fw-bold"/>.
+                    Click <b>Apply Advance</b> to settle this document from it.
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- the 4 accounts, visible in Accounting settings -->
+    <record id="view_company_form_party_accounts" model="ir.ui.view">
+        <field name="name">res.company.form.party.accounts</field>
+        <field name="model">res.company</field>
+        <field name="inherit_id" ref="base.view_company_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Party Accounts" name="party_accounts" groups="account.group_account_manager">
+                    <group>
+                        <field name="x_customer_control_id"/>
+                        <field name="x_vendor_control_id"/>
+                        <field name="x_customer_advance_id"/>
+                        <field name="x_vendor_advance_id"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="cron_archive_settled_party_accounts" model="ir.cron">
+        <field name="name">Party accounts: archive old ones once settled</field>
+        <field name="model_id" ref="base.model_res_company"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_archive_settled_party_accounts()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="active" eval="True"/>
+    </record>
+</odoo>
