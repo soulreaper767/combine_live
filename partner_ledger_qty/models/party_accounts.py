@@ -157,6 +157,50 @@ class ResCompany(models.Model):
         _logger.info('Party lines remapped to the control accounts (%s): %s', self.name, log)
         return log
 
+    # old non-party advance accounts whose lines are party balances -> the party advance account
+    ADVANCE_ACCOUNT_CODES = {'3.10.04.0001': 'x_vendor_advance_id'}
+
+    def _remap_advance_lines(self):
+        """Lines on the old (non-party) advance accounts carry a party but never
+        reached the partner ledger; put them on the party advance account
+        (recorded first, reversible), then archive the old account."""
+        self.ensure_one()
+        cr = self.env.cr
+        Account = self.env['account.account'].with_context(active_test=False)
+        self.env.flush_all()
+        log = []
+        for code, field in self.ADVANCE_ACCOUNT_CODES.items():
+            old = Account.search([('code', '=', code), ('company_ids', 'in', self.id),
+                                  ('account_type', 'not in', ('asset_receivable', 'liability_payable'))], limit=1)
+            new = self[field]
+            if not old or not new:
+                continue
+            cr.execute(f"""INSERT INTO {self.REMAP_TABLE} (company_id, res_model, res_id, old_account_id, new_account_id)
+                           SELECT %s, 'account.move.line', id, account_id, %s FROM account_move_line
+                           WHERE account_id = %s AND company_id = %s""", (self.id, new.id, old.id, self.id))
+            cr.execute("SELECT count(*) FROM account_move_line WHERE account_id = %s AND company_id = %s", (old.id, self.id))
+            count = cr.fetchone()[0]
+            cr.execute("UPDATE account_move_line SET account_id = %s WHERE account_id = %s AND company_id = %s RETURNING id",
+                       (new.id, old.id, self.id))
+            moved = self.env['account.move.line'].browse([r[0] for r in cr.fetchall()])
+            self.env.invalidate_all()
+            # the old account was not reconcilable, so Odoo kept no open amount on these lines;
+            # on the (reconcilable) advance account they are open advances - let Odoo compute that
+            AML = self.env['account.move.line']
+            for fname in ('amount_residual', 'amount_residual_currency', 'reconciled'):
+                self.env.add_to_compute(AML._fields[fname], moved)
+            self.env.flush_all()
+            log.append('%s -> %s: %s lines' % (code, new.code, count))
+            if not self.env['account.journal'].search_count(['|', ('default_account_id', '=', old.id), ('suspense_account_id', '=', old.id)], limit=1):
+                try:
+                    with cr.savepoint():
+                        old.active = False
+                    log.append('archived %s' % code)
+                except Exception as e:
+                    _logger.info('%s kept active: %s', code, e)
+        _logger.info('Advance lines moved to the party advance accounts (%s): %s', self.name, log)
+        return log
+
     def _restore_party_account_remap(self):
         """Undo _remap_party_lines_to_controls exactly, from the recorded table
         (reactivates the old accounts first). Not called automatically."""
@@ -212,14 +256,16 @@ class AccountMove(models.Model):
         lines = self.env['account.move.line'].search([
             ('account_id', '=', account.id), ('partner_id', 'child_of', self.commercial_partner_id.id),
             ('parent_state', '=', 'posted'), ('reconciled', '=', False), ('company_id', '=', self.company_id.id)])
-        return lines.filtered(lambda l: l.amount_residual * sign > 0)
+        # all open lines, both directions (an advance paid and a part returned / adjusted net off)
+        lines = lines.filtered(lambda l: not l.company_currency_id.is_zero(l.amount_residual))
+        return lines if sign * sum(lines.mapped('amount_residual')) > 0 else lines.browse()
 
     @api.depends('state', 'amount_residual', 'partner_id', 'move_type')
     def _compute_advance_available(self):
         for move in self:
             amount = 0.0
             if move.state == 'posted' and move.payment_state not in ('paid', 'in_payment', 'reversed') and move.move_type in ('out_invoice', 'in_invoice'):
-                amount = abs(sum(move._open_advance_lines().mapped('amount_residual')))
+                amount = abs(sum(move._open_advance_lines().mapped('amount_residual')))  # net of debits and credits
             move.x_advance_available = amount
 
     def action_apply_advance(self):
