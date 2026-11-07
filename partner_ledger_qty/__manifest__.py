@@ -1,6 +1,6 @@
 {
     'name': 'Custom Reports (Partner Ledger)',
-    'version': '19.0.7.10.1',
+    'version': '19.0.7.11.0',
     'category': 'Accounting/Accounting',
     'summary': "House for this company's custom reports - starts with the Partner Ledger "
                "Qty column and the itemized Partner Statement PDF",

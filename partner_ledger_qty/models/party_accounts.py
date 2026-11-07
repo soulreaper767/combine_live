@@ -113,6 +113,65 @@ class ResCompany(models.Model):
             if company.x_customer_control_id:
                 company.with_company(company)._archive_settled_party_accounts()
 
+    # ------------------------------------------------------------------ remap
+    REMAP_TABLE = 'combine_party_account_remap'
+
+    def _remap_party_lines_to_controls(self):
+        """Replace the old receivable / payable account by the control account
+        on every journal line (posted, draft, cancelled) and payment of this
+        company. Only the account changes - amounts, dates, numbers, parties,
+        reconciliations and open amounts stay exactly as they are (old and new
+        accounts are both reconcilable party accounts). Every change is first
+        recorded in combine_party_account_remap so it can be reversed exactly
+        (_restore_party_account_remap)."""
+        self.ensure_one()
+        cust, vend = self.x_customer_control_id, self.x_vendor_control_id
+        if not cust or not vend:
+            return ['controls missing - nothing remapped']
+        cr = self.env.cr
+        Account = self.env['account.account'].with_context(active_test=False)
+        old = Account.search([('account_type', 'in', ('asset_receivable', 'liability_payable')),
+                              ('id', 'not in', self._party_accounts().ids), ('company_ids', 'in', self.id)])
+        cr.execute(f"""CREATE TABLE IF NOT EXISTS {self.REMAP_TABLE} (
+                           id serial PRIMARY KEY, company_id int, res_model varchar, res_id int,
+                           old_account_id int, new_account_id int, remapped_at timestamp DEFAULT (now() AT TIME ZONE 'UTC'))""")
+        self.env.flush_all()
+        log = []
+        for old_ids, new in ((old.filtered(lambda a: a.account_type == 'asset_receivable').ids, cust.id),
+                             (old.filtered(lambda a: a.account_type == 'liability_payable').ids, vend.id)):
+            if not old_ids:
+                continue
+            for table, model, column in (('account_move_line', 'account.move.line', 'account_id'),
+                                         ('account_payment', 'account.payment', 'destination_account_id')):
+                cr.execute(f"""INSERT INTO {self.REMAP_TABLE} (company_id, res_model, res_id, old_account_id, new_account_id)
+                               SELECT %s, %s, id, {column}, %s FROM {table} WHERE {column} = ANY(%s) AND company_id = %s""",
+                           (self.id, model, new, old_ids, self.id))
+                cr.execute(f"SELECT count(*) FROM {table} WHERE {column} = ANY(%s) AND company_id = %s", (old_ids, self.id))
+                count = cr.fetchone()[0]
+                cr.execute(f"UPDATE {table} SET {column} = %s WHERE {column} = ANY(%s) AND company_id = %s",
+                           (new, old_ids, self.id))
+                if count:
+                    log.append('%s -> %s: %s %s' % (Account.browse(new).code, model, count, 'records'))
+        self.env.invalidate_all()
+        log.append('archived: %s' % (', '.join(self._archive_settled_party_accounts()) or '-'))
+        _logger.info('Party lines remapped to the control accounts (%s): %s', self.name, log)
+        return log
+
+    def _restore_party_account_remap(self):
+        """Undo _remap_party_lines_to_controls exactly, from the recorded table
+        (reactivates the old accounts first). Not called automatically."""
+        self.ensure_one()
+        cr = self.env.cr
+        cr.execute(f"SELECT DISTINCT old_account_id FROM {self.REMAP_TABLE} WHERE company_id = %s", (self.id,))
+        self.env['account.account'].with_context(active_test=False).browse([r[0] for r in cr.fetchall()]).write({'active': True})
+        self.env.flush_all()
+        for table, model, column in (('account_move_line', 'account.move.line', 'account_id'),
+                                     ('account_payment', 'account.payment', 'destination_account_id')):
+            cr.execute(f"""UPDATE {table} t SET {column} = r.old_account_id FROM {self.REMAP_TABLE} r
+                           WHERE r.res_model = %s AND r.res_id = t.id AND r.company_id = %s""", (model, self.id))
+        self.env.invalidate_all()
+        return True
+
 
 # ============================================================ advances
 class AccountPayment(models.Model):
