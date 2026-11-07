@@ -84,9 +84,10 @@ class AccountMove(models.Model):
 class PurchaseOrder(models.Model):
     _inherit = 'purchase.order'
 
-    def action_create_invoice(self):
-        # bills / debit notes made by the system from the order are not manual price edits
-        return super(PurchaseOrder, self.with_context(combine001_amendment_apply=True)).action_create_invoice()
+    def action_create_invoice(self, attachment_ids=False):
+        # bills / debit notes made by the system from the order are not manual price edits;
+        # attachment_ids: "Upload Bill" passes the uploaded vendor bill file(s)
+        return super(PurchaseOrder, self.with_context(combine001_amendment_apply=True)).action_create_invoice(attachment_ids=attachment_ids)
 
 
 class PurchaseOrderLine(models.Model):
