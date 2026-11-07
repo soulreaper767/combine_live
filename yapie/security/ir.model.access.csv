@@ -1,0 +1,18 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_yapie_log_user,yapie.log user,model_yapie_log,group_yapie_user,1,0,0,0
+access_yapie_log_manager,yapie.log manager,model_yapie_log,group_yapie_manager,1,1,1,1
+access_yapie_chat_user,yapie.chat user,model_yapie_chat,group_yapie_user,1,0,0,0
+access_yapie_chat_manager,yapie.chat manager,model_yapie_chat,group_yapie_manager,1,1,1,1
+access_yapie_report_type_user,yapie.report.type user,model_yapie_report_type,group_yapie_user,1,0,0,0
+access_yapie_report_type_manager,yapie.report.type manager,model_yapie_report_type,group_yapie_manager,1,1,1,1
+access_yapie_schedule_manager,yapie.report.schedule manager,model_yapie_report_schedule,group_yapie_manager,1,1,1,1
+access_yapie_rule_user,yapie.approval.rule user,model_yapie_approval_rule,base.group_user,1,0,0,0
+access_yapie_rule_manager,yapie.approval.rule manager,model_yapie_approval_rule,group_yapie_manager,1,1,1,1
+access_yapie_request_user,yapie.approval.request user,model_yapie_approval_request,base.group_user,1,0,0,0
+access_yapie_request_manager,yapie.approval.request manager,model_yapie_approval_request,group_yapie_manager,1,1,1,1
+access_yapie_card_user,yapie.approval.card user,model_yapie_approval_card,base.group_user,1,0,0,0
+access_yapie_card_manager,yapie.approval.card manager,model_yapie_approval_card,group_yapie_manager,1,1,1,1
+access_yapie_notify_manager,yapie.notify.rule manager,model_yapie_notify_rule,group_yapie_manager,1,1,1,1
+access_yapie_session_manager,yapie.bot.session manager,model_yapie_bot_session,group_yapie_manager,1,1,1,1
+access_yapie_link_wizard,yapie.link.wizard,model_yapie_link_wizard,base.group_user,1,1,1,1
+access_yapie_approval_wizard,yapie.approval.wizard,model_yapie_approval_wizard,base.group_user,1,1,1,1

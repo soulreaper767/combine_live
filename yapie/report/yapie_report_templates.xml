@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- one clean table layout for every Yapie report (inline styles: they always reach the PDF) -->
+    <template id="report_yapie_table">
+        <t t-call="web.html_container">
+            <div class="page" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; color: #1f2937;">
+                <div style="border-bottom: 2px solid #0f766e; padding-bottom: 6px; margin-bottom: 10px;">
+                    <div style="font-size: 17px; font-weight: bold; color: #0f172a;" t-esc="doc['title']"/>
+                    <div style="font-size: 11px; margin-top: 2px;"><b t-esc="doc['company']"/> · <span t-esc="doc.get('subtitle', '')"/></div>
+                    <div style="font-size: 9px; color: #6b7280; margin-top: 2px;"><span t-esc="doc['generated']"/><t t-if="doc.get('currency')"> · amounts in <span t-esc="doc['currency']"/></t></div>
+                </div>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <t t-foreach="doc['head']" t-as="h">
+                                <th t-att-style="'padding: 5px 4px; background: #f1f5f9; border-bottom: 1px solid #94a3b8; text-align: %s;' % ('right' if doc['align'][h_index] == 'r' else 'left')" t-esc="h"/>
+                            </t>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr t-foreach="doc['body']" t-as="row" style="page-break-inside: avoid;">
+                            <t t-foreach="row" t-as="c">
+                                <td t-att-style="'padding: 3px 4px; border-bottom: 1px solid #e5e7eb; text-align: %s;%s' % ('right' if doc['align'][c_index] == 'r' else 'left', ' white-space: nowrap;' if doc['align'][c_index] == 'r' else '')" t-esc="c"/>
+                            </t>
+                        </tr>
+                    </tbody>
+                    <tfoot t-if="doc.get('foot')">
+                        <tr>
+                            <t t-foreach="doc['foot']" t-as="c">
+                                <td t-att-style="'padding: 5px 4px; border-top: 2px solid #334155; font-weight: bold; text-align: %s; white-space: nowrap;' % ('right' if doc['align'][c_index] == 'r' else 'left')" t-esc="c"/>
+                            </t>
+                        </tr>
+                    </tfoot>
+                </table>
+                <p t-if="not doc['body']" style="margin-top: 12px; color: #6b7280;">Nothing to show for this period.</p>
+                <p t-if="doc.get('truncated')" style="margin-top: 8px; color: #b45309;">Only the first 5,000 lines are shown — ask for a shorter period.</p>
+            </div>
+        </t>
+    </template>
+
+    <record id="action_yapie_table_report" model="ir.actions.report">
+        <field name="name">Yapie report</field>
+        <field name="model">yapie.log</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">yapie.report_yapie_table</field>
+        <field name="paperformat_id" ref="paperformat_yapie_portrait"/>
+    </record>
+    <record id="action_yapie_table_report_landscape" model="ir.actions.report">
+        <field name="name">Yapie report (landscape)</field>
+        <field name="model">yapie.log</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">yapie.report_yapie_table</field>
+        <field name="paperformat_id" ref="paperformat_yapie_landscape"/>
+    </record>
+</odoo>

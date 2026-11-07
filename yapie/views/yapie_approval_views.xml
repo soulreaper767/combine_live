@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="yapie_approval_rule_list" model="ir.ui.view">
+        <field name="name">yapie.approval.rule.list</field>
+        <field name="model">yapie.approval.rule</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="model_id"/>
+                <field name="approver_user_ids" widget="many2many_avatar_user"/>
+                <field name="approver_group_ids" widget="many2many_tags" optional="show"/>
+                <field name="auto_request"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+    <record id="yapie_approval_rule_form" model="ir.ui.view">
+        <field name="name">yapie.approval.rule.form</field>
+        <field name="model">yapie.approval.rule</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_requests" type="object" class="oe_stat_button" icon="fa-check-square-o">
+                            <field name="request_count" widget="statinfo" string="Requests"/>
+                        </button>
+                    </div>
+                    <div class="oe_title"><h1><field name="name" placeholder="e.g. Big sales orders"/></h1></div>
+                    <group>
+                        <group string="Which documents">
+                            <field name="model_id" options="{'no_create': True}"/>
+                            <field name="model" invisible="1"/>
+                            <field name="domain" widget="domain" options="{'model': 'model', 'in_dialog': True}" invisible="not model_id"/>
+                            <field name="auto_request"/>
+                            <field name="active"/>
+                        </group>
+                        <group string="What deciding does">
+                            <field name="approve_method"/>
+                            <field name="reject_method"/>
+                            <field name="due_hours"/>
+                            <field name="notify_requester"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Who approves">
+                            <field name="approver_user_ids" widget="many2many_avatar_user" options="{'no_create': True}"/>
+                            <field name="approver_group_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                            <field name="chat_id" options="{'no_create': True}"/>
+                        </group>
+                        <group string="Who may send for approval">
+                            <field name="requester_user_ids" widget="many2many_avatar_user" options="{'no_create': True}"/>
+                            <field name="requester_group_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                            <div colspan="2" class="text-muted">Empty: anyone who can edit the document.</div>
+                        </group>
+                    </group>
+                    <group string="Shown on the card">
+                        <field name="field_ids" widget="many2many_tags" options="{'no_create': True}" nolabel="1" colspan="2"/>
+                    </group>
+                    <div class="text-muted">Approvers decide on Yapie by tapping Approve / Reject or replying “approve” / “reject - reason”.
+                        Only approvers who linked Yapie get the card, and Odoo applies the decision as that approver,
+                        with their access rights. A decision from anyone else is refused.</div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_yapie_approval_rules" model="ir.actions.act_window">
+        <field name="name">Approval rules</field>
+        <field name="res_model">yapie.approval.rule</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'active_test': False}</field>
+        <field name="help" type="html"><p>Which documents need approval on Yapie, who may send them, and who approves.</p></field>
+    </record>
+
+    <record id="yapie_approval_request_list" model="ir.ui.view">
+        <field name="name">yapie.approval.request.list</field>
+        <field name="model">yapie.approval.request</field>
+        <field name="arch" type="xml">
+            <list create="false" decoration-success="state == 'approved'" decoration-danger="state == 'rejected'" decoration-muted="state == 'cancelled'">
+                <field name="create_date" string="Asked"/>
+                <field name="name"/>
+                <field name="requested_by"/>
+                <field name="approver_ids" widget="many2many_avatar_user"/>
+                <field name="state"/>
+                <field name="decided_user_id"/>
+                <field name="comment" optional="show"/>
+                <field name="applied" optional="show"/>
+            </list>
+        </field>
+    </record>
+    <record id="yapie_approval_request_form" model="ir.ui.view">
+        <field name="name">yapie.approval.request.form</field>
+        <field name="model">yapie.approval.request</field>
+        <field name="arch" type="xml">
+            <form create="false" edit="false">
+                <header>
+                    <button name="action_open_document" type="object" string="Open document" class="btn-primary"/>
+                    <button name="action_withdraw" type="object" string="Withdraw" invisible="state != 'pending'"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="rule_id"/>
+                            <field name="requested_by"/>
+                            <field name="automatic"/>
+                            <field name="note"/>
+                            <field name="approver_ids" widget="many2many_avatar_user"/>
+                        </group>
+                        <group>
+                            <field name="decided_user_id"/>
+                            <field name="decided_at"/>
+                            <field name="via"/>
+                            <field name="comment"/>
+                            <field name="applied"/>
+                            <field name="applied_note"/>
+                        </group>
+                    </group>
+                    <field name="card_ids">
+                        <list>
+                            <field name="yapie_id"/>
+                            <field name="user_id"/>
+                            <field name="chat_id"/>
+                            <field name="state"/>
+                        </list>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="yapie_approval_request_search" model="ir.ui.view">
+        <field name="name">yapie.approval.request.search</field>
+        <field name="model">yapie.approval.request</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <filter name="pending" string="Waiting" domain="[('state', '=', 'pending')]"/>
+                <filter name="mine" string="Waiting for me" domain="[('state', '=', 'pending'), ('approver_ids', 'in', uid)]"/>
+                <filter name="asked" string="Asked by me" domain="[('requested_by', '=', uid)]"/>
+                <group>
+                    <filter name="by_state" string="Status" context="{'group_by': 'state'}"/>
+                    <filter name="by_rule" string="Rule" context="{'group_by': 'rule_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_yapie_approval_requests" model="ir.actions.act_window">
+        <field name="name">Approvals</field>
+        <field name="res_model">yapie.approval.request</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_pending': 1}</field>
+    </record>
+</odoo>

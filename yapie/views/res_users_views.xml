@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Preferences (each person, for themselves) -->
+    <record id="yapie_view_users_form_simple_modif" model="ir.ui.view">
+        <field name="name">res.users.preferences.yapie</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_form_simple_modif"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='preferences_page']" position="after">
+                <page string="Yapie" name="yapie">
+                    <group>
+                        <field name="yapie_linked" readonly="1"/>
+                        <field name="yapie_target" invisible="not yapie_linked"/>
+                        <field name="yapie_linked_at" invisible="not yapie_linked"/>
+                    </group>
+                    <button name="action_yapie_link" type="object" string="Link Yapie" class="btn-primary" invisible="yapie_linked"/>
+                    <button name="action_yapie_unlink" type="object" string="Unlink Yapie" invisible="not yapie_linked"
+                            confirm="Unlink your Yapie? You stop getting reports and approvals there."/>
+                    <p class="text-muted mt-2">Get reports, approvals and alerts from this company on Yapie. Yapie sends you a code to confirm
+                        it's your account.</p>
+                </page>
+            </xpath>
+        </field>
+    </record>
+    <!-- the user form (administrators) -->
+    <record id="yapie_view_users_form" model="ir.ui.view">
+        <field name="name">res.users.form.yapie</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='preferences']" position="after">
+                <page string="Yapie" name="yapie" groups="yapie.group_yapie_manager">
+                    <group>
+                        <field name="yapie_linked" readonly="1"/>
+                        <field name="yapie_target" invisible="not yapie_linked"/>
+                        <field name="yapie_username" invisible="not yapie_linked"/>
+                        <field name="yapie_linked_at" invisible="not yapie_linked"/>
+                    </group>
+                    <button name="action_yapie_link" type="object" string="Link Yapie" invisible="yapie_linked"/>
+                    <button name="action_yapie_unlink" type="object" string="Unlink Yapie" invisible="not yapie_linked"
+                            confirm="Unlink this person's Yapie? They stop getting anything from this company at once."/>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

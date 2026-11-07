@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- the reports people can ask for; administrators choose who gets each (nobody but Yapie administrators until then) -->
+    <data noupdate="1">
+        <record id="report_partner_ledger" model="yapie.report.type">
+            <field name="name">Partner ledger</field>
+            <field name="code">partner_ledger</field>
+            <field name="sequence">1</field>
+            <field name="keywords">ledger, statement, khata, account statement</field>
+            <field name="example">ledger Acme this year</field>
+            <field name="needs_partner">required</field>
+            <field name="requires_model">account.move.line</field>
+            <field name="default_period">this_year</field>
+            <field name="description">Opening balance, every posted entry and the running balance of one customer or vendor</field>
+        </record>
+        <record id="report_receivable_aging" model="yapie.report.type">
+            <field name="name">Receivables aging</field>
+            <field name="code">receivable_aging</field>
+            <field name="sequence">2</field>
+            <field name="keywords">receivables, receivable, aging, ageing, debtors, recovery</field>
+            <field name="example">receivables</field>
+            <field name="needs_partner">optional</field>
+            <field name="requires_model">account.move.line</field>
+            <field name="default_period">as_of_today</field>
+        </record>
+        <record id="report_payable_aging" model="yapie.report.type">
+            <field name="name">Payables aging</field>
+            <field name="code">payable_aging</field>
+            <field name="sequence">3</field>
+            <field name="keywords">payables, payable, creditors</field>
+            <field name="example">payables</field>
+            <field name="needs_partner">optional</field>
+            <field name="requires_model">account.move.line</field>
+            <field name="default_period">as_of_today</field>
+        </record>
+        <record id="report_overdue_invoices" model="yapie.report.type">
+            <field name="name">Overdue invoices</field>
+            <field name="code">overdue_invoices</field>
+            <field name="sequence">4</field>
+            <field name="keywords">overdue, overdue invoices, late payments</field>
+            <field name="example">overdue</field>
+            <field name="needs_partner">optional</field>
+            <field name="requires_model">account.move</field>
+            <field name="default_period">as_of_today</field>
+        </record>
+        <record id="report_sales_summary" model="yapie.report.type">
+            <field name="name">Sales by customer</field>
+            <field name="code">sales_summary</field>
+            <field name="sequence">5</field>
+            <field name="keywords">sales, sale, revenue</field>
+            <field name="example">sales last month</field>
+            <field name="needs_partner">optional</field>
+            <field name="requires_model">account.move</field>
+            <field name="default_period">this_month</field>
+        </record>
+        <record id="report_purchase_summary" model="yapie.report.type">
+            <field name="name">Purchases by vendor</field>
+            <field name="code">purchase_summary</field>
+            <field name="sequence">6</field>
+            <field name="keywords">purchases, purchase, expenses bills, bills</field>
+            <field name="example">purchases this month</field>
+            <field name="needs_partner">optional</field>
+            <field name="requires_model">account.move</field>
+            <field name="default_period">this_month</field>
+        </record>
+        <record id="report_cash_bank" model="yapie.report.type">
+            <field name="name">Cash and bank</field>
+            <field name="code">cash_bank</field>
+            <field name="sequence">7</field>
+            <field name="keywords">cash, bank, cash and bank, balances</field>
+            <field name="example">cash</field>
+            <field name="requires_model">account.move.line</field>
+            <field name="default_period">as_of_today</field>
+        </record>
+        <record id="report_sale_orders" model="yapie.report.type">
+            <field name="name">Sales orders</field>
+            <field name="code">sale_orders</field>
+            <field name="sequence">8</field>
+            <field name="keywords">orders, sales orders, sale orders</field>
+            <field name="example">orders this week</field>
+            <field name="needs_partner">optional</field>
+            <field name="requires_model">sale.order</field>
+            <field name="default_period">this_month</field>
+        </record>
+        <record id="report_stock_onhand" model="yapie.report.type">
+            <field name="name">Stock on hand</field>
+            <field name="code">stock_onhand</field>
+            <field name="sequence">9</field>
+            <field name="keywords">stock, inventory, on hand</field>
+            <field name="example">stock yarn</field>
+            <field name="requires_model">stock.quant</field>
+            <field name="default_period">as_of_today</field>
+        </record>
+    </data>
+
+    <record id="ir_cron_yapie_poll" model="ir.cron">
+        <field name="name">Yapie: collect messages</field>
+        <field name="model_id" ref="model_yapie_api"/>
+        <field name="state">code</field>
+        <field name="code">model.poll()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">minutes</field>
+        <field name="active" eval="False"/>
+    </record>
+    <record id="ir_cron_yapie_schedules" model="ir.cron">
+        <field name="name">Yapie: scheduled reports</field>
+        <field name="model_id" ref="model_yapie_report_schedule"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_run()</field>
+        <field name="interval_number">10</field>
+        <field name="interval_type">minutes</field>
+        <field name="active" eval="True"/>
+    </record>
+
+    <record id="paperformat_yapie_portrait" model="report.paperformat">
+        <field name="name">Yapie A4 portrait</field>
+        <field name="format">A4</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">12</field>
+        <field name="margin_bottom">12</field>
+        <field name="margin_left">10</field>
+        <field name="margin_right">10</field>
+        <field name="header_spacing">0</field>
+        <field name="dpi">90</field>
+        <field name="disable_shrinking" eval="True"/>
+    </record>
+    <record id="paperformat_yapie_landscape" model="report.paperformat">
+        <field name="name">Yapie A4 landscape</field>
+        <field name="format">A4</field>
+        <field name="orientation">Landscape</field>
+        <field name="margin_top">12</field>
+        <field name="margin_bottom">12</field>
+        <field name="margin_left">10</field>
+        <field name="margin_right">10</field>
+        <field name="header_spacing">0</field>
+        <field name="dpi">90</field>
+        <field name="disable_shrinking" eval="True"/>
+    </record>
+</odoo>

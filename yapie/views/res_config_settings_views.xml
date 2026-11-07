@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="yapie_settings_view" model="ir.ui.view">
+        <field name="name">res.config.settings.yapie</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <app string="Yapie" name="yapie" groups="yapie.group_yapie_manager">
+                    <block title="Connection">
+                        <setting string="Bot" help="Create a bot in Yapie (Settings › Developers &amp; API, developer plan) and paste its token.">
+                            <field name="yapie_base_url"/>
+                            <field name="yapie_token" password="True"/>
+                            <field name="yapie_bot_name" invisible="not yapie_bot_name"/>
+                            <button name="action_yapie_connect" type="object" string="Save and connect" class="btn-link"/>
+                        </setting>
+                        <setting string="Receiving messages" help="How messages, decisions and attendance reach Odoo.">
+                            <field name="yapie_mode" widget="radio"/>
+                            <div invisible="yapie_mode != 'webhook'"><span class="text-muted">Yapie calls </span><field name="yapie_webhook_url" readonly="1" class="d-inline"/></div>
+                            <button name="action_yapie_poll_now" type="object" string="Check for messages now" class="btn-link" invisible="yapie_mode != 'polling'"/>
+                        </setting>
+                    </block>
+                </app>
+            </xpath>
+        </field>
+    </record>
+    <record id="action_yapie_settings" model="ir.actions.act_window">
+        <field name="name">Settings</field>
+        <field name="res_model">res.config.settings</field>
+        <field name="view_mode">form</field>
+        <field name="context">{'module': 'yapie', 'bin_size': False}</field>
+    </record>
+</odoo>

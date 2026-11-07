@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="yapie_link_wizard_form" model="ir.ui.view">
+        <field name="name">yapie.link.wizard.form</field>
+        <field name="model">yapie.link.wizard</field>
+        <field name="arch" type="xml">
+            <form>
+                <field name="step" invisible="1"/>
+                <group invisible="step != 'ask'">
+                    <field name="user_id"/>
+                    <field name="target" placeholder="@username, +92300… or you@company.com"/>
+                </group>
+                <p invisible="step != 'ask'" class="text-muted">Yapie sends a 6-digit code to that account. Only its owner can read it.</p>
+                <group invisible="step != 'code'">
+                    <field name="target" readonly="1" string="Code sent to"/>
+                    <field name="code" placeholder="6-digit code from Yapie"/>
+                </group>
+                <footer>
+                    <button name="action_send_code" type="object" string="Send code" class="btn-primary" invisible="step != 'ask'"/>
+                    <button name="action_verify" type="object" string="Link" class="btn-primary" invisible="step != 'code'"/>
+                    <button name="action_send_code" type="object" string="Send a new code" invisible="step != 'code'"/>
+                    <button string="Cancel" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

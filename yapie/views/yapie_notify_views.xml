@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="yapie_notify_rule_list" model="ir.ui.view">
+        <field name="name">yapie.notify.rule.list</field>
+        <field name="model">yapie.notify.rule</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="model_id"/>
+                <field name="user_ids" widget="many2many_avatar_user"/>
+                <field name="group_ids" widget="many2many_tags" optional="show"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+    <record id="yapie_notify_rule_form" model="ir.ui.view">
+        <field name="name">yapie.notify.rule.form</field>
+        <field name="model">yapie.notify.rule</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_test" type="object" string="Send for the latest match" invisible="not id"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name" placeholder="e.g. New vendor bills to review"/></h1></div>
+                    <group>
+                        <group string="When">
+                            <field name="model_id" options="{'no_create': True}"/>
+                            <field name="model" invisible="1"/>
+                            <field name="domain" widget="domain" options="{'model': 'model', 'in_dialog': True}" invisible="not model_id"/>
+                            <field name="active"/>
+                        </group>
+                        <group string="Message">
+                            <field name="message"/>
+                            <field name="field_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="To">
+                            <field name="user_ids" widget="many2many_avatar_user" options="{'no_create': True}"/>
+                            <field name="group_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                            <field name="user_field_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                            <field name="chat_id" options="{'no_create': True}"/>
+                        </group>
+                        <group string="The customer (optional)">
+                            <field name="partner_field_id" options="{'no_create': True}"/>
+                            <field name="partner_message" invisible="not partner_field_id"/>
+                        </group>
+                    </group>
+                    <div class="text-muted">Sent once, when a document starts matching. Each person gets it only if they linked Yapie,
+                        are a Yapie user, and can open the document in Odoo.</div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_yapie_notify_rules" model="ir.actions.act_window">
+        <field name="name">Review alerts</field>
+        <field name="res_model">yapie.notify.rule</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'active_test': False}</field>
+        <field name="help" type="html"><p>“Invoice INV/2026/0042 is ready for your review” — to the right people, the moment it is.</p></field>
+    </record>
+</odoo>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_yapie_root" name="Yapie" web_icon="yapie,static/description/icon.png" sequence="90" groups="base.group_user"/>
+
+    <menuitem id="menu_yapie_approvals" name="Approvals" parent="menu_yapie_root" sequence="10" action="action_yapie_approval_requests" groups="base.group_user"/>
+
+    <menuitem id="menu_yapie_reports" name="Reports" parent="menu_yapie_root" sequence="20" groups="group_yapie_manager"/>
+    <menuitem id="menu_yapie_report_types" name="Reports in chat" parent="menu_yapie_reports" sequence="1" action="action_yapie_report_types"/>
+    <menuitem id="menu_yapie_schedules" name="Scheduled reports" parent="menu_yapie_reports" sequence="2" action="action_yapie_schedules"/>
+
+    <menuitem id="menu_yapie_activity" name="Activity" parent="menu_yapie_root" sequence="40" action="action_yapie_log" groups="group_yapie_user"/>
+
+    <menuitem id="menu_yapie_config" name="Configuration" parent="menu_yapie_root" sequence="90" groups="group_yapie_manager"/>
+    <menuitem id="menu_yapie_settings" name="Settings" parent="menu_yapie_config" sequence="1" action="action_yapie_settings"/>
+    <menuitem id="menu_yapie_people" name="People" parent="menu_yapie_config" sequence="2" action="action_yapie_users"/>
+    <menuitem id="menu_yapie_approval_rules" name="Approval rules" parent="menu_yapie_config" sequence="3" action="action_yapie_approval_rules"/>
+    <menuitem id="menu_yapie_notify_rules" name="Review alerts" parent="menu_yapie_config" sequence="4" action="action_yapie_notify_rules"/>
+    <menuitem id="menu_yapie_chats" name="Groups" parent="menu_yapie_config" sequence="5" action="action_yapie_chats"/>
+</odoo>

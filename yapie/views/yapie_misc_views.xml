@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="yapie_chat_list" model="ir.ui.view">
+        <field name="name">yapie.chat.list</field>
+        <field name="model">yapie.chat</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="chat_id"/>
+                <field name="member_ok"/>
+                <field name="member_note"/>
+                <button name="action_check_members" type="object" string="Check members" icon="fa-users"/>
+            </list>
+        </field>
+    </record>
+    <record id="yapie_chat_form" model="ir.ui.view">
+        <field name="name">yapie.chat.form</field>
+        <field name="model">yapie.chat</field>
+        <field name="arch" type="xml">
+            <form>
+                <header><button name="action_check_members" type="object" string="Check members" invisible="not id"/></header>
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="chat_id"/>
+                        <field name="member_ok"/>
+                        <field name="member_note"/>
+                        <field name="active"/>
+                    </group>
+                    <div class="text-muted">Add the bot to the group in Yapie, then a linked member sends <b>/groupid</b> there: the bot replies
+                        privately with the ID. Before every post the bot checks the members: if anyone in the group isn't a linked, authorised
+                        user, nothing is posted.</div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_yapie_chats" model="ir.actions.act_window">
+        <field name="name">Groups</field>
+        <field name="res_model">yapie.chat</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="yapie_log_list" model="ir.ui.view">
+        <field name="name">yapie.log.list</field>
+        <field name="model">yapie.log</field>
+        <field name="arch" type="xml">
+            <list create="false" edit="false" decoration-danger="state == 'error'">
+                <field name="create_date" string="When"/>
+                <field name="kind"/>
+                <field name="user_id"/>
+                <field name="yapie_name" optional="show"/>
+                <field name="summary"/>
+                <field name="state" optional="hide"/>
+            </list>
+        </field>
+    </record>
+    <record id="yapie_log_search" model="ir.ui.view">
+        <field name="name">yapie.log.search</field>
+        <field name="model">yapie.log</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="summary"/>
+                <field name="user_id"/>
+                <filter name="refused" string="Refused" domain="[('kind', '=', 'denied')]"/>
+                <filter name="errors" string="Failed" domain="[('state', '=', 'error')]"/>
+                <group>
+                    <filter name="by_kind" string="Kind" context="{'group_by': 'kind'}"/>
+                    <filter name="by_user" string="Person" context="{'group_by': 'user_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_yapie_log" model="ir.actions.act_window">
+        <field name="name">Activity</field>
+        <field name="res_model">yapie.log</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <record id="yapie_users_list" model="ir.ui.view">
+        <field name="name">res.users.yapie.list</field>
+        <field name="model">res.users</field>
+        <field name="priority">99</field>
+        <field name="arch" type="xml">
+            <list create="false">
+                <field name="name"/>
+                <field name="login"/>
+                <field name="yapie_linked"/>
+                <field name="yapie_target"/>
+                <field name="yapie_username"/>
+                <field name="yapie_linked_at"/>
+                <button name="action_yapie_link" type="object" string="Link" icon="fa-link" invisible="yapie_linked"/>
+                <button name="action_yapie_unlink" type="object" string="Unlink" icon="fa-chain-broken" invisible="not yapie_linked"
+                        confirm="Unlink this person's Yapie? They stop getting anything from this company at once."/>
+            </list>
+        </field>
+    </record>
+    <record id="action_yapie_users" model="ir.actions.act_window">
+        <field name="name">People</field>
+        <field name="res_model">res.users</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="yapie_users_list"/>
+        <field name="domain">[('share', '=', False)]</field>
+        <field name="help" type="html"><p>Give people the “Yapie: User” access (Settings › Users), then each links their own Yapie in
+            Preferences. Linking needs a code that Yapie sends to them, so only the real owner of the account can link it.</p></field>
+    </record>
+</odoo>

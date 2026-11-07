@@ -1,0 +1,9 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_yapie_att_org_mgr,yapie.attendance.org manager,model_yapie_attendance_org,yapie.group_yapie_manager,1,1,1,1
+access_yapie_att_org_hr,yapie.attendance.org hr,model_yapie_attendance_org,hr_attendance.group_hr_attendance_manager,1,1,0,0
+access_yapie_att_member_mgr,yapie.attendance.member manager,model_yapie_attendance_member,yapie.group_yapie_manager,1,1,1,1
+access_yapie_att_member_hr,yapie.attendance.member hr,model_yapie_attendance_member,hr_attendance.group_hr_attendance_manager,1,1,0,0
+access_yapie_att_event_mgr,yapie.attendance.event manager,model_yapie_attendance_event,yapie.group_yapie_manager,1,1,1,1
+access_yapie_att_event_hr,yapie.attendance.event hr,model_yapie_attendance_event,hr_attendance.group_hr_attendance_manager,1,1,0,0
+access_yapie_att_catchup,yapie.attendance.catchup,model_yapie_attendance_catchup,hr_attendance.group_hr_attendance_manager,1,1,1,1
+access_yapie_att_catchup_mgr,yapie.attendance.catchup manager,model_yapie_attendance_catchup,yapie.group_yapie_manager,1,1,1,1

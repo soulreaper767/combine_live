@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="yapie_att_org_list" model="ir.ui.view">
+        <field name="name">yapie.attendance.org.list</field>
+        <field name="model">yapie.attendance.org</field>
+        <field name="arch" type="xml">
+            <list create="false">
+                <header><button name="action_fetch" type="object" string="Check Yapie for organisations" display="always"/></header>
+                <field name="name"/>
+                <field name="enabled" widget="boolean_toggle"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="member_count"/>
+                <field name="unmatched_count" decoration-warning="unmatched_count > 0"/>
+                <field name="pending_count" decoration-warning="pending_count > 0"/>
+                <field name="last_sync"/>
+            </list>
+        </field>
+    </record>
+    <record id="yapie_att_org_form" model="ir.ui.view">
+        <field name="name">yapie.attendance.org.form</field>
+        <field name="model">yapie.attendance.org</field>
+        <field name="arch" type="xml">
+            <form create="false">
+                <header>
+                    <button name="action_sync_members" type="object" string="Sync members" class="btn-primary"/>
+                    <button name="action_catch_up" type="object" string="Catch up"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="enabled"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="org_id"/>
+                        </group>
+                        <group>
+                            <field name="member_count"/>
+                            <field name="unmatched_count"/>
+                            <field name="pending_count"/>
+                            <field name="last_sync"/>
+                        </group>
+                    </group>
+                    <field name="member_ids" readonly="0">
+                        <list editable="bottom" create="false" delete="false" decoration-warning="not employee_id and not ignore">
+                            <field name="name" readonly="1"/>
+                            <field name="email" readonly="1"/>
+                            <field name="phone" readonly="1" optional="show"/>
+                            <field name="department" readonly="1" optional="show"/>
+                            <field name="employee_code" readonly="1" optional="hide"/>
+                            <field name="employee_id" options="{'no_create': True}"/>
+                            <field name="ignore"/>
+                            <field name="match_note" readonly="1"/>
+                        </list>
+                    </field>
+                    <div class="text-muted">Only members matched to an employee are recorded. Check-ins from unmatched members wait here until
+                        you match them.</div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_yapie_att_orgs" model="ir.actions.act_window">
+        <field name="name">Organisations</field>
+        <field name="res_model">yapie.attendance.org</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html"><p>In Yapie, the organisation's owner/admin connects this Odoo's bot (Work › Organisation › Connected
+            systems). Then check here, enable it, and match its members to employees.</p></field>
+    </record>
+
+    <record id="yapie_att_event_list" model="ir.ui.view">
+        <field name="name">yapie.attendance.event.list</field>
+        <field name="model">yapie.attendance.event</field>
+        <field name="arch" type="xml">
+            <list create="false" edit="false" decoration-warning="state == 'pending'" decoration-danger="state == 'error'" decoration-muted="state == 'skipped'">
+                <header><button name="action_retry" type="object" string="Try again"/></header>
+                <field name="create_date" string="Received"/>
+                <field name="org_ref"/>
+                <field name="member_name"/>
+                <field name="action"/>
+                <field name="check_in"/>
+                <field name="check_out"/>
+                <field name="place"/>
+                <field name="status"/>
+                <field name="employee_id"/>
+                <field name="state"/>
+                <field name="note"/>
+            </list>
+        </field>
+    </record>
+    <record id="yapie_att_event_search" model="ir.ui.view">
+        <field name="name">yapie.attendance.event.search</field>
+        <field name="model">yapie.attendance.event</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="member_name"/>
+                <filter name="waiting" string="Waiting" domain="[('state', '=', 'pending')]"/>
+                <filter name="failed" string="Failed" domain="[('state', '=', 'error')]"/>
+            </search>
+        </field>
+    </record>
+    <record id="action_yapie_att_events" model="ir.actions.act_window">
+        <field name="name">Check-ins received</field>
+        <field name="res_model">yapie.attendance.event</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <record id="yapie_att_catchup_form" model="ir.ui.view">
+        <field name="name">yapie.attendance.catchup.form</field>
+        <field name="model">yapie.attendance.catchup</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="org_ref" readonly="1"/>
+                    <field name="date_from"/>
+                    <field name="date_to"/>
+                </group>
+                <p class="text-muted">Reads check-ins and check-outs from Yapie (up to 62 days) and records any that are missing.</p>
+                <footer>
+                    <button name="action_run" type="object" string="Catch up" class="btn-primary"/>
+                    <button string="Cancel" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_attendance_form_yapie" model="ir.ui.view">
+        <field name="name">hr.attendance.form.yapie</field>
+        <field name="model">hr.attendance</field>
+        <field name="inherit_id" ref="hr_attendance.hr_attendance_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <group invisible="not yapie_record_id" string="From Yapie">
+                    <field name="yapie_place"/>
+                    <field name="yapie_status"/>
+                    <field name="yapie_record_id" invisible="1"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <menuitem id="menu_yapie_attendance" name="Attendance" parent="yapie.menu_yapie_root" sequence="30"
+              groups="yapie.group_yapie_manager,hr_attendance.group_hr_attendance_manager"/>
+    <menuitem id="menu_yapie_att_orgs" name="Organisations" parent="menu_yapie_attendance" sequence="1" action="action_yapie_att_orgs"/>
+    <menuitem id="menu_yapie_att_events" name="Check-ins received" parent="menu_yapie_attendance" sequence="2" action="action_yapie_att_events"/>
+</odoo>
