@@ -45,6 +45,76 @@ def field_value(record, field):
     return "" if v in (False, None) else str(v)
 
 
+def _money(record, amount):
+    cur = record["currency_id"] if "currency_id" in record._fields and record["currency_id"] else record.env.company.currency_id
+    return "%s %s" % (cur.symbol or cur.name or "", "{:,.2f}".format(amount or 0))
+
+
+def _num(v):
+    return "{:,.2f}".format(v).rstrip("0").rstrip(".") if v else "0"
+
+
+def doc_party(record):
+    for f in ("partner_id", "employee_id"):
+        if f in record._fields and record[f]:
+            p = record[f]
+            return (p.commercial_partner_id if "commercial_partner_id" in p._fields else p).display_name
+    return ""
+
+
+def doc_summary(record):
+    """The main points of a document for an approval card: party, dates, references, people, the items and the
+    totals - whatever of these the document has. [[label, value], ...]"""
+    rec = record.sudo()
+    out = []
+    F = rec._fields
+    IMF = rec.env["ir.model.fields"]
+    party = doc_party(rec)
+    if party:
+        out.append([_("Party"), party])
+    seen_dates = []
+    for f in ("date_order", "invoice_date", "date", "invoice_date_due", "date_planned", "validity_date"):
+        if f in F and rec[f] and len(seen_dates) < 2:
+            day = field_value(rec, IMF._get(rec._name, f))[:10]  # a date is enough on a card
+            if day not in seen_dates:
+                out.append([F[f].string, day])
+                seen_dates.append(day)
+    for f in ("partner_ref", "client_order_ref", "ref", "origin", "payment_reference"):
+        if f in F and rec[f] and rec[f] != rec.display_name:
+            out.append([F[f].string, str(rec[f])[:80]])
+    for f in ("invoice_user_id", "user_id"):
+        if f in F and rec[f]:
+            out.append([F[f].string, rec[f].display_name])
+            break
+    if "payment_term_id" in F and rec.payment_term_id:
+        out.append([F["payment_term_id"].string, rec.payment_term_id.display_name])
+    lines = None
+    for f in ("order_line", "invoice_line_ids", "expense_line_ids"):
+        if f in F and F[f].type == "one2many":
+            lines = rec[f]
+            break
+    if lines:
+        items = lines.filtered(lambda l: not getattr(l, "display_type", False) or l.display_type == "product")
+        for i, l in enumerate(items[:6], 1):
+            name = (l.product_id.display_name if "product_id" in l._fields and l.product_id else (l.name or ""))[:60]
+            qty = next((l[q] for q in ("product_uom_qty", "product_qty", "quantity") if q in l._fields), 0)
+            uom = next((l[u].name for u in ("product_uom_id", "product_uom") if u in l._fields and l[u]), "")
+            price = l.price_unit if "price_unit" in l._fields else 0
+            sub = l.price_subtotal if "price_subtotal" in l._fields else 0
+            text = "%s %s %s @ %s = %s" % (name, _num(qty), uom, _num(price), _money(rec, sub)) if qty else name
+            out.append([_("Item %s") % i, " ".join(text.split())])
+        if len(items) > 6:
+            out.append([_("More items"), _("%s more line(s)") % (len(items) - 6)])
+    if "amount_untaxed" in F and "amount_tax" in F and rec.amount_tax:
+        out.append([F["amount_untaxed"].string, _money(rec, rec.amount_untaxed)])
+        out.append([F["amount_tax"].string, _money(rec, rec.amount_tax)])
+    for f in ("amount_total", "amount", "total_amount"):
+        if f in F and rec[f]:
+            out.append([_("Total"), _money(rec, rec[f])])
+            break
+    return out
+
+
 def doc_link(record):
     base = record.env["ir.config_parameter"].sudo().get_param("web.base.url", "").rstrip("/")
     return "%s/odoo/%s/%s" % (base, record._name, record.id)
@@ -238,8 +308,13 @@ class YapieApprovalRequest(models.Model):
             amount = ""
             if "amount_total" in rec._fields:
                 amount = " — " + field_value(rec, self.env["ir.model.fields"]._get(rec._name, "amount_total"))
-            title = ("%s %s%s" % (rec._description, rec.display_name, amount))[:200]
-            card_fields = [[f.field_description, field_value(rec.sudo(), f)] for f in rule.field_ids][:20]
+            party = doc_party(rec)
+            title = ("%s %s%s%s" % (rec._description, rec.display_name, (" — " + party) if party else "", amount))[:200]
+            # the rule's chosen fields first, then the document's main points (party, dates, references, items, totals)
+            card_fields = [[f.field_description, field_value(rec.sudo(), f)] for f in rule.field_ids]
+            chosen = {c[0] for c in card_fields}
+            card_fields += [c for c in doc_summary(rec) if c[0] not in chosen]
+            card_fields = card_fields[:24]
             if note:
                 card_fields.append([_("Note"), note])
             card_fields.append([_("Requested by"), by.name + (_(" (automatic)") if automatic else "")])

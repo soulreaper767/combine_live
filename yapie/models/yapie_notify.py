@@ -5,7 +5,7 @@ from odoo.exceptions import UserError
 from odoo.fields import Domain
 from odoo.tools.safe_eval import safe_eval
 
-from .yapie_approval import doc_link, field_value, users_of
+from .yapie_approval import doc_link, doc_summary, field_value, users_of
 
 _logger = logging.getLogger(__name__)
 
@@ -84,14 +84,18 @@ class YapieNotifyRule(models.Model):
         # linked, authorised, and allowed to open this document
         return users.filtered(lambda u: u.active and u._yapie_authorized() and rec.with_user(u).has_access("read"))
 
-    def _text(self, rec, template, fields_):
+    def _text(self, rec, template, fields_, summary=False):
         doc = rec.display_name
         text = (template or "").replace("{document}", doc).replace("{type}", rec._description).replace("{company}", rec.env.company.name)
         lines = ["📄 " + text]
+        shown = set()
         for f in fields_:
             v = field_value(rec.sudo(), f)
             if v:
                 lines.append("%s: %s" % (f.field_description, v))
+                shown.add(f.field_description)
+        if summary:  # internal recipients only: the document's main points (party, dates, references, items, totals)
+            lines += ["%s: %s" % (k, v) for k, v in doc_summary(rec) if k not in shown and v]
         return "\n".join(lines)
 
     def _fire(self, records):
@@ -104,7 +108,7 @@ class YapieNotifyRule(models.Model):
         for rec in records:
             try:
                 users = self._recipients(rec)
-                body = self._text(rec, self.message, self.field_ids) + "\n" + doc_link(rec)
+                body = self._text(rec, self.message, self.field_ids, summary=True) + "\n" + doc_link(rec)
                 sent = []
                 for u in users:
                     api_.send_later(api_.target_of(u), body)
