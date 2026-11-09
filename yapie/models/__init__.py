@@ -5,6 +5,7 @@ from . import yapie_chat
 from . import yapie_report_type
 from . import yapie_report
 from . import yapie_schedule
+from . import yapie_workflow
 from . import yapie_approval
 from . import yapie_notify
 from . import yapie_bot

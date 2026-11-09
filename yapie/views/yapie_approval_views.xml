@@ -5,12 +5,17 @@
         <field name="model">yapie.approval.rule</field>
         <field name="arch" type="xml">
             <list>
+                <header>
+                    <button name="action_sync_workflows" type="object" string="Sync with Odoo workflows" display="always" class="btn-secondary"/>
+                </header>
                 <field name="sequence" widget="handle"/>
                 <field name="name"/>
-                <field name="model_id"/>
-                <field name="approver_user_ids" widget="many2many_avatar_user"/>
-                <field name="approver_group_ids" widget="many2many_tags" optional="show"/>
-                <field name="auto_request"/>
+                <field name="workflow_key" column_invisible="True"/>
+                <field name="model_id" readonly="workflow_key"/>
+                <field name="approver_user_ids" readonly="workflow_key" widget="many2many_avatar_user"/>
+                <field name="approver_group_ids" readonly="workflow_key" widget="many2many_tags" optional="show"/>
+                <field name="approval_mode" optional="show"/>
+                <field name="auto_request" readonly="workflow_key"/>
                 <field name="active" widget="boolean_toggle"/>
             </list>
         </field>
@@ -27,17 +32,25 @@
                         </button>
                     </div>
                     <div class="oe_title"><h1><field name="name" placeholder="e.g. Big sales orders"/></h1></div>
+                    <field name="workflow_key" invisible="1"/>
+                    <div class="alert alert-info" role="alert" invisible="not workflow_key">
+                        This rule follows Odoo's own approval workflow: the documents, the approvers (read live from these Odoo
+                        groups / users), whether any one or every one must approve, and the approve / reject buttons all come from
+                        Odoo, so Yapie and Odoo never disagree. Change approvers in Odoo (Settings › Users / groups), then press
+                        “Sync with Odoo workflows” in the rules list.
+                    </div>
                     <group>
                         <group string="Which documents">
                             <field name="model_id" options="{'no_create': True}"/>
                             <field name="model" invisible="1"/>
-                            <field name="domain" widget="domain" options="{'model': 'model', 'in_dialog': True}" invisible="not model_id"/>
+                            <field name="domain" readonly="workflow_key" widget="domain" options="{'model': 'model', 'in_dialog': True}" invisible="not model_id"/>
                             <field name="auto_request"/>
                             <field name="active"/>
                         </group>
                         <group string="What deciding does">
-                            <field name="approve_method"/>
-                            <field name="reject_method"/>
+                            <field name="approve_method" readonly="workflow_key"/>
+                            <field name="reject_method" readonly="workflow_key"/>
+                            <field name="reason_field" readonly="workflow_key"/>
                             <field name="due_hours"/>
                             <field name="notify_requester"/>
                         </group>
@@ -46,6 +59,7 @@
                         <group string="Who approves">
                             <field name="approver_user_ids" widget="many2many_avatar_user" options="{'no_create': True}"/>
                             <field name="approver_group_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                            <field name="approval_mode" widget="radio" readonly="workflow_key"/>
                             <field name="chat_id" options="{'no_create': True}"/>
                         </group>
                         <group string="Who may send for approval">

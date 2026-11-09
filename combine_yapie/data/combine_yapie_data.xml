@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- generate / refresh the Yapie rules from the workflows (also daily, and from the rules list button) -->
+    <function model="yapie.approval.rule" name="_yapie_sync_workflows"/>
+</odoo>

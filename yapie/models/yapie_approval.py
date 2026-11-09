@@ -149,6 +149,67 @@ class YapieApprovalRule(models.Model):
     automation_id = fields.Many2one("base.automation", readonly=True, copy=False, ondelete="set null")
     action_id = fields.Many2one("ir.actions.server", readonly=True, copy=False, ondelete="set null")
     request_count = fields.Integer(compute="_compute_request_count")
+    # ---- rules that follow an Odoo approval workflow (yapie.workflow); set by the sync, not by hand ----
+    workflow_key = fields.Char("Follows Odoo workflow", readonly=True, copy=False, index=True,
+                               help="Set by “Sync with Odoo workflows”: documents, approvers, mode and buttons come from Odoo's own "
+                                    "approval workflow, so Yapie and Odoo can never disagree.")
+    approval_mode = fields.Selection([("any", "Any one approver decides"), ("all", "Every approver must approve")],
+                                     "Approved by", default="any", required=True)
+    reason_field = fields.Char("Rejection reason field", help="Field on the document the rejection reason is written to before the "
+                                                               "reject button runs (e.g. x_rejection_reason).")
+
+    @api.constrains("model_id", "active", "workflow_key")
+    def _check_no_clash_with_workflow(self):
+        for r in self.filtered(lambda r: r.active and not r.workflow_key):
+            synced = self.sudo().search([("workflow_key", "!=", False), ("model", "=", r.model), ("active", "=", True)], limit=1)
+            if synced:
+                raise ValidationError(_("%(m)s follows Odoo's own approval workflow (rule “%(s)s”). A separate Yapie rule would send "
+                                        "cards to different people than Odoo expects, so it isn't allowed. Change the approvers in Odoo "
+                                        "and press “Sync with Odoo workflows”.", m=r.model_id.name, s=synced.name))
+
+
+    @api.model
+    def _yapie_sync_workflows(self):
+        """Create / update one rule per Odoo approval workflow, switch off rules whose workflow is gone, and switch off manual
+        rules on the same document types (their pending requests are withdrawn) so Yapie never contradicts Odoo."""
+        Rule = self.sudo().with_context(active_test=False, yapie_workflow_sync=True)
+        seen = Rule.browse()
+        log = []
+        for wf in self.env["yapie.workflow"].sudo()._yapie_workflows():
+            if wf["model"] not in self.env:
+                continue
+            groups = self.env["res.groups"]
+            for xid in wf.get("groups", []):
+                groups |= self.env.ref(xid, raise_if_not_found=False) or self.env["res.groups"]
+            vals = {"name": wf["name"], "model_id": self.env["ir.model"]._get(wf["model"]).id, "domain": repr(wf["domain"]),
+                    "approver_group_ids": [(6, 0, groups.ids)], "approver_user_ids": [(6, 0, wf.get("user_ids", []))],
+                    "approve_method": wf["approve"], "reject_method": wf.get("reject") or False, "approval_mode": wf.get("mode", "any"),
+                    "reason_field": wf.get("reason_field") or False, "auto_request": True, "active": True, "workflow_key": wf["key"]}
+            rule = Rule.search([("workflow_key", "=", wf["key"])], limit=1)
+            if rule:
+                rule.write(vals)
+            else:
+                rule = Rule.create(vals)
+                log.append(_("added %s") % wf["name"])
+            seen |= rule
+        for rule in Rule.search([("workflow_key", "!=", False), ("id", "not in", seen.ids), ("active", "=", True)]):
+            rule.active = False
+            log.append(_("switched off %s (workflow no longer in Odoo)") % rule.name)
+        Req = self.env["yapie.approval.request"].sudo()
+        for rule in Rule.search([("workflow_key", "=", False), ("model", "in", seen.mapped("model")), ("active", "=", True)]):
+            for req in Req.search([("rule_id", "=", rule.id), ("state", "=", "pending")]):
+                req._yapie_close(_("Withdrawn: this document type now follows Odoo's approval workflow"))
+            rule.active = False
+            log.append(_("switched off manual rule %s (Odoo's workflow decides these documents)") % rule.name)
+        if log:
+            self.env["yapie.log"].add("approval", _("Synced with Odoo workflows: %s") % "; ".join(log))
+        return log
+
+    def action_sync_workflows(self):
+        log = self._yapie_sync_workflows()
+        return {"type": "ir.actions.client", "tag": "display_notification",
+                "params": {"title": _("Synced with Odoo workflows"), "message": "; ".join(log) or _("Already in step with Odoo."),
+                           "type": "success", "next": {"type": "ir.actions.client", "tag": "soft_reload"}}}
 
     def _compute_request_count(self):
         data = dict(self.env["yapie.approval.request"]._read_group([("rule_id", "in", self.ids)], ["rule_id"], ["__count"]))
@@ -225,6 +286,11 @@ class YapieApprovalRule(models.Model):
         return rules
 
     def write(self, vals):
+        locked = {"model_id", "domain", "approver_user_ids", "approver_group_ids", "approve_method", "reject_method", "approval_mode",
+                  "reason_field", "auto_request", "workflow_key"}
+        if locked & set(vals) and not self.env.context.get("yapie_workflow_sync") and any(r.workflow_key for r in self):
+            raise ValidationError(_("This rule follows an Odoo approval workflow: its documents, approvers and buttons come from Odoo. "
+                                    "Change them in Odoo, then press “Sync with Odoo workflows”."))
         res = super().write(vals)
         if {"model_id", "domain", "auto_request", "active", "name"} & set(vals):
             self._sync_hooks()
@@ -265,6 +331,29 @@ class YapieApprovalRequest(models.Model):
     via = fields.Char(readonly=True)
     applied = fields.Selection([("ok", "Applied"), ("error", "Failed"), ("none", "Logged only")], readonly=True)
     applied_note = fields.Char(readonly=True)
+    approved_user_ids = fields.Many2many("res.users", "yapie_request_approved_rel", "request_id", "user_id", "Approved so far", readonly=True,
+                                         help="For rules where every approver must approve.")
+
+    def _yapie_close(self, note):
+        """Close a pending request without a Yapie decision (decided in Odoo, withdrawn, rule replaced): cards are withdrawn."""
+        api_ = self.env["yapie.api"].sudo()
+        for req in self.filtered(lambda r: r.state == "pending"):
+            for card in req.card_ids.filtered(lambda c: c.state == "open"):
+                try:
+                    api_.call("/approvals/%s/cancel" % card.yapie_id, {})
+                except UserError:
+                    pass
+                card.state = "closed"
+            req.write({"state": "cancelled", "applied": "none", "applied_note": note[:180]})
+            self.env["yapie.log"].add("approval", _("%(d)s: %(n)s", d=req.name, n=note))
+
+    @api.model
+    def _cron_close_decided_in_odoo(self):
+        """A document approved / rejected inside Odoo no longer waits: withdraw its Yapie cards, so nobody acts on stale cards."""
+        for req in self.sudo().search([("state", "=", "pending"), ("rule_id.workflow_key", "!=", False)]):
+            rec = self.env[req.res_model].sudo().browse(req.res_id).exists() if req.res_model in self.env else None
+            if not rec or not req.rule_id.matches(rec):
+                req._yapie_close(_("Already decided in Odoo"))
 
     # ---------- asking ----------
     @api.model
@@ -315,6 +404,9 @@ class YapieApprovalRequest(models.Model):
             chosen = {c[0] for c in card_fields}
             card_fields += [c for c in doc_summary(rec) if c[0] not in chosen]
             card_fields = card_fields[:24]
+            names = ", ".join(approvers.mapped("name"))
+            card_fields.append([_("Approval"), (_("Every one of: %s") if rule.approval_mode == "all" else
+                                                _("Any one of: %s") if len(approvers) > 1 else "%s") % names])
             if note:
                 card_fields.append([_("Note"), note])
             card_fields.append([_("Requested by"), by.name + (_(" (automatic)") if automatic else "")])
@@ -366,11 +458,33 @@ class YapieApprovalRequest(models.Model):
             answer(False, _("Not an authorised approver in Odoo — nothing changed"))
             return False
         rec = self.env[req.res_model].sudo().browse(req.res_id).exists()
-        method = req.rule_id.approve_method if status == "approved" else req.rule_id.reject_method if status == "rejected" else False
+        rule = req.rule_id
+        # a document that follows an Odoo workflow and no longer waits was decided inside Odoo: don't act twice
+        if rule.workflow_key and (not rec or not rule.matches(rec)):
+            card.state = "closed"
+            req._yapie_close(_("Already decided in Odoo"))
+            answer(False, _("Already decided in Odoo — nothing changed"))
+            return False
+        # every approver must approve: record this approval and wait for the others
+        if status == "approved" and rule.approval_mode == "all":
+            req.approved_user_ids = [(4, user.id)]
+            waiting = req.approver_ids.filtered(lambda u: u._yapie_authorized()) - req.approved_user_ids
+            if waiting:
+                card.state = "decided"
+                if rec and hasattr(rec, "message_post"):
+                    rec.sudo().message_post(body=_("✅ Approved by %(n)s on Yapie — still waiting for %(w)s", n=user.name, w=", ".join(waiting.mapped("name"))),
+                                            author_id=user.partner_id.id)
+                self.env["yapie.log"].add("approval", _("%(d)s approved by %(n)s, waiting for %(w)s", d=req.name, n=user.name, w=", ".join(waiting.mapped("name"))),
+                                          user=user, record=rec or None)
+                answer(True, _("Your approval is recorded — waiting for %s") % ", ".join(waiting.mapped("name")))
+                return True
+        method = rule.approve_method if status == "approved" else rule.reject_method if status == "rejected" else False
         ok, note = True, ""
         if rec and method:
             try:
                 with self.env.cr.savepoint():
+                    if status == "rejected" and rule.reason_field and rule.reason_field in rec._fields:
+                        rec.sudo().write({rule.reason_field: data.get("comment") or _("Rejected on Yapie by %s") % user.name})
                     getattr(rec.sudo(False).with_user(user), method)()
                 note = _("done")
             except Exception as e:  # noqa: BLE001  the decision stays recorded; the document just didn't change
