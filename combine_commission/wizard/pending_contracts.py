@@ -25,10 +25,10 @@ class PendingContractsWizard(models.TransientModel):
     date_from = fields.Date(string='Contracts from', required=True,
                             default=lambda self: fields.Date.context_today(self).replace(month=1, day=1))
     date_to = fields.Date(string='Contracts to', required=True, default=fields.Date.context_today)
-    layout = fields.Selection([('document', 'Contract-wise'), ('party', 'Party-wise')],
+    layout = fields.Selection([('document', 'Contract-wise'), ('party', 'Party-wise'), ('item', 'Item-wise')],
                               string='Layout', required=True, default='document')
     detail = fields.Selection([
-        ('summary', 'One line per contract'),
+        ('summary', 'One line per contract (item-wise: per item)'),
         ('lines', 'Contract items'),
         ('deliveries', 'Contract items with each delivery challan'),
     ], string='Detail', required=True, default='lines')
@@ -137,6 +137,14 @@ class PendingContractsWizard(models.TransientModel):
 
     # ------------------------------------------------------------ columns
     def _columns(self):
+        if self.layout == 'item':
+            if self.detail == 'summary':
+                cols = [(_('Item'), 't', 'item'), (_('UoM'), 'c', 'uom'), (_('Contracts'), 'c', 'count'),
+                        (_('Contract Qty'), 'q', 'qty'), (_('Avg Rate'), 'n', 'rate')]
+            else:
+                cols = [(_('Contract'), 't', 'contract'), (_('Date'), 'd', 'date'), (_('Customer'), 't', 'customer'),
+                        (_('UoM'), 'c', 'uom'), (_('Contract Qty'), 'q', 'qty'), (_('Rate'), 'n', 'rate')]
+            return cols + self._figure_columns()
         cols = []
         if self.layout == 'party' or self.detail == 'summary':
             cols += [(_('Contract'), 't', 'contract'), (_('Date'), 'd', 'date')]
@@ -147,12 +155,14 @@ class PendingContractsWizard(models.TransientModel):
         cols.append((_('Contract Qty'), 'q', 'qty'))
         if self.detail != 'summary':
             cols.append((_('Rate'), 'n', 'rate'))
-        cols += [(_('Value Ex. GST'), 'n', 'ex'), (_('GST %'), 'c', 'gst_pct'), (_('GST'), 'n', 'gst'),
-                 (_('Value Incl. GST'), 'n', 'incl'), (_('Comm. %'), 'c', 'comm_pct'), (_('Commission'), 'n', 'comm'),
-                 (_('Delivered'), 'q', 'delivered'), (_('Pending Delivery'), 'q', 'pending'),
-                 (_('Invoiced'), 'q', 'invoiced'), (_('Delivered, Not Invoiced'), 'q', 'uninvoiced'),
-                 (_('Pending Delivery Value'), 'n', 'pending_val'), (_('Uninvoiced Value'), 'n', 'uninv_val')]
-        return cols
+        return cols + self._figure_columns()
+
+    def _figure_columns(self):
+        return [(_('Value Ex. GST'), 'n', 'ex'), (_('GST %'), 'c', 'gst_pct'), (_('GST'), 'n', 'gst'),
+                (_('Value Incl. GST'), 'n', 'incl'), (_('Comm. %'), 'c', 'comm_pct'), (_('Commission'), 'n', 'comm'),
+                (_('Delivered'), 'q', 'delivered'), (_('Pending Delivery'), 'q', 'pending'),
+                (_('Invoiced'), 'q', 'invoiced'), (_('Delivered, Not Invoiced'), 'q', 'uninvoiced'),
+                (_('Pending Delivery Value'), 'n', 'pending_val'), (_('Uninvoiced Value'), 'n', 'uninv_val')]
 
     def _status(self, figs):
         if all(f['pending'] <= EPS for f in figs):
@@ -224,7 +234,47 @@ class PendingContractsWizard(models.TransientModel):
                      for k in keys] for r in rows]
 
         groups, all_rows = [], []
-        if self.layout == 'party':
+        if self.layout == 'item':
+            by_item = OrderedDict()
+            for order, items in contracts:
+                for line, f in items:
+                    by_item.setdefault(line.product_id, []).append((order, line, f))
+            ordered = sorted(by_item.items(), key=lambda kv: kv[0].display_name or '')
+            if self.detail == 'summary':
+                rows = []
+                for product, lst in ordered:
+                    figs = [f for _o, _l, f in lst]
+                    uoms = {f['uom'] for f in figs}
+                    row = {'item': product.display_name, 'uom': ', '.join(sorted(uoms)),
+                           'count': str(len({o.id for o, _l, _f in lst}))}
+                    for k in sum_keys:
+                        row[k] = sum(f[k] for f in figs)
+                    for k in qty_keys:
+                        row[k] = sum(f[k] for f in figs) if len(uoms) == 1 else None
+                    row['rate'] = (sum(f['rate'] * f['qty'] for f in figs) / row['qty']) if row.get('qty') else None
+                    row['gst_pct'] = ', '.join(sorted({f['gst_pct'] for f in figs}))
+                    row['comm_pct'] = ', '.join(sorted({f['comm_pct'] for f in figs if f['comm_pct']}))
+                    rows.append(row)
+                all_rows = rows
+                if rows:
+                    groups.append({'title': _('Items'), 'sub': _('%s item(s)', len(rows)),
+                                   'rows': as_list(rows), 'totals': totals(rows)})
+            else:
+                for product, lst in ordered:
+                    rows = []
+                    for order, line, f in sorted(lst, key=lambda x: (x[0]._document_date(), x[0].id)):
+                        row = dict(f)
+                        row.update(head(order))
+                        rows.append(row)
+                        if self.detail == 'deliveries':
+                            rows.extend(self._delivery_rows(line))
+                    all_rows += rows
+                    sub = _('%s contract(s)', len({o.id for o, _l, _f in lst}))
+                    if product.categ_id:
+                        sub = '%s | %s' % (product.categ_id.complete_name, sub)
+                    groups.append({'title': product.display_name, 'sub': sub, 'rows': as_list(rows),
+                                   'totals': totals(rows)})
+        elif self.layout == 'party':
             by_party = OrderedDict()
             for order, items in sorted(contracts, key=lambda c: (c[0].partner_id.commercial_partner_id.name or '',
                                                                  c[0]._document_date(), c[0].id)):
