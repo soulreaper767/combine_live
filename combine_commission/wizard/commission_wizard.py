@@ -83,8 +83,9 @@ class CommissionBookWizard(models.TransientModel):
 
     def action_book(self):
         self.ensure_one()
-        if not self.env.user.has_group('account.group_account_manager'):
-            raise UserError(_('Only a Finance Manager can book commission.'))
+        if not (self.env.user.has_group('account.group_account_manager')
+                or self.env.user.has_group('combine_commission.group_commission_biller')):
+            raise UserError(_('Only a Finance Manager or a user with Commission: Book & Bill can book commission.'))
         if not self.line_ids:
             raise UserError(_('There is no unbooked commission.'))
         self.line_ids.agent_id.filtered(lambda a: not a.partner_id).action_combine_create_party()

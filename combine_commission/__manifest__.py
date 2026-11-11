@@ -1,6 +1,6 @@
 {
     'name': 'Combine - Commission',
-    'version': '19.0.1.2.0',
+    'version': '19.0.1.3.0',
     'category': 'Accounting',
     'summary': 'Commission agents as parties: commission booked in the accounts, commission bills, '
                'payments, and the Commission Agent Ledger',
@@ -40,6 +40,7 @@ installation stays "Not booked" until someone deliberately books it with
     'license': 'LGPL-3',
     'depends': ['combine001', 'partner_ledger_qty'],
     'data': [
+        'security/commission_groups.xml',
         'security/ir.model.access.csv',
         'data/party_type_data.xml',
         'report/agent_ledger_report.xml',

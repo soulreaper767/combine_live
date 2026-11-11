@@ -137,6 +137,7 @@ class CommissionLine(models.Model):
 
     def _x_state(self):
         self.ensure_one()
+        self = self.sudo()  # status shown to every user of the commission reports
         bill = self._x_active_bill()
         if bill:
             return 'paid' if bill.state == 'posted' and bill.payment_state in ('paid', 'in_payment') else 'billed'
@@ -464,8 +465,9 @@ class AccountMove(models.Model):
 
     def action_combine_book_commission(self):
         self.ensure_one()
-        if not self.env.user.has_group('account.group_account_manager'):
-            raise UserError(_('Only a Finance Manager can book commission of an earlier invoice.'))
+        if not (self.env.user.has_group('account.group_account_manager')
+                or self.env.user.has_group('combine_commission.group_commission_biller')):
+            raise UserError(_('Only a Finance Manager or a user with Commission: Book & Bill can book commission.'))
         lines = self._x_commission_lines().filtered(lambda l: l._x_state() == 'not_booked')
         lines.agent_id.filtered(lambda a: not a.partner_id).action_combine_create_party()
         skipped = lines._combine_book(date=fields.Date.context_today(self))
