@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- A role for users who book and bill agent commission without full
+         accounting rights (e.g. the sales head). Commission bills they create
+         still need the Finance Manager's bill approval to post. Nobody is put
+         in this group automatically. -->
+    <record id="group_commission_biller" model="res.groups">
+        <field name="name">Commission: Book &amp; Bill</field>
+        <field name="implied_ids" eval="[(4, ref('account.group_account_invoice'))]"/>
+        <field name="comment">Book Commission, Bill Commission and Commission Settlement. Includes Invoicing (to create and submit the commission bill); posting still needs the Finance Manager's bill approval.</field>
+    </record>
+</odoo>

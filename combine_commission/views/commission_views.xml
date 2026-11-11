@@ -88,7 +88,7 @@
         <field name="target">new</field>
         <field name="binding_model_id" ref="combine001.model_combine001_commission_line"/>
         <field name="binding_view_types">list</field>
-        <field name="group_ids" eval="[(4, ref('account.group_account_invoice'))]"/>
+        <field name="group_ids" eval="[(4, ref('account.group_account_invoice')), (4, ref('group_commission_biller'))]"/>
     </record>
 
     <!-- Sales invoice: Bill Commission / Book Commission; commission bill banner -->
@@ -102,10 +102,10 @@
                 <field name="x_can_book_commission" invisible="1"/>
                 <field name="x_is_commission_bill" invisible="1"/>
                 <button name="action_combine_bill_commission" type="object" string="Bill Commission"
-                        invisible="not x_can_bill_commission" groups="account.group_account_invoice"
+                        invisible="not x_can_bill_commission" groups="account.group_account_invoice,combine_commission.group_commission_biller"
                         help="Creates the commission agent's bill for this invoice's commission (booking it first if needed)."/>
                 <button name="action_combine_book_commission" type="object" string="Book Commission"
-                        invisible="not x_can_book_commission" groups="account.group_account_manager"
+                        invisible="not x_can_book_commission" groups="account.group_account_manager,combine_commission.group_commission_biller"
                         help="Books this invoice's commission in the accounts (dated today) without billing it."/>
             </xpath>
             <xpath expr="//div[@name='button_box']" position="inside">
@@ -174,7 +174,7 @@
     </record>
 
     <menuitem id="menu_commission_settlement" name="Commission Settlement" parent="combine001.menu_combine001_commission"
-              action="action_settlement_wizard" sequence="40" groups="account.group_account_invoice"/>
+              action="action_settlement_wizard" sequence="40" groups="account.group_account_invoice,combine_commission.group_commission_biller"/>
     <!-- the commission reports: every internal user -->
     <menuitem id="menu_commission_reports" name="Commission Reports" parent="combine001.menu_combine001_root"
               sequence="21" groups="base.group_user"/>
@@ -182,12 +182,20 @@
               action="action_agent_ledger_wizard" sequence="10" groups="base.group_user"/>
     <menuitem id="menu_commission_agent_summary" name="Agent Outstanding Summary" parent="menu_commission_reports"
               action="action_agent_summary_wizard" sequence="20" groups="base.group_user"/>
+    <menuitem id="menu_commission_report_sales_all" name="Sales Commission Report" parent="menu_commission_reports"
+              action="combine001.action_commission_line" sequence="30" groups="base.group_user"/>
+    <menuitem id="menu_commission_report_purchase_all" name="Purchase Commission Report" parent="menu_commission_reports"
+              action="combine001.action_purchase_commission_line" sequence="40" groups="base.group_user"/>
+    <menuitem id="menu_commission_settlement_reports" name="Commission Settlement" parent="menu_commission_reports"
+              action="action_settlement_wizard" sequence="50" groups="account.group_account_invoice,combine_commission.group_commission_biller"/>
+    <menuitem id="menu_commission_book_reports" name="Book Commission" parent="menu_commission_reports"
+              action="action_book_wizard" sequence="60" groups="account.group_account_manager,combine_commission.group_commission_biller"/>
     <menuitem id="menu_commission_agent_ledger_sale" name="Commission Agent Ledger" parent="sale.menu_sale_report"
               action="action_agent_ledger_wizard" sequence="53"/>
     <menuitem id="menu_commission_agent_summary_sale" name="Agent Outstanding Summary" parent="sale.menu_sale_report"
               action="action_agent_summary_wizard" sequence="54"/>
     <menuitem id="menu_commission_book" name="Book Commission" parent="combine001.menu_combine001_commission"
-              action="action_book_wizard" sequence="60" groups="account.group_account_manager"/>
+              action="action_book_wizard" sequence="60" groups="account.group_account_manager,combine_commission.group_commission_biller"/>
     <menuitem id="menu_commission_agent_ledger_acc" name="Commission Agent Ledger"
               parent="account.account_reports_partners_reports_menu" action="action_agent_ledger_wizard"
               sequence="13"/>
