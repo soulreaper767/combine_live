@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Commission agent: party + totals -->
+    <record id="view_commission_agent_form_inherit" model="ir.ui.view">
+        <field name="name">combine001.commission.agent.form.combine_commission</field>
+        <field name="model">combine001.commission.agent</field>
+        <field name="inherit_id" ref="combine001.view_commission_agent_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="before">
+                <header>
+                    <button name="action_combine_create_party" type="object" string="Create Party"
+                            class="btn-primary" invisible="partner_id"
+                            help="Creates this agent's party (vendor, party type Commission Agent) so commission can be booked, billed and paid."/>
+                </header>
+            </xpath>
+            <xpath expr="//sheet/group" position="before">
+                <div class="oe_button_box" name="button_box">
+                    <button name="action_view_commission_lines" type="object" class="oe_stat_button" icon="fa-percent">
+                        <field name="x_line_count" widget="statinfo" string="Commission"/>
+                    </button>
+                </div>
+            </xpath>
+            <xpath expr="//sheet/group" position="after">
+                <group string="Commission position">
+                    <field name="currency_id" invisible="1"/>
+                    <field name="x_amount_not_booked"/>
+                    <field name="x_amount_unbilled"/>
+                    <field name="x_amount_billed"/>
+                    <field name="x_amount_paid"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Commission report: status, booking entry, bill -->
+    <record id="view_commission_line_list_inherit" model="ir.ui.view">
+        <field name="name">combine001.commission.line.list.combine_commission</field>
+        <field name="model">combine001.commission.line</field>
+        <field name="inherit_id" ref="combine001.view_commission_line_list"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='commission_amount']" position="after">
+                <field name="x_commission_state" widget="badge"
+                       decoration-muted="x_commission_state == 'not_booked'"
+                       decoration-info="x_commission_state == 'unbilled'"
+                       decoration-warning="x_commission_state == 'billed'"
+                       decoration-success="x_commission_state == 'paid'"/>
+                <field name="x_accrual_move_id" optional="hide"/>
+                <field name="x_bill_id" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_commission_line_form_inherit" model="ir.ui.view">
+        <field name="name">combine001.commission.line.form.combine_commission</field>
+        <field name="model">combine001.commission.line</field>
+        <field name="inherit_id" ref="combine001.view_commission_line_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <group string="Accounts">
+                    <field name="x_commission_state"/>
+                    <field name="x_accrual_move_id"/>
+                    <field name="x_bill_id"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_commission_line_search_inherit" model="ir.ui.view">
+        <field name="name">combine001.commission.line.search.combine_commission</field>
+        <field name="model">combine001.commission.line</field>
+        <field name="inherit_id" ref="combine001.view_commission_line_search"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='filter_paid']" position="after">
+                <separator/>
+                <filter string="Not booked" name="cs_not_booked" domain="[('x_commission_state', '=', 'not_booked')]"/>
+                <filter string="Booked - not billed" name="cs_unbilled" domain="[('x_commission_state', '=', 'unbilled')]"/>
+                <filter string="Billed" name="cs_billed" domain="[('x_commission_state', '=', 'billed')]"/>
+                <filter string="Commission paid" name="cs_paid" domain="[('x_commission_state', '=', 'paid')]"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Select commission lines > Action > Create Commission Bill -->
+    <record id="action_server_commission_settlement" model="ir.actions.act_window">
+        <field name="name">Create Commission Bill</field>
+        <field name="res_model">combine.commission.settlement.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="combine001.model_combine001_commission_line"/>
+        <field name="binding_view_types">list</field>
+        <field name="group_ids" eval="[(4, ref('account.group_account_invoice'))]"/>
+    </record>
+
+    <!-- Sales invoice: Bill Commission / Book Commission; commission bill banner -->
+    <record id="view_move_form_commission" model="ir.ui.view">
+        <field name="name">account.move.form.combine_commission</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <field name="x_can_bill_commission" invisible="1"/>
+                <field name="x_can_book_commission" invisible="1"/>
+                <field name="x_is_commission_bill" invisible="1"/>
+                <button name="action_combine_bill_commission" type="object" string="Bill Commission"
+                        invisible="not x_can_bill_commission" groups="account.group_account_invoice"
+                        help="Creates the commission agent's bill for this invoice's commission (booking it first if needed)."/>
+                <button name="action_combine_book_commission" type="object" string="Book Commission"
+                        invisible="not x_can_book_commission" groups="account.group_account_manager"
+                        help="Books this invoice's commission in the accounts (dated today) without billing it."/>
+            </xpath>
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_combine_view_commission" type="object" class="oe_stat_button" icon="fa-percent"
+                        invisible="x_commission_line_count == 0">
+                    <field name="x_commission_line_count" widget="statinfo" string="Commission"/>
+                </button>
+            </xpath>
+            <xpath expr="//sheet" position="before">
+                <div class="alert alert-info mb-0" role="alert" invisible="not x_is_commission_bill">
+                    <strong>Commission bill.</strong>
+                    Approve and post it, then pay it with a payment voucher.
+                    <span invisible="x_commission_wht_rate == 0">
+                        Withholding tax per rate table: <field name="x_commission_wht_rate" class="oe_inline"/>% =
+                        <field name="x_commission_wht_amount" class="oe_inline"/>.
+                    </span>
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Company: optional account overrides -->
+    <record id="view_company_form_commission" model="ir.ui.view">
+        <field name="name">res.company.form.combine_commission</field>
+        <field name="model">res.company</field>
+        <field name="inherit_id" ref="base.view_company_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Commission" name="combine_commission" groups="account.group_account_manager">
+                    <group>
+                        <field name="x_commission_expense_account_id" placeholder="6.02.05.0001 Commission on Yarn Sales"/>
+                        <field name="x_commission_accrual_account_id" placeholder="2.13.02.0003 Unbilled Invoices (Commission)"/>
+                        <field name="x_commission_journal_id" placeholder="Miscellaneous Operations"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Menus: Combine001 > Commission ; Accounting > Reporting -->
+    <record id="action_agent_ledger_wizard" model="ir.actions.act_window">
+        <field name="name">Commission Agent Ledger</field>
+        <field name="res_model">combine.commission.ledger.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="context">{'default_report_type': 'ledger'}</field>
+    </record>
+    <record id="action_agent_summary_wizard" model="ir.actions.act_window">
+        <field name="name">Agent Outstanding Summary</field>
+        <field name="res_model">combine.commission.ledger.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="context">{'default_report_type': 'summary'}</field>
+    </record>
+    <record id="action_settlement_wizard" model="ir.actions.act_window">
+        <field name="name">Commission Settlement</field>
+        <field name="res_model">combine.commission.settlement.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+    <record id="action_book_wizard" model="ir.actions.act_window">
+        <field name="name">Book Commission</field>
+        <field name="res_model">combine.commission.book.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem id="menu_commission_settlement" name="Commission Settlement" parent="combine001.menu_combine001_commission"
+              action="action_settlement_wizard" sequence="40" groups="account.group_account_invoice"/>
+    <menuitem id="menu_commission_agent_ledger" name="Commission Agent Ledger" parent="combine001.menu_combine001_commission"
+              action="action_agent_ledger_wizard" sequence="50"/>
+    <menuitem id="menu_commission_agent_summary" name="Agent Outstanding Summary" parent="combine001.menu_combine001_commission"
+              action="action_agent_summary_wizard" sequence="51"/>
+    <menuitem id="menu_commission_book" name="Book Commission" parent="combine001.menu_combine001_commission"
+              action="action_book_wizard" sequence="60" groups="account.group_account_manager"/>
+    <menuitem id="menu_commission_agent_ledger_acc" name="Commission Agent Ledger"
+              parent="account.account_reports_partners_reports_menu" action="action_agent_ledger_wizard"
+              sequence="13" groups="account.group_account_readonly,account.group_account_invoice"/>
+</odoo>

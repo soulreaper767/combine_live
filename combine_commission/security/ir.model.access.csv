@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_commission_ledger_wizard_ro,commission ledger wizard (readonly),model_combine_commission_ledger_wizard,account.group_account_readonly,1,1,1,1
+access_commission_ledger_wizard_inv,commission ledger wizard (invoicing),model_combine_commission_ledger_wizard,account.group_account_invoice,1,1,1,1
+access_commission_settlement_wizard,commission settlement wizard,model_combine_commission_settlement_wizard,account.group_account_invoice,1,1,1,1
+access_commission_book_wizard,commission book wizard,model_combine_commission_book_wizard,account.group_account_manager,1,1,1,1

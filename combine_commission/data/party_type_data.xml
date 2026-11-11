@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- A new party type only; no existing party is given it. Applied to
+         parties created with "Create Party" on a commission agent. -->
+    <record id="party_type_commission_agent" model="combine.party.type">
+        <field name="name">Commission Agent</field>
+        <field name="code">AGENT</field>
+        <field name="sequence">90</field>
+    </record>
+</odoo>
