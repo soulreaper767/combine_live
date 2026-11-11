@@ -216,6 +216,13 @@ class ResCompany(models.Model):
         accounts, so it is undone (and logged) for re-matching."""
         self.ensure_one()
         cr = self.env.cr
+        # the heads come back even where the merge only archived them (no lines)
+        archived = self.env['account.account'].with_context(active_test=False).search(
+            [('code', 'in', self.RESTORE_HEAD_CODES), ('active', '=', False), ('company_ids', 'in', self.id)])
+        if archived:
+            archived.write({'active': True})
+            self.env.flush_all()
+            _logger.info('Heads reactivated (%s): %s', self.name, ', '.join(archived.mapped('code')))
         table = self.REMAP_TABLE
         cr.execute("SELECT to_regclass(%s)", (table,))
         if not cr.fetchone()[0]:
