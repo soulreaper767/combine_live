@@ -49,7 +49,7 @@ class CommissionLedgerWizard(models.TransientModel):
 
     def action_print_xlsx(self):
         self.ensure_one()
-        report = self.env['report.combine_commission.agent_ledger_document']
+        report = self.env['report.combine_commission.agent_ledger_document'].sudo()
         content = self._xlsx_ledger(report) if self.report_type == 'ledger' else self._xlsx_summary(report)
         name = 'Commission Agent Ledger.xlsx' if self.report_type == 'ledger' else 'Agent Outstanding Summary.xlsx'
         attachment = self.env['ir.attachment'].create({

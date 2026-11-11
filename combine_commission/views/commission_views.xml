@@ -175,13 +175,20 @@
 
     <menuitem id="menu_commission_settlement" name="Commission Settlement" parent="combine001.menu_combine001_commission"
               action="action_settlement_wizard" sequence="40" groups="account.group_account_invoice"/>
-    <menuitem id="menu_commission_agent_ledger" name="Commission Agent Ledger" parent="combine001.menu_combine001_commission"
-              action="action_agent_ledger_wizard" sequence="50"/>
-    <menuitem id="menu_commission_agent_summary" name="Agent Outstanding Summary" parent="combine001.menu_combine001_commission"
-              action="action_agent_summary_wizard" sequence="51"/>
+    <!-- the commission reports: every internal user -->
+    <menuitem id="menu_commission_reports" name="Commission Reports" parent="combine001.menu_combine001_root"
+              sequence="21" groups="base.group_user"/>
+    <menuitem id="menu_commission_agent_ledger" name="Commission Agent Ledger" parent="menu_commission_reports"
+              action="action_agent_ledger_wizard" sequence="10" groups="base.group_user"/>
+    <menuitem id="menu_commission_agent_summary" name="Agent Outstanding Summary" parent="menu_commission_reports"
+              action="action_agent_summary_wizard" sequence="20" groups="base.group_user"/>
+    <menuitem id="menu_commission_agent_ledger_sale" name="Commission Agent Ledger" parent="sale.menu_sale_report"
+              action="action_agent_ledger_wizard" sequence="53"/>
+    <menuitem id="menu_commission_agent_summary_sale" name="Agent Outstanding Summary" parent="sale.menu_sale_report"
+              action="action_agent_summary_wizard" sequence="54"/>
     <menuitem id="menu_commission_book" name="Book Commission" parent="combine001.menu_combine001_commission"
               action="action_book_wizard" sequence="60" groups="account.group_account_manager"/>
     <menuitem id="menu_commission_agent_ledger_acc" name="Commission Agent Ledger"
               parent="account.account_reports_partners_reports_menu" action="action_agent_ledger_wizard"
-              sequence="13" groups="account.group_account_readonly,account.group_account_invoice"/>
+              sequence="13"/>
 </odoo>

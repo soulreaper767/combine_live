@@ -21,12 +21,15 @@ class AgentLedgerReport(models.AbstractModel):
     def _get_report_values(self, docids, data=None):
         wizard = self.env['combine.commission.ledger.wizard'].browse(docids)
         fmt = self.env['report.partner_ledger_qty.partner_statement_document']
+        # read-only report open to every internal user: the books are read
+        # with system rights, nothing is written
+        reader = self.sudo()
         return {
             'doc_ids': docids,
             'doc_model': 'combine.commission.ledger.wizard',
             'docs': wizard,
-            'ledger_data': self._ledger_data,
-            'summary_data': self._summary_data,
+            'ledger_data': reader._ledger_data,
+            'summary_data': reader._summary_data,
             'fmt_amount': fmt._fmt_amount,
             'fmt_percent': fmt._fmt_percent,
             'fmt_rate': lambda v: '' if v is None else ('{:g}'.format(v) + '%'),

@@ -1,5 +1,7 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_commission_ledger_wizard_ro,commission ledger wizard (readonly),model_combine_commission_ledger_wizard,account.group_account_readonly,1,1,1,1
-access_commission_ledger_wizard_inv,commission ledger wizard (invoicing),model_combine_commission_ledger_wizard,account.group_account_invoice,1,1,1,1
+access_commission_ledger_wizard_user,commission ledger wizard (all internal users),model_combine_commission_ledger_wizard,base.group_user,1,1,1,1
+access_commission_agent_user_read,commission agents (read - for the commission reports),combine001.model_combine001_commission_agent,base.group_user,1,0,0,0
 access_commission_settlement_wizard,commission settlement wizard,model_combine_commission_settlement_wizard,account.group_account_invoice,1,1,1,1
 access_commission_book_wizard,commission book wizard,model_combine_commission_book_wizard,account.group_account_manager,1,1,1,1
+access_pending_contracts_wizard_sale,pending contracts wizard (sales),model_combine_pending_contracts_wizard,sales_team.group_sale_salesman,1,1,1,1
+access_pending_contracts_wizard_acc,pending contracts wizard (accounts),model_combine_pending_contracts_wizard,account.group_account_readonly,1,1,1,1
