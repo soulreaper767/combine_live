@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_commission_settlement_wizard_form" model="ir.ui.view">
+        <field name="name">combine.commission.settlement.wizard.form</field>
+        <field name="model">combine.commission.settlement.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Commission Settlement">
+                <p class="text-muted">
+                    Pick the agent and period (or select lines in the Sales Commission Report and use Action &gt;
+                    Create Commission Bill). Remove any line you do not want to bill now. Commission not yet booked
+                    in the accounts is booked today, then billed.
+                </p>
+                <group>
+                    <group>
+                        <field name="agent_id" options="{'no_create': true}"/>
+                    </group>
+                    <group>
+                        <field name="date_from"/>
+                        <field name="date_to"/>
+                    </group>
+                </group>
+                <field name="line_ids" options="{'no_create': true}">
+                    <list>
+                        <field name="date"/>
+                        <field name="agent_id"/>
+                        <field name="invoice_id"/>
+                        <field name="partner_id"/>
+                        <field name="sale_order_id"/>
+                        <field name="product_id"/>
+                        <field name="base_amount"/>
+                        <field name="rate"/>
+                        <field name="commission_amount" sum="Total"/>
+                        <field name="x_commission_state"/>
+                    </list>
+                </field>
+                <group>
+                    <field name="currency_id" invisible="1"/>
+                    <field name="amount_total"/>
+                </group>
+                <footer>
+                    <button name="action_create_bill" type="object" string="Create Commission Bill" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_commission_book_wizard_form" model="ir.ui.view">
+        <field name="name">combine.commission.book.wizard.form</field>
+        <field name="model">combine.commission.book.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Book Commission">
+                <p class="text-muted">
+                    Books commission of invoices posted before automatic booking (status "Not booked") into the
+                    accounts on the date below, without billing it: Dr Commission expense / Cr Unbilled commission,
+                    one entry per agent. Agents without a party get one.
+                </p>
+                <group>
+                    <field name="date"/>
+                    <field name="agent_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All agents"/>
+                    <field name="currency_id" invisible="1"/>
+                    <field name="amount_total"/>
+                </group>
+                <field name="line_ids" readonly="1">
+                    <list>
+                        <field name="date"/>
+                        <field name="agent_id"/>
+                        <field name="invoice_id"/>
+                        <field name="partner_id"/>
+                        <field name="commission_amount" sum="Total"/>
+                    </list>
+                </field>
+                <footer>
+                    <button name="action_book" type="object" string="Book" class="btn-primary"
+                            confirm="Book this commission in the accounts?"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

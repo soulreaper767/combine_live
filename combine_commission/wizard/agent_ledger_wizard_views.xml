@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_commission_ledger_wizard_form" model="ir.ui.view">
+        <field name="name">combine.commission.ledger.wizard.form</field>
+        <field name="model">combine.commission.ledger.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Commission Agent Ledger">
+                <group>
+                    <field name="report_type" widget="radio" options="{'horizontal': true}"/>
+                    <field name="agent_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All agents"/>
+                    <field name="date_from"/>
+                    <field name="date_to"/>
+                </group>
+                <footer>
+                    <button name="action_print" type="object" string="Generate Report" class="btn-primary"/>
+                    <button name="action_print_xlsx" type="object" string="Generate Excel" class="btn-secondary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_agent_ledger" model="ir.actions.report">
+        <field name="name">Commission Agent Ledger</field>
+        <field name="model">combine.commission.ledger.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">combine_commission.agent_ledger_document</field>
+        <field name="report_file">combine_commission.agent_ledger_document</field>
+        <field name="print_report_name">'Commission Agent Ledger'</field>
+        <field name="paperformat_id" ref="partner_ledger_qty.paperformat_partner_statement"/>
+        <field name="binding_model_id" eval="False"/>
+    </record>
+
+    <record id="action_report_agent_summary" model="ir.actions.report">
+        <field name="name">Agent Outstanding Summary</field>
+        <field name="model">combine.commission.ledger.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">combine_commission.agent_summary_document</field>
+        <field name="report_file">combine_commission.agent_summary_document</field>
+        <field name="print_report_name">'Agent Outstanding Summary'</field>
+        <field name="paperformat_id" ref="partner_ledger_qty.paperformat_partner_statement"/>
+        <field name="binding_model_id" eval="False"/>
+    </record>
+
+    <template id="agent_ledger_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="wizard_doc">
+                <t t-foreach="wizard_doc._agents()" t-as="agent">
+                    <t t-set="data" t-value="ledger_data(wizard_doc, agent)"/>
+                    <div class="page cr" style="page-break-after: always;">
+                        <t t-call="partner_ledger_qty.cr_style"/>
+                        <t t-call="partner_ledger_qty.cr_header">
+                            <t t-set="cr_title">Commission Agent Ledger</t>
+                            <t t-set="cr_company" t-value="data['company']"/>
+                            <t t-set="cr_party" t-value="agent"/>
+                            <t t-set="cr_date_from" t-value="data['date_from']"/>
+                            <t t-set="cr_date_to" t-value="data['date_to']"/>
+                        </t>
+                        <table class="cr-tbl">
+                            <colgroup>
+                                <col style="width: 6.5%"/>
+                                <col style="width: 10%"/>
+                                <col style="width: 14%"/>
+                                <col style="width: 6.5%"/>
+                                <col style="width: 12%"/>
+                                <col style="width: 5.5%"/>
+                                <col style="width: 8%"/>
+                                <col style="width: 4.5%"/>
+                                <col style="width: 0.5%"/>
+                                <col style="width: 8%"/>
+                                <col style="width: 8%"/>
+                                <col style="width: 9%"/>
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>V. No.</th>
+                                    <th>Customer / Remarks</th>
+                                    <th>Contract</th>
+                                    <th>Item</th>
+                                    <th>Qty</th>
+                                    <th>Sales Value (Ex. GST)</th>
+                                    <th>Comm. %</th>
+                                    <th class="gap"/>
+                                    <th>Debit</th>
+                                    <th>Credit</th>
+                                    <th>Balance</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="open">
+                                    <td class="c"><span t-out="data['date_from']" t-options="{'widget': 'date', 'format': 'dd-MMM-yy'}"/></td>
+                                    <td colspan="7">Opening balance</td>
+                                    <td class="gap"/>
+                                    <td class="n"/>
+                                    <td class="n"/>
+                                    <td class="n"><span t-out="fmt_amount(data['opening'])"/></td>
+                                </tr>
+                                <tr t-foreach="data['rows']" t-as="row">
+                                    <td class="c"><span t-out="row['date']" t-options="{'widget': 'date', 'format': 'dd-MMM-yy'}"/></td>
+                                    <td class="nw"><span t-out="row['voucher']"/></td>
+                                    <td><span t-out="row['customer'] or row['remarks']"/></td>
+                                    <td class="nw"><span t-out="row['contract']"/></td>
+                                    <td><span t-out="row['item']"/></td>
+                                    <td class="n"><span t-out="fmt_amount(row['qty'])"/></td>
+                                    <td class="n"><span t-out="fmt_amount(row['sales'])"/></td>
+                                    <td class="c"><span t-if="row['rate'] is not None" t-out="fmt_rate(row['rate'])"/></td>
+                                    <td class="gap"/>
+                                    <td class="n"><span t-if="row['debit']" t-out="fmt_amount(row['debit'])"/></td>
+                                    <td class="n"><span t-if="row['credit']" t-out="fmt_amount(row['credit'])"/></td>
+                                    <td class="n"><span t-out="fmt_amount(row['balance'])"/></td>
+                                </tr>
+                                <tr class="tot">
+                                    <td colspan="5" class="c">TOTAL</td>
+                                    <td class="n"><span t-out="fmt_amount(data['totals']['qty'])"/></td>
+                                    <td class="n"><span t-out="fmt_amount(data['totals']['sales'])"/></td>
+                                    <td/>
+                                    <td class="gap"/>
+                                    <td class="n"><span t-out="fmt_amount(data['totals']['debit'])"/></td>
+                                    <td class="n"><span t-out="fmt_amount(data['totals']['credit'])"/></td>
+                                    <td class="n"><span t-out="fmt_amount(data['closing'])"/></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p style="margin-top: 8px; font-size: 11px; color: #4b5563;">
+                            Balance = commission owed to the agent (unbilled + billed, less paid).
+                            <t t-if="not data['partner']"> This agent has no party yet, so nothing is booked in the accounts.</t>
+                            <t t-if="data['not_booked_count']">
+                                Not yet booked in the accounts (invoices up to <span t-out="data['date_to']" t-options="{'widget': 'date', 'format': 'dd-MMM-yy'}"/>):
+                                <strong t-out="data['not_booked_count']"/> line(s),
+                                <strong t-out="fmt_amount(data['not_booked_amount'])"/> - use Bill Commission on the invoice to bring them in.
+                            </t>
+                        </p>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <template id="agent_summary_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="wizard_doc">
+                <t t-set="data" t-value="summary_data(wizard_doc)"/>
+                <div class="page cr">
+                    <t t-call="partner_ledger_qty.cr_style"/>
+                    <t t-call="partner_ledger_qty.cr_header">
+                        <t t-set="cr_title">Agent Outstanding Summary</t>
+                        <t t-set="cr_company" t-value="data['company']"/>
+                        <t t-set="cr_date_from" t-value="data['date_from']"/>
+                        <t t-set="cr_date_to" t-value="data['date_to']"/>
+                    </t>
+                    <table class="cr-tbl">
+                        <thead>
+                            <tr>
+                                <th>Commission Agent</th>
+                                <th>Opening</th>
+                                <th>Commission (net)</th>
+                                <th>Paid / Adjusted</th>
+                                <th>Closing Balance</th>
+                                <th>of which Unbilled</th>
+                                <th>of which Billed</th>
+                                <th class="gap"/>
+                                <th>Not yet booked</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="data['rows']" t-as="row">
+                                <td><span t-out="row['agent']"/></td>
+                                <td class="n"><span t-out="fmt_amount(row['opening'])"/></td>
+                                <td class="n"><span t-out="fmt_amount(row['earned'])"/></td>
+                                <td class="n"><span t-out="fmt_amount(row['paid'])"/></td>
+                                <td class="n"><span t-out="fmt_amount(row['closing'])"/></td>
+                                <td class="n"><span t-out="fmt_amount(row['unbilled'])"/></td>
+                                <td class="n"><span t-out="fmt_amount(row['billed'])"/></td>
+                                <td class="gap"/>
+                                <td class="n"><span t-out="fmt_amount(row['not_booked'])"/></td>
+                            </tr>
+                            <tr class="tot">
+                                <td class="c">TOTAL</td>
+                                <td class="n"><span t-out="fmt_amount(data['totals']['opening'])"/></td>
+                                <td class="n"><span t-out="fmt_amount(data['totals']['earned'])"/></td>
+                                <td class="n"><span t-out="fmt_amount(data['totals']['paid'])"/></td>
+                                <td class="n"><span t-out="fmt_amount(data['totals']['closing'])"/></td>
+                                <td class="n"><span t-out="fmt_amount(data['totals']['unbilled'])"/></td>
+                                <td class="n"><span t-out="fmt_amount(data['totals']['billed'])"/></td>
+                                <td class="gap"/>
+                                <td class="n"><span t-out="fmt_amount(data['totals']['not_booked'])"/></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p style="margin-top: 8px; font-size: 11px; color: #4b5563;">
+                        Not yet booked = commission of invoices not yet brought into the accounts (use Bill Commission on the invoice).
+                    </p>
+                </div>
+            </t>
+        </t>
+    </template>
+</odoo>
