@@ -201,6 +201,64 @@ class ResCompany(models.Model):
         _logger.info('Advance lines moved to the party advance accounts (%s): %s', self.name, log)
         return log
 
+    # heads users created (not party accounts) that the merge took:
+    # CANTEEN / HAIDRI - SHOP / WASHER MAN contractors, EXPENSES PAYABLE - SITE
+    RESTORE_HEAD_CODES = ('2.07.06', '2.07.10', '2.07.11', '2.11.02.0001')
+
+    def _restore_user_heads(self):
+        """Bring back the heads users created themselves that the party merge
+        (19.0.7.11.0) took as party accounts - e.g. EXPENSES PAYABLE - SITE,
+        contractor accounts: reactivate them and put every line the merge
+        moved off them back on them, exactly from the recorded table. Heads
+        from the imported chart (created by the system) stay merged, the
+        supplier-advance move stays. A matching between a restored line and
+        a line that stayed on the control account would join two different
+        accounts, so it is undone (and logged) for re-matching."""
+        self.ensure_one()
+        cr = self.env.cr
+        table = self.REMAP_TABLE
+        cr.execute("SELECT to_regclass(%s)", (table,))
+        if not cr.fetchone()[0]:
+            return ['no merge record - nothing to restore']
+        cr.execute(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS restored_at timestamp")
+        Account = self.env['account.account'].with_context(active_test=False)
+        cr.execute(f"SELECT DISTINCT old_account_id FROM {table} WHERE company_id = %s AND restored_at IS NULL", (self.id,))
+        olds = Account.browse([r[0] for r in cr.fetchall()]).exists()
+        heads = olds.filtered(lambda a: a.code in self.RESTORE_HEAD_CODES)
+        if not heads:
+            return ['none of the user-created heads is in the merge record']
+        log = ['heads: %s' % ', '.join('%s %s' % (a.code, a.name) for a in heads)]
+        heads.write({'active': True})
+        self.env.flush_all()
+        restored = []
+        for tbl, model, column in (('account_move_line', 'account.move.line', 'account_id'),
+                                   ('account_payment', 'account.payment', 'destination_account_id')):
+            cr.execute(f"""UPDATE {tbl} t SET {column} = r.old_account_id FROM {table} r
+                           WHERE r.res_model = %s AND r.res_id = t.id AND r.company_id = %s AND r.restored_at IS NULL
+                             AND r.old_account_id = ANY(%s) AND t.{column} = r.new_account_id
+                           RETURNING t.id""", (model, self.id, heads.ids))
+            ids = [r[0] for r in cr.fetchall()]
+            cr.execute(f"""UPDATE {table} SET restored_at = (now() AT TIME ZONE 'UTC')
+                           WHERE res_model = %s AND company_id = %s AND old_account_id = ANY(%s) AND restored_at IS NULL""",
+                       (model, self.id, heads.ids))
+            log.append('%s back on their heads: %s' % (model, len(ids)))
+            if model == 'account.move.line':
+                restored = ids
+        self.env.invalidate_all()
+        lines = self.env['account.move.line'].browse(restored)
+        partials = lines.matched_debit_ids | lines.matched_credit_ids
+        cross = partials.filtered(lambda p: p.debit_move_id.account_id != p.credit_move_id.account_id)
+        if cross:
+            log.append('matchings undone (re-match them): %s' % ', '.join(
+                '%s / %s' % (p.debit_move_id.move_id.name, p.credit_move_id.move_id.name) for p in cross))
+            cross.unlink()
+        AML = self.env['account.move.line']
+        for fname in ('amount_residual', 'amount_residual_currency', 'reconciled'):
+            self.env.add_to_compute(AML._fields[fname], lines)
+        self.env.flush_all()
+        _logger.info('User-created heads restored (%s): %s', self.name, log)
+        return log
+
     def _restore_party_account_remap(self):
         """Undo _remap_party_lines_to_controls exactly, from the recorded table
         (reactivates the old accounts first). Not called automatically."""
