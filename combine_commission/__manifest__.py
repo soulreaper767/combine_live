@@ -1,6 +1,6 @@
 {
     'name': 'Combine - Commission',
-    'version': '19.0.1.3.0',
+    'version': '19.0.1.4.0',
     'category': 'Accounting',
     'summary': 'Commission agents as parties: commission booked in the accounts, commission bills, '
                'payments, and the Commission Agent Ledger',
@@ -48,6 +48,7 @@ installation stays "Not booked" until someone deliberately books it with
         'wizard/agent_ledger_wizard_views.xml',
         'wizard/commission_wizard_views.xml',
         'wizard/pending_contracts_views.xml',
+        'wizard/total_sales_views.xml',
         'views/commission_views.xml',
     ],
     'installable': True,
