@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="product_template_form_production_cost" model="ir.ui.view">
+        <field name="name">product.template.form.production.cost</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='general_information']" position="inside">
+                <group string="Production Cost" name="combine_production_cost" invisible="not x_production_cost_mo_id">
+                    <group>
+                        <field name="x_production_cost"/>
+                        <field name="x_production_cost_date"/>
+                        <field name="x_production_cost_mo_id"/>
+                    </group>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

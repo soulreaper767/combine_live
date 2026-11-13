@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="seq_cost_revaluation" model="ir.sequence">
+        <field name="name">Cost Revaluation</field>
+        <field name="code">combine.cost.revaluation</field>
+        <field name="prefix">REVAL/%(year)s/</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+
+    <record id="cost_revaluation_list" model="ir.ui.view">
+        <field name="name">combine.cost.revaluation.list</field>
+        <field name="model">combine.cost.revaluation</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0">
+                <field name="name"/><field name="date"/><field name="accounting_date"/><field name="user_id"/>
+                <field name="note"/><field name="currency_id" column_invisible="1"/>
+                <field name="stock_delta" sum="Total"/><field name="consumption_delta" sum="Total"/>
+            </list>
+        </field>
+    </record>
+    <record id="cost_revaluation_form" model="ir.ui.view">
+        <field name="name">combine.cost.revaluation.form</field>
+        <field name="model">combine.cost.revaluation</field>
+        <field name="arch" type="xml">
+            <form create="0" edit="0">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_entries" type="object" class="oe_stat_button" icon="fa-book"
+                                invisible="not account_move_ids" string="Journal Entries"/>
+                    </div>
+                    <h1><field name="name"/></h1>
+                    <group>
+                        <group><field name="date"/><field name="accounting_date"/><field name="user_id"/><field name="note"/></group>
+                        <group><field name="currency_id" invisible="1"/><field name="stock_delta"/><field name="consumption_delta"/>
+                            <field name="journal_entry_id" invisible="not journal_entry_id"/>
+                            <field name="account_move_ids" widget="many2many_tags" invisible="not account_move_ids"/></group>
+                    </group>
+                    <notebook>
+                        <page string="Items">
+                            <field name="line_ids">
+                                <list>
+                                    <field name="product_id"/><field name="new_cost"/><field name="stock_qty"/>
+                                    <field name="consumed_qty"/><field name="currency_id" column_invisible="1"/>
+                                    <field name="stock_delta" sum="Total"/><field name="consumption_delta" sum="Total"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Stock moves changed">
+                            <field name="move_ids">
+                                <list>
+                                    <field name="product_id"/><field name="reference"/><field name="kind"/><field name="quantity"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                    <field name="old_value"/><field name="new_value"/><field name="delta" sum="Total"/>
+                                    <field name="account_move_id"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_cost_revaluation" model="ir.actions.act_window">
+        <field name="name">Cost Revaluations</field>
+        <field name="res_model">combine.cost.revaluation</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

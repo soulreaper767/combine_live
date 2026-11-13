@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="cost_revalue_form" model="ir.ui.view">
+        <field name="name">combine.cost.revalue.form</field>
+        <field name="model">combine.cost.revalue</field>
+        <field name="arch" type="xml">
+            <form string="Revalue zero-cost stock">
+                <p class="text-muted">
+                    Give a unit cost to stock that came in at cost 0. The receipts / adjustments at 0 get quantity x new cost
+                    (stock on hand and the item's cost follow); deliveries and consumption already made at 0 are re-costed too.
+                    Items valued in real time get the journal entries. Load the items, enter the new unit costs, Preview, then Apply.
+                </p>
+                <group>
+                    <group string="Which items">
+                        <field name="categ_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All categories"/>
+                        <field name="product_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All items"/>
+                        <field name="company_id" invisible="1"/>
+                    </group>
+                    <group string="Effect">
+                        <field name="do_batch"/>
+                        <field name="do_flat"/>
+                        <field name="flat_date_from" invisible="not do_flat"/>
+                        <field name="accounting_date"/>
+                        <field name="note" placeholder="e.g. opening stock cost as per costing sheet"/>
+                    </group>
+                </group>
+                <field name="has_real_time" invisible="1"/>
+                <group string="Journal entry (items valued in real time, e.g. raw materials)" invisible="not has_real_time">
+                    <group>
+                        <field name="counterpart_account_id" options="{'no_create': true}" placeholder="No entry"/>
+                        <field name="consumption_account_id" options="{'no_create': true}" placeholder="No entry"/>
+                    </group>
+                    <div class="text-muted">Dr item category stock account (value still on hand) + Dr consumption account
+                        (value of what was already consumed / delivered), Cr counterpart account (total). Periodic items
+                        (yarn) need no entry: their stock value is taken at closing.</div>
+                </group>
+                <field name="line_ids">
+                    <list editable="bottom">
+                        <field name="product_id"/>
+                        <field name="uom_id" optional="show"/>
+                        <field name="cost_method" optional="show"/>
+                        <field name="valuation" optional="hide"/>
+                        <field name="new_cost"/>
+                        <field name="zero_in_qty" optional="show"/>
+                        <field name="zero_on_hand_qty"/>
+                        <field name="zero_batch_qty" optional="show"/>
+                        <field name="zero_flat_qty" optional="show"/>
+                        <field name="stock_add" sum="Total"/>
+                        <field name="consumption_add" sum="Total"/>
+                    </list>
+                </field>
+                <footer>
+                    <button name="action_load" type="object" string="Load zero-cost items" class="btn-secondary"/>
+                    <button name="action_preview" type="object" string="Preview" class="btn-secondary"/>
+                    <button name="action_apply" type="object" string="Apply revaluation" class="btn-primary"
+                            confirm="Revalue the listed items? Stock values, deliveries / consumption at 0 and (real-time items) the journal entries will be updated."/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+    <record id="action_cost_revalue" model="ir.actions.act_window">
+        <field name="name">Revalue Zero-Cost Stock</field>
+        <field name="res_model">combine.cost.revalue</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

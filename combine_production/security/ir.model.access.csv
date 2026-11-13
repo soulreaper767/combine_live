@@ -1,0 +1,21 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_fifo_alloc_stock,fifo allocation stock,model_combine_fifo_allocation,stock.group_stock_user,1,0,0,0
+access_fifo_alloc_acc,fifo allocation accounts,model_combine_fifo_allocation,account.group_account_readonly,1,0,0,0
+access_fifo_alloc_sale,fifo allocation sales,model_combine_fifo_allocation,sales_team.group_sale_salesman,1,0,0,0
+access_prod_report_mrp,production report mrp,model_combine_prod_report,mrp.group_mrp_user,1,1,1,1
+access_prod_report_stock,production report stock,model_combine_prod_report,stock.group_stock_user,1,1,1,1
+access_prod_report_acc,production report accounts,model_combine_prod_report,account.group_account_readonly,1,1,1,1
+access_delcost_stock,delivery cost stock,model_combine_delivery_cost,stock.group_stock_user,1,1,1,1
+access_delcost_acc,delivery cost accounts,model_combine_delivery_cost,account.group_account_readonly,1,1,1,1
+access_zerocost_stock,zero cost stock,model_combine_zero_cost,stock.group_stock_user,1,1,1,1
+access_zerocost_acc,zero cost accounts,model_combine_zero_cost,account.group_account_readonly,1,1,1,1
+access_zerocost_mrp,zero cost mrp,model_combine_zero_cost,mrp.group_mrp_user,1,1,1,1
+access_revalue_mgr,revalue wizard,model_combine_cost_revalue,account.group_account_manager,1,1,1,1
+access_revalue_line_mgr,revalue wizard line,model_combine_cost_revalue_line,account.group_account_manager,1,1,1,1
+access_reval_mgr,revaluation,model_combine_cost_revaluation,account.group_account_manager,1,1,1,0
+access_reval_ro,revaluation readonly,model_combine_cost_revaluation,account.group_account_readonly,1,0,0,0
+access_reval_line_mgr,revaluation line,model_combine_cost_revaluation_line,account.group_account_manager,1,1,1,0
+access_reval_line_ro,revaluation line ro,model_combine_cost_revaluation_line,account.group_account_readonly,1,0,0,0
+access_reval_move_mgr,revaluation move,model_combine_cost_revaluation_move,account.group_account_manager,1,1,1,0
+access_reval_move_ro,revaluation move ro,model_combine_cost_revaluation_move,account.group_account_readonly,1,0,0,0
+access_delcost_sale,delivery cost sales,model_combine_delivery_cost,sales_team.group_sale_salesman,1,1,1,1
