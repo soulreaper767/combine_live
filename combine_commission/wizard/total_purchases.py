@@ -21,6 +21,9 @@ class TotalPurchasesWizard(models.TransientModel):
                                  string='Commission Agents', help='Leave empty for all.')
     user_ids = fields.Many2many('res.users', 'combine_tpur_user_rel', 'wizard_id', 'user_id', string='Buyers',
                                 help='Leave empty for all.')
+    created_by_ids = fields.Many2many('res.users', 'combine_tpur_cuser_rel', 'wizard_id', 'user_id', string='Entries created by',
+                                      context={'active_test': False},
+                                      help='User who created the bill. Leave empty for all.')
 
     def _lines(self):
         types = ('in_invoice', 'in_refund') if self.include_refunds else ('in_invoice',)
@@ -31,6 +34,8 @@ class TotalPurchasesWizard(models.TransientModel):
             domain.append(('tax_ids', 'in', self.tax_ids.ids))
         if self.user_ids:
             domain.append(('move_id.invoice_user_id', 'in', self.user_ids.ids))
+        if self.created_by_ids:
+            domain.append(('move_id.create_uid', 'in', self.created_by_ids.ids))
         # read with sudo so every internal user can run the report (it is read-only)
         lines = self.env['account.move.line'].sudo().search(domain).sorted(
             lambda l: (l.move_id.invoice_date, l.move_id.name or '', l.id))

@@ -34,6 +34,9 @@ class TotalSalesWizard(models.TransientModel):
                                  string='Commission Agents', help='Leave empty for all.')
     user_ids = fields.Many2many('res.users', 'combine_tsales_user_rel', 'wizard_id', 'user_id', string='Salespersons',
                                 help='Leave empty for all.')
+    created_by_ids = fields.Many2many('res.users', 'combine_tsales_cuser_rel', 'wizard_id', 'user_id', string='Entries created by',
+                                      context={'active_test': False},
+                                      help='User who created the invoice. Leave empty for all.')
 
     # ------------------------------------------------------------ lines
     def _lines(self):
@@ -45,6 +48,8 @@ class TotalSalesWizard(models.TransientModel):
             domain.append(('tax_ids', 'in', self.tax_ids.ids))
         if self.user_ids:
             domain.append(('move_id.invoice_user_id', 'in', self.user_ids.ids))
+        if self.created_by_ids:
+            domain.append(('move_id.create_uid', 'in', self.created_by_ids.ids))
         lines = self.env['account.move.line'].search(domain).sorted(
             lambda l: (l.move_id.invoice_date, l.move_id.name or '', l.id))
         CL = self.env['combine001.commission.line'].sudo()
@@ -181,7 +186,7 @@ class TotalSalesWizard(models.TransientModel):
                                    'rows': [as_row(r) for r in sub_rows], 'totals': totals(rows)})
         filters = self._register_filter_lines()
         for label, recs in ((_('Tax Rates'), self.tax_ids), (_('Commission Agents'), self.agent_ids),
-                            (_('Salespersons'), self.user_ids)):
+                            (_('Salespersons'), self.user_ids), (_('Created by'), self.created_by_ids)):
             if recs:
                 filters.append((label, ', '.join(recs.mapped('display_name'))))
         filters.append((_('Grouped by'), ' > '.join(l for _k, l in dims) or _('none')))

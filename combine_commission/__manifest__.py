@@ -1,6 +1,6 @@
 {
     'name': 'Combine - Commission',
-    'version': '19.0.1.5.0',
+    'version': '19.0.1.6.0',
     'category': 'Accounting',
     'summary': 'Commission agents as parties: commission booked in the accounts, commission bills, '
                'payments, and the Commission Agent Ledger',
