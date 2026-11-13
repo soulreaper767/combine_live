@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from odoo import fields, models
+from odoo import _, fields, models
 
 
 class StockMove(models.Model):
@@ -46,6 +46,41 @@ class StockMove(models.Model):
                     for line in move.sudo().x_fifo_allocation_ids:
                         line.write({'quantity': line.quantity * ratio, 'value': line.value * ratio})
         return res
+
+    def _get_aml_value(self):
+        override = self.env.context.get('combine_aml_value')
+        if override and self.id in override:
+            return override[self.id]
+        return super()._get_aml_value()
+
+    def _combine_post_value_delta(self, delta, date, label):
+        """Journal entry for a change of `delta` in this move's value, with the accounts Odoo itself uses
+        for this move (real-time valued items only). The move keeps its original entry link."""
+        self.ensure_one()
+        currency = self.company_id.currency_id
+        if currency.is_zero(delta) or delta < 0 or not self._should_create_account_move():
+            return self.env['account.move']
+        keep = self.account_move_id
+        entry = self.with_context(combine_aml_value={self.id: delta}, force_period_date=date)._create_account_move()
+        if entry:
+            entry.ref = '%s - %s' % (label, entry.ref or self.reference or '')
+        if keep or entry:
+            self.sudo().account_move_id = keep
+        return entry
+
+    def _combine_kind_label(self):
+        self.ensure_one()
+        if self.picking_code == 'outgoing' or self.location_dest_id.usage == 'customer':
+            return _('Delivery')
+        if self.location_dest_id.usage == 'production' or self.raw_material_production_id:
+            return _('Consumption')
+        if self.location_dest_id.usage == 'inventory' or self.location_id.usage == 'inventory':
+            return _('Adjustment')
+        if self.production_id:
+            return _('Production')
+        if self.picking_code == 'incoming' or self.location_id.usage == 'supplier':
+            return _('Receipt')
+        return _('Other')
 
     def action_view_fifo_split(self):
         self.ensure_one()
