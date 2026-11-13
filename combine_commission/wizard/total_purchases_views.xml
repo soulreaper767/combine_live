@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_total_purchases_wizard_form" model="ir.ui.view">
+        <field name="name">combine.total.purchases.wizard.form</field>
+        <field name="model">combine.total.purchases.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Total Purchases Report">
+                <group>
+                    <group string="Group by (one or more, in this order)">
+                        <field name="by_party"/>
+                        <field name="by_item"/>
+                        <field name="by_tax"/>
+                        <field name="detail" widget="radio"/>
+                    </group>
+                    <group string="Bills dated">
+                        <field name="date_from"/>
+                        <field name="date_to"/>
+                        <field name="include_refunds"/>
+                    </group>
+                </group>
+                <group string="Filters">
+                    <group>
+                        <field name="partner_ids" string="Vendors" widget="many2many_tags" options="{'no_create': true}" placeholder="All vendors"
+                               domain="[('supplier_rank', '>', 0)]"/>
+                        <field name="party_type_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All party types"/>
+                        <field name="user_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All buyers"/>
+                        <field name="agent_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All commission agents"/>
+                    </group>
+                    <group>
+                        <field name="product_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All items"/>
+                        <field name="categ_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All item categories"/>
+                        <field name="tax_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All tax rates"
+                               context="{'active_test': False}"/>
+                    </group>
+                </group>
+                <footer>
+                    <button name="action_print" type="object" string="Generate Report" class="btn-primary"/>
+                    <button name="action_print_xlsx" type="object" string="Generate Excel" class="btn-secondary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_total_purchases_wizard" model="ir.actions.act_window">
+        <field name="name">Total Purchases Report</field>
+        <field name="res_model">combine.total.purchases.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <record id="action_report_total_purchases" model="ir.actions.report">
+        <field name="name">Total Purchases Report</field>
+        <field name="model">combine.total.purchases.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">combine_commission.report_total_purchases</field>
+        <field name="report_file">combine_commission.report_total_purchases</field>
+        <field name="print_report_name">'Total Purchases Report %s to %s' % (object.date_from, object.date_to)</field>
+        <field name="paperformat_id" ref="partner_ledger_qty.paperformat_partner_statement"/>
+        <field name="binding_model_id" eval="False"/>
+    </record>
+    <template id="report_total_purchases">
+        <t t-call="web.html_container"><t t-foreach="docs" t-as="doc"><t t-call="partner_ledger_qty.register_doc"/></t></t>
+    </template>
+
+    <menuitem id="menu_total_purchases" name="Total Purchases Report" parent="purchase.purchase_report_main"
+              action="action_total_purchases_wizard" sequence="49"/>
+    <menuitem id="menu_total_purchases_acc" name="Total Purchases Report" parent="account.account_reports_partners_reports_menu"
+              action="action_total_purchases_wizard" sequence="20" groups="account.group_account_readonly,account.group_account_invoice"/>
+</odoo>

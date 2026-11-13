@@ -12,3 +12,7 @@ access_purchase_commission_line_user_read,purchase commission lines (read - comm
 access_total_sales_wizard_sale,total sales report (sales),model_combine_total_sales_wizard,sales_team.group_sale_salesman,1,1,1,1
 access_total_sales_wizard_acc,total sales report (accounts),model_combine_total_sales_wizard,account.group_account_readonly,1,1,1,1
 access_total_sales_wizard_inv,total sales report (invoicing),model_combine_total_sales_wizard,account.group_account_invoice,1,1,1,1
+access_total_purchases_wizard_user,total purchases report (all users),model_combine_total_purchases_wizard,base.group_user,1,1,1,1
+access_total_purchases_wizard_pur,total purchases report (purchase),model_combine_total_purchases_wizard,purchase.group_purchase_user,1,1,1,1
+access_total_purchases_wizard_acc,total purchases report (accounts),model_combine_total_purchases_wizard,account.group_account_readonly,1,1,1,1
+access_total_purchases_wizard_inv,total purchases report (invoicing),model_combine_total_purchases_wizard,account.group_account_invoice,1,1,1,1

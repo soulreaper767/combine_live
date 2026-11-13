@@ -186,6 +186,8 @@
               action="combine001.action_commission_line" sequence="30" groups="base.group_user"/>
     <menuitem id="menu_commission_report_purchase_all" name="Purchase Commission Report" parent="menu_commission_reports"
               action="combine001.action_purchase_commission_line" sequence="40" groups="base.group_user"/>
+    <menuitem id="menu_total_purchases_all" name="Total Purchases Report" parent="menu_commission_reports"
+              action="action_total_purchases_wizard" sequence="45" groups="base.group_user"/>
     <menuitem id="menu_commission_settlement_reports" name="Commission Settlement" parent="menu_commission_reports"
               action="action_settlement_wizard" sequence="50" groups="account.group_account_invoice,combine_commission.group_commission_biller"/>
     <menuitem id="menu_commission_book_reports" name="Book Commission" parent="menu_commission_reports"
