@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Manufacturing > Reporting -->
+    <menuitem id="menu_prod_entries" name="Production Entries" parent="mrp.menu_mrp_reporting"
+              action="action_prod_report_entries" sequence="60"/>
+    <menuitem id="menu_prod_daily" name="Daily Production Report" parent="mrp.menu_mrp_reporting"
+              action="action_prod_report_daily" sequence="61"/>
+    <menuitem id="menu_prod_total" name="Total Production Report" parent="mrp.menu_mrp_reporting"
+              action="action_prod_report_total" sequence="62"/>
+    <menuitem id="menu_delivery_cost_mrp" name="Delivery Cost Report" parent="mrp.menu_mrp_reporting"
+              action="action_delivery_cost" sequence="63"/>
+    <!-- Inventory > Reporting -->
+    <menuitem id="menu_delivery_cost_stock" name="Delivery Cost Report" parent="stock.menu_warehouse_report"
+              action="action_delivery_cost" sequence="60"/>
+    <menuitem id="menu_fifo_lines_stock" name="Delivery FIFO Cost Lines" parent="stock.menu_warehouse_report"
+              action="action_fifo_allocation" sequence="61"/>
+    <menuitem id="menu_prod_daily_stock" name="Daily Production Report" parent="stock.menu_warehouse_report"
+              action="action_prod_report_daily" sequence="62"/>
+    <!-- Sales > Reporting -->
+    <menuitem id="menu_delivery_cost_sale" name="Delivery Cost Report" parent="sale.menu_sale_report"
+              action="action_delivery_cost" sequence="60"/>
+</odoo>

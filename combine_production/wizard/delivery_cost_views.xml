@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="delivery_cost_form" model="ir.ui.view">
+        <field name="name">combine.delivery.cost.form</field>
+        <field name="model">combine.delivery.cost</field>
+        <field name="arch" type="xml">
+            <form string="Delivery Cost Report">
+                <group>
+                    <group string="Report">
+                        <field name="detail" widget="radio"/>
+                        <field name="group_by" widget="radio"/>
+                        <field name="show_sale"/>
+                        <field name="include_returns"/>
+                    </group>
+                    <group string="Delivered">
+                        <field name="date_from"/>
+                        <field name="date_to"/>
+                    </group>
+                </group>
+                <group string="Filters">
+                    <group>
+                        <field name="partner_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All customers"/>
+                        <field name="party_type_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All party types"/>
+                        <field name="warehouse_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All units / warehouses"/>
+                    </group>
+                    <group>
+                        <field name="product_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All items"/>
+                        <field name="categ_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All categories"/>
+                    </group>
+                </group>
+                <footer>
+                    <button name="action_print" type="object" string="Generate Report" class="btn-primary"/>
+                    <button name="action_print_xlsx" type="object" string="Generate Excel" class="btn-secondary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+    <record id="action_delivery_cost" model="ir.actions.act_window">
+        <field name="name">Delivery Cost Report</field>
+        <field name="res_model">combine.delivery.cost</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+    <record id="action_report_delivery_cost" model="ir.actions.report">
+        <field name="name">Delivery Cost Report</field>
+        <field name="model">combine.delivery.cost</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">combine_production.report_delivery_cost</field>
+        <field name="report_file">combine_production.report_delivery_cost</field>
+        <field name="print_report_name">'Delivery Cost Report %s to %s' % (object.date_from, object.date_to)</field>
+        <field name="paperformat_id" ref="partner_ledger_qty.paperformat_partner_statement"/>
+        <field name="binding_model_id" eval="False"/>
+    </record>
+    <template id="report_delivery_cost">
+        <t t-call="web.html_container"><t t-foreach="docs" t-as="doc"><t t-call="partner_ledger_qty.register_doc"/></t></t>
+    </template>
+</odoo>
