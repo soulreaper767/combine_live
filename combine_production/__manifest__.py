@@ -10,8 +10,9 @@ Production Costing (FIFO)
 * Manufacturing Order gets a **Unit Cost**: the production is valued at
   quantity x unit cost, and that cost is saved on the item as its
   **Last Production Cost** (with date and order).
-* On install the Finished Goods / Yarn category is switched to **FIFO**
-  (raw materials keep their average cost).
+* Installing changes NO existing record: costing methods stay as they are.
+  FIFO for Finished Goods / Yarn is a separate, deliberate step
+  (product.category._combine_production_set_fifo, run only when approved).
 * Every delivery of a FIFO item records which stock it came from - e.g.
   production 1 used up and part of production 2 - with quantity, rate and
   cost per batch (exactly the split Odoo used to cost the delivery).
@@ -32,7 +33,6 @@ Production Costing (FIFO)
         'wizard/cost_revalue_views.xml',
         'views/cost_revaluation_views.xml',
         'views/menus.xml',
-        'data/fifo_setup.xml',
     ],
     'installable': True,
 }
