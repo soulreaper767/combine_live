@@ -24,6 +24,7 @@
                                domain="[('supplier_rank', '>', 0)]"/>
                         <field name="party_type_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All party types"/>
                         <field name="user_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All buyers"/>
+                        <field name="created_by_ids" string="Created by" widget="many2many_tags" options="{'no_create': true}" placeholder="All users" context="{'active_test': False}"/>
                         <field name="agent_ids" widget="many2many_tags" options="{'no_create': true}" placeholder="All commission agents"/>
                     </group>
                     <group>
