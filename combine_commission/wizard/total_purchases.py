@@ -31,7 +31,8 @@ class TotalPurchasesWizard(models.TransientModel):
             domain.append(('tax_ids', 'in', self.tax_ids.ids))
         if self.user_ids:
             domain.append(('move_id.invoice_user_id', 'in', self.user_ids.ids))
-        lines = self.env['account.move.line'].search(domain).sorted(
+        # read with sudo so every internal user can run the report (it is read-only)
+        lines = self.env['account.move.line'].sudo().search(domain).sorted(
             lambda l: (l.move_id.invoice_date, l.move_id.name or '', l.id))
         PCL = self.env['combine001.purchase.commission.line'].sudo()
         comm = {c.vendor_bill_line_id.id: c for c in PCL.search([('vendor_bill_line_id', 'in', lines.ids)])}
