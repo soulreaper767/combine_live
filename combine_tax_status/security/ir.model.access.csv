@@ -1,0 +1,6 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_combine_tax_status_period_user,combine.tax.status.period.user,model_combine_tax_status_period,base.group_user,1,0,0,0
+access_combine_tax_status_period_sys,combine.tax.status.period.sys,model_combine_tax_status_period,base.group_system,1,1,1,1
+access_combine_tax_status_period_modadmin,combine.tax.status.period.modadmin,model_combine_tax_status_period,combine001.group_combine001_module_admin,1,1,1,1
+access_combine_tax_status_period_tax,combine.tax.status.period.tax,model_combine_tax_status_period,combine001.group_tax_officer,1,1,1,1
+access_combine_tax_status_period_finmanager,combine.tax.status.period.finmanager,model_combine_tax_status_period,account.group_account_manager,1,1,1,1

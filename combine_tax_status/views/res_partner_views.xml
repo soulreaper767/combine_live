@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_partner_form_tax_status_by_date" model="ir.ui.view">
+        <field name="name">res.partner.form.tax.status.by.date</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="combine001.view_partner_form_combine001_tax_info"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='combine001_tax_info']" position="inside">
+                <separator string="Status by Date"/>
+                <div class="text-muted mb-2">
+                    When the party's registration changes, add the period here (from / to). A document takes the
+                    status in force on its own date when it is created; documents that already exist are never
+                    changed. With no period covering a date, the status above is used.
+                </div>
+                <field name="x_tax_status_period_ids" context="{'default_partner_id': id}">
+                    <list editable="bottom">
+                        <field name="tax_type"/>
+                        <field name="status"/>
+                        <field name="date_from"/>
+                        <field name="date_to"/>
+                        <field name="reference"/>
+                        <field name="company_id" column_invisible="True"/>
+                    </list>
+                </field>
+            </xpath>
+        </field>
+    </record>
+</odoo>
