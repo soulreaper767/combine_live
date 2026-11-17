@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_tax_status_period_list" model="ir.ui.view">
+        <field name="name">combine.tax.status.period.list</field>
+        <field name="model">combine.tax.status.period</field>
+        <field name="arch" type="xml">
+            <list string="Registration Status by Date" editable="bottom">
+                <field name="partner_id"/>
+                <field name="tax_type"/>
+                <field name="status"/>
+                <field name="date_from"/>
+                <field name="date_to"/>
+                <field name="reference"/>
+                <field name="company_id" column_invisible="True"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_tax_status_period_search" model="ir.ui.view">
+        <field name="name">combine.tax.status.period.search</field>
+        <field name="model">combine.tax.status.period</field>
+        <field name="arch" type="xml">
+            <search string="Registration Status by Date">
+                <field name="partner_id"/>
+                <filter string="Sales Tax (GST)" name="filter_gst" domain="[('tax_type', '=', 'gst')]"/>
+                <filter string="Income Tax" name="filter_income_tax" domain="[('tax_type', '=', 'income_tax')]"/>
+                <filter string="PRA" name="filter_pra" domain="[('tax_type', '=', 'pra')]"/>
+                <separator/>
+                <filter string="Registered / Filer" name="filter_reg" domain="[('status', 'in', ('registered', 'filer'))]"/>
+                <filter string="Unregistered / Non-Filer" name="filter_unreg" domain="[('status', 'in', ('unregistered', 'non_filer'))]"/>
+                <group>
+                    <filter string="Party" name="group_partner" context="{'group_by': 'partner_id'}"/>
+                    <filter string="Tax" name="group_tax" context="{'group_by': 'tax_type'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_tax_status_period" model="ir.actions.act_window">
+        <field name="name">Registration Status by Date</field>
+        <field name="res_model">combine.tax.status.period</field>
+        <field name="view_mode">list</field>
+        <field name="search_view_id" ref="view_tax_status_period_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No dated registration status yet.</p>
+            <p>Like the Withholding Tax Rates: give a party its GST / Income Tax / PRA status for a period
+               (from / to). Documents created afterwards take the status in force on their own date;
+               documents that already exist are never changed.</p>
+        </field>
+    </record>
+
+    <menuitem id="menu_tax_status_period" name="Registration Status by Date"
+              parent="combine001.menu_combine001_taxation" action="action_tax_status_period" sequence="45"/>
+</odoo>
