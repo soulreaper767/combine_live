@@ -27,14 +27,30 @@ class TaxStatusMixin(models.AbstractModel):
     def _combine_status_open(self):
         return True
 
-    def _combine_stamp_status(self):
+    def _combine_status_tax_lines(self):
+        """Lines whose taxes follow the GST status: {line: keep_as_is}. Empty for documents without taxes."""
+        return {}
+
+    def _combine_stamp_status(self, on_date=None):
         Period = self.env['combine.tax.status.period']
         for rec in self:
-            vals = Period._combine_statuses_at(rec.partner_id, rec._combine_status_date(),
+            vals = Period._combine_statuses_at(rec.partner_id, on_date or rec._combine_status_date(),
                                                rec.company_id if 'company_id' in rec._fields else None)
             vals = {k: v for k, v in vals.items() if rec[k] != v}
-            if vals:
-                rec.with_context(combine_status_stamp=True).write(vals)
+            if not vals:
+                continue
+            # the taxes the lines have now (from the contract, typed in, or the product) stay; a status
+            # change only swaps the GST rate 18 <-> 22. Without this, Odoo would recompute the lines'
+            # taxes from the product defaults and drop taxes carried from the contract.
+            lines = rec._combine_status_tax_lines()
+            snapshot = {line: line.tax_ids for line in lines}
+            rec.with_context(combine_status_stamp=True).write(vals)
+            for line, keep in lines.items():
+                taxes = snapshot[line]
+                if not keep:
+                    taxes = taxes._combine_gst_for_status(rec.x_gst_status, rec.company_id)
+                if line.tax_ids != taxes:
+                    line.tax_ids = taxes
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -64,15 +80,16 @@ class SaleOrder(models.Model):
     def _combine_status_open(self):
         return self.state in ('draft', 'sent')
 
+    def _combine_status_tax_lines(self):
+        if self.state not in ('draft', 'sent'):
+            return {}
+        return {line: False for line in self.order_line if line.product_id and not line.display_type}
+
     def action_confirm(self):
         # Odoo dates a contract on its confirmation: apply that day's status while it is still a quotation,
         # so its GST rate (18 / 22) follows it; lines without GST stay without GST
-        Period = self.env['combine.tax.status.period']
         for order in self.filtered(lambda o: o.state in ('draft', 'sent')):
-            vals = Period._combine_statuses_at(order.partner_id, fields.Date.context_today(order), order.company_id)
-            vals = {k: v for k, v in vals.items() if order[k] != v}
-            if vals:
-                order.with_context(combine_status_stamp=True).write(vals)
+            order._combine_stamp_status(on_date=fields.Date.context_today(order))
         return super().action_confirm()
 
 
@@ -86,6 +103,13 @@ class AccountMove(models.Model):
 
     def _combine_status_open(self):
         return self.state == 'draft'
+
+    def _combine_status_tax_lines(self):
+        if self.state != 'draft' or not self.is_invoice(include_receipts=True):
+            return {}
+        # lines raised from a contract keep the contract's taxes exactly; other sale lines follow the status
+        return {line: bool(line.sale_line_ids) or not self.is_sale_document(include_receipts=True)
+                for line in self.invoice_line_ids if line.display_type == 'product'}
 
 
 class StockPicking(models.Model):
