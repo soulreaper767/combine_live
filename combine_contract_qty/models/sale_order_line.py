@@ -11,9 +11,14 @@ class SaleOrderLine(models.Model):
 
     # ------------------------------------------------------------ helpers
     def _cq_amendable(self):
-        """Product lines of a confirmed contract, or of one reopened by Revise Contract."""
+        """Product lines of a confirmed contract, of one reopened by Revise Contract, or of a contract
+        that was confirmed before and set back to Quotation (Cancel > Set to Quotation) - it already
+        has a delivery or an invoice, even a cancelled one."""
+        def was_confirmed(order):
+            return order.state == 'sale' or order.x_revision_open or (
+                order.state in ('draft', 'sent') and (order.picking_ids or order.invoice_ids))
         return self.filtered(lambda l: l.product_id and not l.display_type and not l.x_is_charge_line
-                             and (l.order_id.state == 'sale' or l.order_id.x_revision_open))
+                             and was_confirmed(l.order_id))
 
     def _cq_delivered_qty(self):
         self.ensure_one()
