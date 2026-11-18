@@ -1,6 +1,6 @@
 {
     'name': 'Combine - Contract Quantity Amendment',
-    'version': '19.0.1.0.0',
+    'version': '19.0.1.0.1',
     'category': 'Sales/Sales',
     'summary': 'Change the quantity of a confirmed or revised contract; delivery and invoice limits follow the new quantity',
     'description': """
