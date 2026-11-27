@@ -21,6 +21,8 @@ class YapieBotSession(models.Model):
     _description = "Yapie bot question"
 
     user_id = fields.Many2one("res.users", required=True, ondelete="cascade", index=True)
+    # the Yapie account that is answering: several people working through one Odoo user each keep their own question
+    yapie_uid = fields.Integer(index=True)
     data = fields.Text()
     expires = fields.Datetime()
 
@@ -110,12 +112,14 @@ class YapieBot(models.AbstractModel):
     # ---------- conversation ----------
     def _session(self, user, data=None, clear=False):
         S = self.env["yapie.bot.session"].sudo()
-        s = S.search([("user_id", "=", user.id)], limit=1)
+        uid = int((self.env.context.get("yapie_account") or {}).get("uid") or 0)
+        s = S.search([("user_id", "=", user.id), ("yapie_uid", "=", uid)], limit=1)
         if clear:
             s.unlink()
             return None
         if data is not None:
-            vals = {"user_id": user.id, "data": json.dumps(data, default=str), "expires": fields.Datetime.now() + timedelta(minutes=15)}
+            vals = {"user_id": user.id, "yapie_uid": uid, "data": json.dumps(data, default=str),
+                    "expires": fields.Datetime.now() + timedelta(minutes=15)}
             s.write(vals) if s else S.create(vals)
             return data
         if s and s.expires and s.expires > fields.Datetime.now():
@@ -242,10 +246,8 @@ class YapieBot(models.AbstractModel):
         if not best.field_line_ids:
             api_.send_text(me, _("%s isn't set up yet (no fields). Ask your administrator.") % best.name)
             return True
-        sess = {"create": best.id, "i": 0, "vals": {}, "shown": []}
-        self._session(user, sess)
-        api_.send_text(me, _("New %(t)s — %(n)d question(s). Send “cancel” to stop.\n\n%(q)s",
-                             t=best.name, n=len(best.field_line_ids), q=best.field_line_ids[0].question()))
+        api_.send_text(me, _("New %s — send “cancel” any time to stop.") % best.name)
+        self._create_next(user, best, {"create": best.id, "i": -1, "vals": {}, "shown": []}, me)
         return True
 
     def _create_step(self, user, sess, text, me):
@@ -259,12 +261,29 @@ class YapieBot(models.AbstractModel):
             self._session(user, clear=True)
             return api_.send_text(me, _("You may no longer create %s.") % ctype.name)
         lines = ctype.field_line_ids
+        yes = low in ("yes", "y", "ok", "confirm", "create", "haan")
         if sess.get("confirm"):
-            if low in ("yes", "y", "ok", "confirm", "create", "haan"):
+            if yes:
                 self._session(user, clear=True)
                 return self._create_do(user, ctype, sess, me)
             return api_.send_text(me, _("Send “yes” to create it, or “cancel”."))
-        line = lines[sess["i"]]
+        top = lines[sess["i"]]
+        lines_mode = top.field_id.ttype == "one2many"
+        # a line was just finished: another one, or done with the lines?
+        if lines_mode and sess.get("more"):
+            if yes:
+                sess.update(more=False, j=0, cur={}, cur_shown=[])
+                self._session(user, sess)
+                return api_.send_text(me, _("Line %(n)d\n%(q)s", n=len(sess["rows"]) + 1, q=top.sub_field_ids[0].question()))
+            if low in ("no", "n", "done", "nahi"):
+                sess["vals"][top.field_id.name] = [(0, 0, r) for r in sess["rows"]]
+                sess["shown"].append([top.prompt or top.field_id.field_description,
+                                      "".join("\n   %d. %s" % (i + 1, ", ".join(r)) for i, r in enumerate(sess["rows_shown"]))])
+                for k in ("more", "j", "cur", "cur_shown", "rows", "rows_shown"):
+                    sess.pop(k, None)
+                return self._create_next(user, ctype, sess, me)
+            return api_.send_text(me, _("Add another line? (yes / no)"))
+        line = top.sub_field_ids[sess.get("j", 0)] if lines_mode else top
         value = display = None
         skipped = False
         if sess.get("choices") and low.isdigit() and 1 <= int(low) <= len(sess["choices"]):
@@ -282,13 +301,37 @@ class YapieBot(models.AbstractModel):
                 rows = [_("Which one?")] + ["%d. %s" % (i + 1, n) for i, (_id, n) in enumerate(choices)] + [_("Reply with the number.")]
                 return api_.send_text(me, "\n".join(rows))
         sess.pop("choices", None)
+        if lines_mode:
+            if not skipped:
+                sess["cur"][line.field_id.name] = value
+                sess["cur_shown"].append("%s %s" % (line.prompt or line.field_id.field_description, display))
+            sess["j"] += 1
+            if sess["j"] < len(top.sub_field_ids):
+                self._session(user, sess)
+                return api_.send_text(me, top.sub_field_ids[sess["j"]].question())
+            sess["rows"].append(sess["cur"])
+            sess["rows_shown"].append(sess["cur_shown"])
+            sess["more"] = True
+            self._session(user, sess)
+            return api_.send_text(me, _("Line %(n)d added: %(l)s\nAdd another line? (yes / no)", n=len(sess["rows"]), l=", ".join(sess["cur_shown"])))
         if not skipped:
             sess["vals"][line.field_id.name] = value
         sess["shown"].append([line.prompt or line.field_id.field_description, display])
-        sess["i"] += 1
+        return self._create_next(user, ctype, sess, me)
+
+    def _create_next(self, user, ctype, sess, me):
+        """Ask the next question (a lines field starts its first line), or show the summary to confirm."""
+        api_ = self.env["yapie.api"].sudo()
+        lines = ctype.field_line_ids
+        sess["i"] = sess.get("i", -1) + 1
+        while sess["i"] < len(lines) and lines[sess["i"]].field_id.ttype == "one2many" and not lines[sess["i"]].sub_field_ids:
+            sess["i"] += 1  # a lines field without questions can't be filled
         if sess["i"] < len(lines):
+            nxt = lines[sess["i"]]
+            if nxt.field_id.ttype == "one2many":
+                sess.update(j=0, cur={}, cur_shown=[], rows=[], rows_shown=[], more=False)
             self._session(user, sess)
-            return api_.send_text(me, lines[sess["i"]].question())
+            return api_.send_text(me, nxt.question())
         sess["confirm"] = True
         self._session(user, sess)
         summary = "\n".join("• %s: %s" % (k, v) for k, v in sess["shown"])
@@ -320,7 +363,8 @@ class YapieBot(models.AbstractModel):
                     try:
                         with self.env.cr.savepoint():
                             Req.request(rec, rule, by=user)
-                    except (UserError, AccessError) as e:
+                    except Exception as e:  # noqa: BLE001  the record stays created; the person is told
+                        _logger.warning("Yapie: approval of %s not sent: %s", rec.display_name, e)
                         note += "\n" + _("Could not send for approval: %s") % (e.args[0] if e.args else e)
             pending = Req.search([("res_model", "=", rec._name), ("res_id", "=", rec.id), ("state", "=", "pending")])
             if pending:

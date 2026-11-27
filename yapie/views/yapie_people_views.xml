@@ -103,13 +103,37 @@
                     <p class="text-muted">People type “create &lt;keyword&gt;” in Yapie; the bot asks these questions in order and creates the
                         record as their Odoo user (Odoo's own access rights apply). If an approval rule matches the new record, it is
                         sent for approval at once.</p>
-                    <field name="field_line_ids">
-                        <list editable="bottom">
+                    <field name="field_line_ids" context="{'default_type_id': id}">
+                        <list>
                             <field name="sequence" widget="handle"/>
-                            <field name="field_id" options="{'no_create': True}"/>
-                            <field name="prompt" placeholder="Question (empty: field name)"/>
+                            <field name="field_id"/>
+                            <field name="prompt"/>
                             <field name="required"/>
+                            <field name="sub_field_ids" string="Line questions" widget="many2many_tags" optional="show"/>
                         </list>
+                        <form>
+                            <group>
+                                <field name="model_name" invisible="1"/>
+                                <field name="is_lines" invisible="1"/>
+                                <field name="field_id" options="{'no_create': True}"/>
+                                <field name="prompt" placeholder="Question (empty: field name)"/>
+                                <field name="required"/>
+                            </group>
+                            <div invisible="not is_lines">
+                                <p class="text-muted">A lines field (e.g. Order Lines): the bot asks these questions for every line, then
+                                    “Add another line? (yes / no)”.</p>
+                                <field name="sub_field_ids" context="{'default_type_id': type_id}">
+                                    <list editable="bottom">
+                                        <field name="sequence" widget="handle"/>
+                                        <field name="model_name" column_invisible="1"/>
+                                        <field name="type_id" column_invisible="1"/>
+                                        <field name="field_id" options="{'no_create': True}"/>
+                                        <field name="prompt" placeholder="Question (empty: field name)"/>
+                                        <field name="required"/>
+                                    </list>
+                                </field>
+                            </div>
+                        </form>
                     </field>
                 </sheet>
             </form>

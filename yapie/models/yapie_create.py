@@ -22,7 +22,8 @@ class YapieCreateType(models.Model):
     keywords = fields.Char(required=True, help="Comma separated words after 'create', e.g. 'account, gl account'")
     model_id = fields.Many2one("ir.model", "Record type", required=True, ondelete="cascade", domain=[("transient", "=", False)])
     model = fields.Char(related="model_id.model", store=True)
-    field_line_ids = fields.One2many("yapie.create.field", "type_id", "Fields the bot asks for", copy=True)
+    field_line_ids = fields.One2many("yapie.create.field", "type_id", "Fields the bot asks for", copy=True,
+                                     domain=[("parent_id", "=", False)])
     fixed_values = fields.Char("Fixed values", default="{}",
                                help="Values always set, as a Python dict, e.g. {'move_type': 'out_invoice'}")
     user_ids = fields.Many2many("res.users", "yapie_create_type_user_rel", "type_id", "user_id", "Allowed people",
@@ -74,7 +75,8 @@ class YapieCreateType(models.Model):
             have = set(t.field_line_ids.mapped("field_id.name")) | set(t._fixed())
             seq = max(t.field_line_ids.mapped("sequence") or [0])
             for name, f in Model._fields.items():
-                if f.required and not f.compute and not f.related and f.type in ASKABLE and name not in have and name not in defaults:
+                if f.required and not f.compute and not f.related and f.type in ASKABLE and name not in have and name not in defaults \
+                        and name not in ("company_id", "currency_id"):
                     seq += 10
                     t.field_line_ids = [(0, 0, {"field_id": self.env["ir.model.fields"]._get(t.model, name).id, "required": True, "sequence": seq})]
         return True
@@ -87,14 +89,49 @@ class YapieCreateField(models.Model):
 
     type_id = fields.Many2one("yapie.create.type", required=True, ondelete="cascade")
     sequence = fields.Integer(default=10)
+    # a lines field (e.g. Order Lines) asks its own questions for every line
+    parent_id = fields.Many2one("yapie.create.field", "Lines field", ondelete="cascade", index=True)
+    sub_field_ids = fields.One2many("yapie.create.field", "parent_id", "Questions for each line", copy=True)
+    model_name = fields.Char(compute="_compute_model_name")
     field_id = fields.Many2one("ir.model.fields", required=True, ondelete="cascade",
-                               domain="[('model_id', '=', parent.model_id), ('ttype', 'in', %s), ('store', '=', True)]" % (list(ASKABLE),))
+                               domain="[('model', '=', model_name), ('ttype', 'in', %s), ('store', '=', True)]" % (list(ASKABLE + ("one2many",)),))
+    is_lines = fields.Boolean(compute="_compute_model_name")
     prompt = fields.Char("Question", help="What the bot asks. Empty: the field's name")
-    required = fields.Boolean(default=True)
+    required = fields.Boolean(default=True, help="For a lines field: at least one line")
+
+    @api.depends("type_id.model", "parent_id.field_id", "field_id.ttype")
+    def _compute_model_name(self):
+        for line in self:
+            line.model_name = line.parent_id.field_id.relation if line.parent_id else line.type_id.model
+            line.is_lines = line.field_id.ttype == "one2many"
+
+    @api.depends("prompt", "field_id")
+    def _compute_display_name(self):
+        for line in self:
+            line.display_name = line.prompt or line.field_id.field_description or ""
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        # questions for each line belong to the same create type
+        for vals in vals_list:
+            if vals.get("parent_id") and not vals.get("type_id"):
+                vals["type_id"] = self.browse(vals["parent_id"]).type_id.id
+        return super().create(vals_list)
+
+    @api.constrains("field_id", "parent_id")
+    def _check_lines(self):
+        for line in self:
+            if line.parent_id and line.field_id.ttype == "one2many":
+                raise ValidationError(_("Lines inside lines aren't supported."))
+            if line.parent_id and line.field_id.model != line.parent_id.field_id.relation:
+                raise ValidationError(_("%s is not a field of the lines.") % line.field_id.field_description)
 
     def question(self):
         self.ensure_one()
         f = self.field_id
+        if f.ttype == "one2many":
+            first = self.sub_field_ids[:1]
+            return _("%(l)s — line 1\n%(q)s", l=self.prompt or f.field_description, q=first.question() if first else "")
         q = self.prompt or f.field_description
         hint = {"date": _(" (e.g. 28/11/2026 or today)"), "boolean": _(" (yes / no)")}.get(f.ttype, "")
         if f.ttype == "selection":
