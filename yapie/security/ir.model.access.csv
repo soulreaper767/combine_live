@@ -16,3 +16,5 @@ access_yapie_notify_manager,yapie.notify.rule manager,model_yapie_notify_rule,gr
 access_yapie_session_manager,yapie.bot.session manager,model_yapie_bot_session,group_yapie_manager,1,1,1,1
 access_yapie_link_wizard,yapie.link.wizard,model_yapie_link_wizard,base.group_user,1,1,1,1
 access_yapie_approval_wizard,yapie.approval.wizard,model_yapie_approval_wizard,base.group_user,1,1,1,1
+access_yapie_user_link_user,yapie.user.link user,model_yapie_user_link,group_yapie_user,1,1,0,1
+access_yapie_user_link_manager,yapie.user.link manager,model_yapie_user_link,group_yapie_manager,1,1,1,1

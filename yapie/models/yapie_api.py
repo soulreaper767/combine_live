@@ -65,7 +65,17 @@ class YapieApi(models.AbstractModel):
             return {"chat_id": user.yapie_chat_id}
         if user.yapie_target:
             return {"to": user.yapie_target}
+        if user.yapie_extra_link_ids:
+            return user.yapie_extra_link_ids[0].target()
         raise UserError(_("%s hasn't linked a Yapie account.") % user.name)
+
+    @api.model
+    def targets_of(self, user):
+        """Every Yapie account the user is reached on (main link + additional accounts)."""
+        targets = user._yapie_targets()
+        if not targets:
+            raise UserError(_("%s hasn't linked a Yapie account.") % user.name)
+        return targets
 
     @api.model
     def send_text(self, target, text, buttons=None):

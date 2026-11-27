@@ -18,6 +18,18 @@
                             confirm="Unlink your Yapie? You stop getting reports and approvals there."/>
                     <p class="text-muted mt-2">Get reports, approvals and alerts from this company on Yapie. Yapie sends you a code to confirm
                         it's your account.</p>
+                    <separator string="Additional Yapie accounts" invisible="not yapie_linked and not yapie_extra_link_ids"/>
+                    <field name="yapie_extra_link_ids" invisible="not yapie_linked and not yapie_extra_link_ids" readonly="1">
+                        <list>
+                            <field name="person"/>
+                            <field name="yapie_target"/>
+                            <field name="yapie_username"/>
+                            <field name="yapie_linked_at"/>
+                            <button name="action_unlink_account" type="object" string="Unlink" icon="fa-chain-broken"
+                                    confirm="Unlink this Yapie account? That person stops getting anything from this company at once."/>
+                        </list>
+                    </field>
+                    <button name="action_yapie_add_account" type="object" string="Add another Yapie account" invisible="not yapie_linked"/>
                 </page>
             </xpath>
         </field>
@@ -39,6 +51,20 @@
                     <button name="action_yapie_link" type="object" string="Link Yapie" invisible="yapie_linked"/>
                     <button name="action_yapie_unlink" type="object" string="Unlink Yapie" invisible="not yapie_linked"
                             confirm="Unlink this person's Yapie? They stop getting anything from this company at once."/>
+                    <separator string="Additional Yapie accounts"/>
+                    <p class="text-muted">More people can work through this one Odoo user, each with their own Yapie. They get the same
+                        reports, alerts and approvals, and act with exactly this user's rights.</p>
+                    <field name="yapie_extra_link_ids" readonly="1">
+                        <list>
+                            <field name="person"/>
+                            <field name="yapie_target"/>
+                            <field name="yapie_username"/>
+                            <field name="yapie_linked_at"/>
+                            <button name="action_unlink_account" type="object" string="Unlink" icon="fa-chain-broken"
+                                    confirm="Unlink this Yapie account? That person stops getting anything from this company at once."/>
+                        </list>
+                    </field>
+                    <button name="action_yapie_add_account" type="object" string="Add another Yapie account" invisible="not yapie_linked"/>
                 </page>
             </xpath>
         </field>

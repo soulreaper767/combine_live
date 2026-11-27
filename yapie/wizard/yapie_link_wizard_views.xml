@@ -9,6 +9,8 @@
                 <group invisible="step != 'ask'">
                     <field name="user_id"/>
                     <field name="target" placeholder="@username, +92300… or you@company.com"/>
+                    <field name="extra" invisible="1"/>
+                    <field name="person" invisible="not extra" placeholder="e.g. Ali – store"/>
                 </group>
                 <p invisible="step != 'ask'" class="text-muted">Yapie sends a 6-digit code to that account. Only its owner can read it.</p>
                 <group invisible="step != 'code'">

@@ -51,15 +51,20 @@ class YapieBot(models.AbstractModel):
         if not authorized:
             self._refuse(sender, chat, direct, name, user)
             return
-        # remember the person's chat with the bot and their current username
+        # remember the person's chat with the bot and their current username (on their own account: the user's
+        # main link, or the additional account they wrote from)
+        account = self.env["res.users"]._yapie_link_by_uid(sender["id"]) or user.sudo()
         vals = {}
-        if direct and chat.get("id") and user.yapie_chat_id != chat["id"]:
+        if direct and chat.get("id") and account.yapie_chat_id != chat["id"]:
             vals["yapie_chat_id"] = chat["id"]
-        if sender.get("username") and user.yapie_username != sender["username"]:
+        if sender.get("username") and account.yapie_username != sender["username"]:
             vals["yapie_username"] = sender["username"]
         if vals:
-            user.sudo().write(vals)
-        me = {"chat_id": chat["id"]} if direct else api_.target_of(user)
+            account.sudo().write(vals)
+        if direct:
+            me = {"chat_id": chat["id"]}
+        else:
+            me = account.target() if account._name == "yapie.user.link" else api_.target_of(user)
         if not direct:
             # in a group the bot only answers "/" commands, and always privately
             if not text.startswith("/"):

@@ -1,5 +1,6 @@
 from . import yapie_api
 from . import res_users
+from . import yapie_user_link
 from . import yapie_log
 from . import yapie_chat
 from . import yapie_report_type

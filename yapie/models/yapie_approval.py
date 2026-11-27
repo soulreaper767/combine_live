@@ -416,12 +416,15 @@ class YapieApprovalRequest(models.Model):
                     "due_hours": rule.due_hours or None}
             # one card in a group whose members are all approvers, or one card to each approver privately
             if rule.chat_id and rule.chat_id.safe_for(lambda u: u in approvers):
-                r = api_.call("/approvals", dict(base, chat_id=rule.chat_id.chat_id, approvers=[u.yapie_target for u in approvers]))
+                r = api_.call("/approvals", dict(base, chat_id=rule.chat_id.chat_id,
+                                                 approvers=[h for u in approvers for h in u._yapie_approver_handles()]))
                 self.env["yapie.approval.card"].sudo().create({"request_id": req.id, "yapie_id": r.get("approval_id"), "chat_id": rule.chat_id.id})
             else:
+                # each approver gets the card on every Yapie account linked to them (main + additional accounts)
                 for u in approvers:
-                    r = api_.call("/approvals", dict(base, approvers=[u.yapie_target], **api_.target_of(u)))
-                    self.env["yapie.approval.card"].sudo().create({"request_id": req.id, "yapie_id": r.get("approval_id"), "user_id": u.id})
+                    for handle, target in u._yapie_accounts():
+                        r = api_.call("/approvals", dict(base, approvers=[handle], **target))
+                        self.env["yapie.approval.card"].sudo().create({"request_id": req.id, "yapie_id": r.get("approval_id"), "user_id": u.id})
             if hasattr(rec, "message_post"):
                 rec.sudo().message_post(body=_("Sent for approval on Yapie to %s.") % ", ".join(approvers.mapped("name")))
             self.env["yapie.log"].add("approval", _("%(d)s sent for approval to %(a)s", d=rec.display_name, a=", ".join(approvers.mapped("name"))), user=by, record=rec)
@@ -439,6 +442,9 @@ class YapieApprovalRequest(models.Model):
         status = data.get("status")
         who = data.get("decided_by") or {}
         user = self.env["res.users"]._yapie_by_uid(who.get("id"))
+        # decided from one of the user's additional Yapie accounts: say which person it was
+        link = self.env["res.users"]._yapie_link_by_uid(who.get("id"))
+        by_name = ("%s (%s)" % (user.name, link.label())) if (user and link) else (user.name if user else "")
 
         def answer(ok, note):
             try:
@@ -472,9 +478,9 @@ class YapieApprovalRequest(models.Model):
             if waiting:
                 card.state = "decided"
                 if rec and hasattr(rec, "message_post"):
-                    rec.sudo().message_post(body=_("✅ Approved by %(n)s on Yapie — still waiting for %(w)s", n=user.name, w=", ".join(waiting.mapped("name"))),
+                    rec.sudo().message_post(body=_("✅ Approved by %(n)s on Yapie — still waiting for %(w)s", n=by_name, w=", ".join(waiting.mapped("name"))),
                                             author_id=user.partner_id.id)
-                self.env["yapie.log"].add("approval", _("%(d)s approved by %(n)s, waiting for %(w)s", d=req.name, n=user.name, w=", ".join(waiting.mapped("name"))),
+                self.env["yapie.log"].add("approval", _("%(d)s approved by %(n)s, waiting for %(w)s", d=req.name, n=by_name, w=", ".join(waiting.mapped("name"))),
                                           user=user, record=rec or None)
                 answer(True, _("Your approval is recorded — waiting for %s") % ", ".join(waiting.mapped("name")))
                 return True
@@ -484,7 +490,7 @@ class YapieApprovalRequest(models.Model):
             try:
                 with self.env.cr.savepoint():
                     if status == "rejected" and rule.reason_field and rule.reason_field in rec._fields:
-                        rec.sudo().write({rule.reason_field: data.get("comment") or _("Rejected on Yapie by %s") % user.name})
+                        rec.sudo().write({rule.reason_field: data.get("comment") or _("Rejected on Yapie by %s") % by_name})
                     getattr(rec.sudo(False).with_user(user), method)()
                 note = _("done")
             except Exception as e:  # noqa: BLE001  the decision stays recorded; the document just didn't change
@@ -495,7 +501,7 @@ class YapieApprovalRequest(models.Model):
         card.state = "decided"
         if rec and hasattr(rec, "message_post"):
             icon = "✅" if status == "approved" else "❌"
-            text = _("%(i)s %(s)s by %(n)s on Yapie%(v)s%(c)s", i=icon, s=_("Approved") if status == "approved" else _("Rejected"), n=user.name,
+            text = _("%(i)s %(s)s by %(n)s on Yapie%(v)s%(c)s", i=icon, s=_("Approved") if status == "approved" else _("Rejected"), n=by_name,
                      v=_(" (by reply)") if data.get("via") == "reply" else "", c=(": “%s”" % data["comment"]) if data.get("comment") else "")
             if not ok:
                 text += _(" — could not run %(m)s: %(e)s", m=method, e=note)
@@ -508,12 +514,12 @@ class YapieApprovalRequest(models.Model):
             except UserError:
                 pass
             other.state = "closed"
-        self.env["yapie.log"].add("approval", _("%(d)s %(s)s by %(n)s", d=req.name, s=status, n=user.name), user=user, record=rec or None,
+        self.env["yapie.log"].add("approval", _("%(d)s %(s)s by %(n)s", d=req.name, s=status, n=by_name), user=user, record=rec or None,
                                   state="ok" if ok else "error")
         if req.rule_id.notify_requester and req.requested_by and req.requested_by != user and req.requested_by._yapie_authorized():
             try:
                 api_.send_text(api_.target_of(req.requested_by), _("%(i)s %(d)s was %(s)s by %(n)s%(c)s", i="✅" if status == "approved" else "❌", d=req.name,
-                                                                    s=_("approved") if status == "approved" else _("rejected"), n=user.name,
+                                                                    s=_("approved") if status == "approved" else _("rejected"), n=by_name,
                                                                     c=(" — “%s”" % data["comment"]) if data.get("comment") else ""))
             except UserError:
                 pass
