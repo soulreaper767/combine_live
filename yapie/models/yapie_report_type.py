@@ -37,6 +37,10 @@ class YapieReportType(models.Model):
         user = user.sudo()
         if not (self.active and self.available and user._yapie_authorized()):
             return False
+        # asked from an additional Yapie account: only the reports that person's role allows
+        link_id = self.env.context.get("yapie_link_id")
+        if link_id and not self.env["yapie.user.link"].sudo().browse(link_id).allows_report(self):
+            return False
         if user.has_group("yapie.group_yapie_manager") or user in self.sudo().user_ids:
             return True
         return bool(self.sudo().group_ids & user.all_group_ids)

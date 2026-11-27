@@ -20,7 +20,7 @@ Connects this Odoo database to a Yapie bot.
 * **Groups** — reports or alerts go to a Yapie group only when every member is a linked, authorised user.
 * Works with a public Odoo (webhook) or one without a public address (polling).
 """,
-    "version": "19.0.1.3.0",
+    "version": "19.0.1.4.0",
     "category": "Productivity",
     "author": "Yapie",
     "website": "https://yapie.app/integrations",
@@ -41,6 +41,7 @@ Connects this Odoo database to a Yapie bot.
         "views/res_users_views.xml",
         "views/res_config_settings_views.xml",
         "views/yapie_menus.xml",
+        "views/yapie_people_views.xml",
     ],
     "application": True,
     "installable": True,

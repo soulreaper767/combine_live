@@ -132,7 +132,7 @@ class YapieReportSchedule(models.Model):
                 skipped.append(u.name)
                 continue
             try:
-                for target in api_.targets_of(u):
+                for target in api_.targets_of(u, "schedule", rt):
                     api_.send_file(target, name, mime, content, caption)
                 sent.append(u.name)
             except UserError as e:

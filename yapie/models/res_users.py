@@ -60,8 +60,22 @@ class ResUsers(models.Model):
         Link = self.env["yapie.user.link"].sudo()
         return Link.search([("yapie_uid", "=", int(uid))], limit=1) if uid else Link
 
-    def _yapie_targets(self):
-        """Every Yapie account this user is reached on: the main link first, then the additional ones."""
+    def _yapie_links_for(self, purpose=None, rule=None):
+        """The additional accounts that take part in this: 'alert', 'schedule' (rule = the report type),
+        'approval' (rule = the approval rule) or anything."""
+        self.ensure_one()
+        links = self.sudo().yapie_extra_link_ids
+        if purpose == "alert":
+            links = links.filtered("receive_alerts")
+        elif purpose == "schedule":
+            links = links.filtered(lambda l: l.receive_schedules and (l.allows_report(rule) if rule else l.report_access != "none"))
+        elif purpose == "approval":
+            links = links.filtered(lambda l: l.allows_approval(rule))
+        return links
+
+    def _yapie_targets(self, purpose=None, rule=None):
+        """Every Yapie account this user is reached on for this purpose: the main link first, then the
+        additional accounts whose role includes it."""
         self.ensure_one()
         u = self.sudo()
         out = []
@@ -69,23 +83,36 @@ class ResUsers(models.Model):
             out.append({"chat_id": u.yapie_chat_id})
         elif u.yapie_target:
             out.append({"to": u.yapie_target})
-        out += [link.target() for link in u.yapie_extra_link_ids]
+        out += [link.target() for link in u._yapie_links_for(purpose, rule)]
         return out
 
-    def _yapie_accounts(self):
-        """[(handle Yapie knows the account by, where to send)] for the main link and every additional account."""
+    @api.model
+    def _yapie_account_info(self, uid):
+        """{uid, label, link_id} of the Yapie account with this ID, for the activity trail."""
+        link = self._yapie_link_by_uid(uid)
+        if link:
+            return {"uid": int(uid), "label": link.label(), "link_id": link.id}
+        user = self.sudo().search([("yapie_uid", "=", int(uid or 0))], limit=1) if uid else self.browse()
+        if user:
+            return {"uid": int(uid), "label": ("@" + user.yapie_username) if user.yapie_username else (user.yapie_target or user.name)}
+        return {"uid": int(uid or 0)}
+
+    def _yapie_accounts(self, purpose=None, rule=None):
+        """[(handle Yapie knows the account by, where to send)] for the main link and the additional accounts
+        whose role includes this purpose."""
         self.ensure_one()
         u = self.sudo()
         out = []
         if u.yapie_target:
             out.append((u.yapie_target, {"chat_id": u.yapie_chat_id} if u.yapie_chat_id else {"to": u.yapie_target}))
-        out += [(link.yapie_target, link.target()) for link in u.yapie_extra_link_ids]
+        out += [(link.yapie_target, link.target()) for link in u._yapie_links_for(purpose, rule)]
         return out
 
-    def _yapie_approver_handles(self):
-        """What Yapie knows each account by, for an approval card (main link + additional accounts)."""
+    def _yapie_approver_handles(self, rule=None):
+        """What Yapie knows each approving account by, for an approval card (main link + additional accounts
+        that may decide this rule)."""
         self.ensure_one()
-        return [h for h, _t in self._yapie_accounts() if h]
+        return [h for h, _t in self._yapie_accounts("approval", rule) if h]
 
     def action_yapie_add_account(self):
         self.ensure_one()

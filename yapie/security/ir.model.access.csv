@@ -18,3 +18,7 @@ access_yapie_link_wizard,yapie.link.wizard,model_yapie_link_wizard,base.group_us
 access_yapie_approval_wizard,yapie.approval.wizard,model_yapie_approval_wizard,base.group_user,1,1,1,1
 access_yapie_user_link_user,yapie.user.link user,model_yapie_user_link,group_yapie_user,1,1,0,1
 access_yapie_user_link_manager,yapie.user.link manager,model_yapie_user_link,group_yapie_manager,1,1,1,1
+access_yapie_create_type_user,yapie.create.type user,model_yapie_create_type,group_yapie_user,1,0,0,0
+access_yapie_create_type_manager,yapie.create.type manager,model_yapie_create_type,group_yapie_manager,1,1,1,1
+access_yapie_create_field_user,yapie.create.field user,model_yapie_create_field,group_yapie_user,1,0,0,0
+access_yapie_create_field_manager,yapie.create.field manager,model_yapie_create_field,group_yapie_manager,1,1,1,1

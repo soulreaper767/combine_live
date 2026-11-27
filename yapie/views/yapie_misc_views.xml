@@ -49,6 +49,7 @@
                 <field name="kind"/>
                 <field name="user_id"/>
                 <field name="yapie_name" optional="show"/>
+                <field name="yapie_account" optional="show"/>
                 <field name="summary"/>
                 <field name="state" optional="hide"/>
             </list>
@@ -61,11 +62,14 @@
             <search>
                 <field name="summary"/>
                 <field name="user_id"/>
+                <field name="yapie_account"/>
                 <filter name="refused" string="Refused" domain="[('kind', '=', 'denied')]"/>
+                <filter name="extra_accounts" string="By additional accounts" domain="[('link_id', '!=', False)]"/>
                 <filter name="errors" string="Failed" domain="[('state', '=', 'error')]"/>
                 <group>
                     <filter name="by_kind" string="Kind" context="{'group_by': 'kind'}"/>
                     <filter name="by_user" string="Person" context="{'group_by': 'user_id'}"/>
+                    <filter name="by_account" string="Yapie account" context="{'group_by': 'yapie_account'}"/>
                 </group>
             </search>
         </field>

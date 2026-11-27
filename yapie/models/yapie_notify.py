@@ -111,7 +111,7 @@ class YapieNotifyRule(models.Model):
                 body = self._text(rec, self.message, self.field_ids, summary=True) + "\n" + doc_link(rec)
                 sent = []
                 for u in users:
-                    for target in api_.targets_of(u):
+                    for target in api_.targets_of(u, "alert"):
                         api_.send_later(target, body)
                     sent.append(u.name)
                 if self.chat_id and self.chat_id.safe_for(lambda u: rec.with_user(u).has_access("read")):

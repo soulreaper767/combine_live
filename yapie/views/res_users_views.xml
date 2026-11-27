@@ -52,14 +52,18 @@
                     <button name="action_yapie_unlink" type="object" string="Unlink Yapie" invisible="not yapie_linked"
                             confirm="Unlink this person's Yapie? They stop getting anything from this company at once."/>
                     <separator string="Additional Yapie accounts"/>
-                    <p class="text-muted">More people can work through this one Odoo user, each with their own Yapie. They get the same
-                        reports, alerts and approvals, and act with exactly this user's rights.</p>
-                    <field name="yapie_extra_link_ids" readonly="1">
-                        <list>
+                    <p class="text-muted">More people can work through this one Odoo user, each with their own Yapie. Each one does only
+                        what you give them (open the line): reports, approvals, alerts, creating records - never more than this user may.
+                        A new person can do nothing until you set it.</p>
+                    <field name="yapie_extra_link_ids">
+                        <list create="0" delete="0">
                             <field name="person"/>
                             <field name="yapie_target"/>
                             <field name="yapie_username"/>
-                            <field name="yapie_linked_at"/>
+                            <field name="report_access"/>
+                            <field name="can_approve"/>
+                            <field name="create_access"/>
+                            <field name="yapie_linked_at" optional="hide"/>
                             <button name="action_unlink_account" type="object" string="Unlink" icon="fa-chain-broken"
                                     confirm="Unlink this Yapie account? That person stops getting anything from this company at once."/>
                         </list>

@@ -70,9 +70,10 @@ class YapieApi(models.AbstractModel):
         raise UserError(_("%s hasn't linked a Yapie account.") % user.name)
 
     @api.model
-    def targets_of(self, user):
-        """Every Yapie account the user is reached on (main link + additional accounts)."""
-        targets = user._yapie_targets()
+    def targets_of(self, user, purpose=None, rule=None):
+        """Every Yapie account the user is reached on for this purpose ('alert', 'schedule', 'approval'): the main
+        link + the additional accounts whose role includes it."""
+        targets = user._yapie_targets(purpose, rule)
         if not targets:
             raise UserError(_("%s hasn't linked a Yapie account.") % user.name)
         return targets

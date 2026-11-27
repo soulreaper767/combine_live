@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- additional Yapie accounts: one person each, with their own part of the Odoo user's work -->
+    <record id="yapie_user_link_form" model="ir.ui.view">
+        <field name="name">yapie.user.link.form</field>
+        <field name="model">yapie.user.link</field>
+        <field name="arch" type="xml">
+            <form create="false">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_activity" type="object" class="oe_stat_button" icon="fa-history">
+                            <field name="log_count" widget="statinfo" string="Activity"/>
+                        </button>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="person"/>
+                            <field name="user_id"/>
+                        </group>
+                        <group>
+                            <field name="yapie_target"/>
+                            <field name="yapie_username"/>
+                            <field name="yapie_linked_at"/>
+                        </group>
+                    </group>
+                    <separator string="What this person may do"/>
+                    <p class="text-muted">Never more than the Odoo user may do. A new person can do nothing until it is given here.</p>
+                    <group>
+                        <group string="Reports">
+                            <field name="report_access" widget="radio"/>
+                            <field name="report_type_ids" widget="many2many_tags" invisible="report_access != 'selected'"/>
+                            <field name="receive_schedules"/>
+                        </group>
+                        <group string="Approvals and alerts">
+                            <field name="can_approve"/>
+                            <field name="approval_rule_ids" widget="many2many_tags" invisible="not can_approve"
+                                   placeholder="Empty = every rule the Odoo user approves"/>
+                            <field name="receive_alerts"/>
+                        </group>
+                        <group string="Create from chat">
+                            <field name="create_access" widget="radio"/>
+                            <field name="create_type_ids" widget="many2many_tags" invisible="create_access != 'selected'"/>
+                        </group>
+                    </group>
+                    <footer invisible="1"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="yapie_user_link_list" model="ir.ui.view">
+        <field name="name">yapie.user.link.list</field>
+        <field name="model">yapie.user.link</field>
+        <field name="arch" type="xml">
+            <list create="false">
+                <field name="user_id"/>
+                <field name="person"/>
+                <field name="yapie_target"/>
+                <field name="report_access"/>
+                <field name="can_approve"/>
+                <field name="create_access"/>
+                <field name="receive_alerts" optional="show"/>
+                <field name="receive_schedules" optional="show"/>
+                <field name="log_count" string="Activity" optional="show"/>
+                <button name="action_unlink_account" type="object" string="Unlink" icon="fa-chain-broken"
+                        confirm="Unlink this Yapie account? That person stops getting anything from this company at once."/>
+            </list>
+        </field>
+    </record>
+    <record id="action_yapie_user_links" model="ir.actions.act_window">
+        <field name="name">Additional Yapie accounts</field>
+        <field name="res_model">yapie.user.link</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p>Several people can work through one Odoo user, each with their own Yapie. Add them from the user's Yapie tab
+               (“Add another Yapie account”), then set here what each person may do.</p>
+        </field>
+    </record>
+
+    <!-- what can be created from chat -->
+    <record id="yapie_create_type_form" model="ir.ui.view">
+        <field name="name">yapie.create.type.form</field>
+        <field name="model">yapie.create.type</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_add_required_fields" type="object" string="Add required fields"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="keywords" placeholder="account, gl account"/>
+                            <field name="model_id" options="{'no_create': True}"/>
+                            <field name="active" widget="boolean_toggle"/>
+                        </group>
+                        <group>
+                            <field name="user_ids" widget="many2many_tags"/>
+                            <field name="group_ids" widget="many2many_tags"/>
+                            <field name="send_for_approval"/>
+                            <field name="fixed_values"/>
+                        </group>
+                    </group>
+                    <p class="text-muted">People type “create &lt;keyword&gt;” in Yapie; the bot asks these questions in order and creates the
+                        record as their Odoo user (Odoo's own access rights apply). If an approval rule matches the new record, it is
+                        sent for approval at once.</p>
+                    <field name="field_line_ids">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="field_id" options="{'no_create': True}"/>
+                            <field name="prompt" placeholder="Question (empty: field name)"/>
+                            <field name="required"/>
+                        </list>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="yapie_create_type_list" model="ir.ui.view">
+        <field name="name">yapie.create.type.list</field>
+        <field name="model">yapie.create.type</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="keywords"/>
+                <field name="model_id"/>
+                <field name="send_for_approval"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_yapie_create_types" model="ir.actions.act_window">
+        <field name="name">Create from chat</field>
+        <field name="res_model">yapie.create.type</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p>What people may create from Yapie: e.g. “Account (Chart of Accounts)” on Account, asking Code, Account Name and Type.</p>
+        </field>
+    </record>
+
+    <menuitem id="menu_yapie_user_links" name="Additional accounts" parent="menu_yapie_config" sequence="2"
+              action="action_yapie_user_links"/>
+    <menuitem id="menu_yapie_create_types" name="Create from chat" parent="menu_yapie_config" sequence="6"
+              action="action_yapie_create_types"/>
+</odoo>

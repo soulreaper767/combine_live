@@ -417,12 +417,12 @@ class YapieApprovalRequest(models.Model):
             # one card in a group whose members are all approvers, or one card to each approver privately
             if rule.chat_id and rule.chat_id.safe_for(lambda u: u in approvers):
                 r = api_.call("/approvals", dict(base, chat_id=rule.chat_id.chat_id,
-                                                 approvers=[h for u in approvers for h in u._yapie_approver_handles()]))
+                                                 approvers=[h for u in approvers for h in u._yapie_approver_handles(rule)]))
                 self.env["yapie.approval.card"].sudo().create({"request_id": req.id, "yapie_id": r.get("approval_id"), "chat_id": rule.chat_id.id})
             else:
-                # each approver gets the card on every Yapie account linked to them (main + additional accounts)
+                # each approver gets the card on their main Yapie and on the additional accounts allowed to decide this rule
                 for u in approvers:
-                    for handle, target in u._yapie_accounts():
+                    for handle, target in u._yapie_accounts("approval", rule):
                         r = api_.call("/approvals", dict(base, approvers=[handle], **target))
                         self.env["yapie.approval.card"].sudo().create({"request_id": req.id, "yapie_id": r.get("approval_id"), "user_id": u.id})
             if hasattr(rec, "message_post"):
@@ -445,6 +445,8 @@ class YapieApprovalRequest(models.Model):
         # decided from one of the user's additional Yapie accounts: say which person it was
         link = self.env["res.users"]._yapie_link_by_uid(who.get("id"))
         by_name = ("%s (%s)" % (user.name, link.label())) if (user and link) else (user.name if user else "")
+        # everything logged from here on names the Yapie account that decided
+        self = self.with_context(yapie_account=self.env["res.users"]._yapie_account_info(who.get("id")))
 
         def answer(ok, note):
             try:
@@ -462,6 +464,13 @@ class YapieApprovalRequest(models.Model):
             self.env["yapie.log"].add("denied", _("Approval of %(d)s by %(n)s refused: not an authorised approver in Odoo", d=req.name, n=who.get("name") or "?"),
                                       yapie_name=who.get("name"), state="error")
             answer(False, _("Not an authorised approver in Odoo — nothing changed"))
+            return False
+        # an additional account decides only what its role allows (chain of command)
+        if link and not link.allows_approval(req.rule_id):
+            card.state = "closed"
+            self.env["yapie.log"].add("denied", _("Approval of %(d)s by %(n)s refused: this person may not decide it", d=req.name, n=by_name),
+                                      user=user, yapie_name=who.get("name"), state="error")
+            answer(False, _("You may not decide this approval — nothing changed"))
             return False
         rec = self.env[req.res_model].sudo().browse(req.res_id).exists()
         rule = req.rule_id

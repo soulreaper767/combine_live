@@ -9,5 +9,6 @@ from . import yapie_schedule
 from . import yapie_workflow
 from . import yapie_approval
 from . import yapie_notify
+from . import yapie_create
 from . import yapie_bot
 from . import res_config_settings
